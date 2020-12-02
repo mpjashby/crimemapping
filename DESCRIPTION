@@ -1,11 +1,13 @@
 Package: crimemapping
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Crime Mapping with R
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Matt Ashby
+Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
+Description: Learn how to effectively map crimes in R using a series of 
+    interactive tutorials
+License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
+Suggests: 
+    learnr
