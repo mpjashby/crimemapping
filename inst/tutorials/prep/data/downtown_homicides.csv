@@ -1,0 +1,5 @@
+report_number,report_date,occur_date,occur_time,possible_date,possible_time,beat,apartment_office_prefix,apartment_number,location,shift_occurence,location_type,ucr_literal,ucr_number,ibr_code,neighborhood,npu,latitude,longitude
+190191530,2019-01-19,2019-01-19,1550,2019-01-19,1603,504,NA,NA,400 W PEACHTREE ST NW,Evening Watch,14,HOMICIDE,0110,0903,Downtown,M,33.76614,-84.3876
+190570315,2019-02-26,2019-02-26,0200,2019-02-26,0528,510,NA,NA,171 AUBURN AVE NE @CITY WALK APARTMENTS,Day Watch,18,HOMICIDE,0110,0999,Downtown,M,33.75546,-84.38185
+192160018,2019-08-04,2019-08-04,0005,2019-08-04,0010,512,NA,NA,241 FORSYTH ST SW,Morning Watch,13,HOMICIDE,0110,0911,Downtown,M,33.74827,-84.39732
+193302338,2019-11-26,2019-11-26,2235,2019-11-26,2240,510,NA,NA,80 JESSE HILL JR DR SE @GRADY,Morning Watch,28,HOMICIDE,0110,0911,Downtown,M,33.75168,-84.38198
