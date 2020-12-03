@@ -27,5 +27,9 @@ crimes %>%
     occur_date >= as.Date("2019-01-01"),
     neighborhood == "Downtown"
   ) %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
-  st_write("../data/")
+  select(report_number, occur_date, occur_time, location, longitude,
+         latitude) %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE) %>%
+  st_write(here::here("inst/tutorials/prep/data/downtown_homicides.gpkg")) %>%
+  st_set_geometry(NULL) %>%
+  write_csv(here::here("inst/tutorials/prep/data/downtown_homicides.csv"))
