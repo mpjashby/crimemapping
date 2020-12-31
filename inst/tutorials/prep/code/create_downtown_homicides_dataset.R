@@ -16,11 +16,11 @@ crimes <- str_glue("{tempdir()}/COBRA-2009-2019.csv") %>%
   janitor::clean_names()
 
 # load neighbourhood data
-nbhds <- read_sf("https://opendata.arcgis.com/datasets/d6298dee8938464294d3f49d473bcf15_196.geojson") %>%
-  janitor::clean_names() %>%
-  filter(neighborho == "Castleberry Hill, Downtown")
+# nbhds <- read_sf("https://opendata.arcgis.com/datasets/d6298dee8938464294d3f49d473bcf15_196.geojson") %>%
+#   janitor::clean_names() %>%
+#   filter(neighborho == "Castleberry Hill, Downtown")
 
-# get downtown homicides
+# get Downtown homicides
 crimes %>%
   filter(
     ucr_literal == "HOMICIDE",
@@ -34,5 +34,22 @@ crimes %>%
   ) %>%
   select(report_number, label, longitude, latitude) %>%
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE) %>%
-  write_sf(here::here("inst/tutorials/prep/data/downtown_homicides.gpkg")) %>%
-  write_csv(here::here("inst/tutorials/prep/data/downtown_homicides.csv"))
+  write_sf(here::here("inst/extdata/downtown_homicides.gpkg")) %>%
+  write_csv(here::here("inst/extdata/downtown_homicides.csv"))
+
+# get Glenrose Heights homicides
+crimes %>%
+  filter(
+    ucr_literal == "HOMICIDE",
+    occur_date >= as.Date("2019-01-01"),
+    neighborhood == "Glenrose Heights"
+  ) %>%
+  mutate(
+    occur_date = strftime(lubridate::ymd(occur_date), "%e %B"),
+    occur_time = str_glue("{str_sub(occur_time, 0, 2)}:00"),
+    label = str_glue("{location}\n{occur_date} @ {occur_time}")
+  ) %>%
+  select(report_number, label, longitude, latitude) %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE) %>%
+  write_sf(here::here("inst/extdata/glenrose_heights_homicides.gpkg")) %>%
+  write_csv(here::here("inst/extdata/glenrose_heights_homicides.csv"))
