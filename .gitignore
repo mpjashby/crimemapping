@@ -37,3 +37,7 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Old versions of tutorials no longer needed
+inst/tutorials/*-old/
+

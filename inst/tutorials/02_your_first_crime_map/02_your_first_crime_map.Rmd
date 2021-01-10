@@ -1,0 +1,391 @@
+---
+title: "Crime Mapping: Your first crime map"
+description: "Quickly walk (or jog) through the process of creating a complete crime map in R."
+output: 
+  learnr::tutorial:
+    progressive: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+## Introduction
+
+In this tutorial we will use R to produce a simple crime map. To do this we will
+skip over lots of the detail of how R works and what choices we should make in
+creating maps. We will return to all these details in future sessions.
+
+This tutorial includes short chunks of R code that you can run directly in this
+window. We will uses these chunks of code to walk through the code we need to
+produce a map. To run the code in each chunk, just click the `Run Code` button
+in the top-right corner of each chunk. If you want to re-run a chunk of code,
+you can click the `Start Over` button in the top-left corner of each chunk.
+
+When you click `Run Code`, the output of the chunk will appear below it (there
+may be a delay of a few seconds for more-complicated chunks).
+
+To try out using a code chunk, click `Run Code` below – you should see the
+message 'Hello, world!' printed below the box.
+
+```{r exercise0, exercise=TRUE}
+message("Hello, world!")
+```
+
+`message()` is a *function* – a piece of R code that does something. The thing
+that the `messages()` function does is simple: it prints a message on the 
+screen.
+
+Now click `Next Topic` below to start this tutorial.
+
+
+
+## Loading crime data
+
+
+### Loading packages
+
+The data we will use will be records of homicides in the Downtown neighbourhood
+of Atlanta, Georgia, in 2019. Before we can work with the data, we first load
+packages of functions for use in the analysis. To load these packages, click
+`Run Code`. This will produce various messages, all of which you can safely
+ignore for now.
+
+
+
+```{r exercise1, exercise=TRUE, exercise.lines=5}
+# load the R packages we need to analyse this data
+library("ggmap")
+library("sf")
+library("tidyverse")
+```
+
+
+
+### Loading data
+
+The first task in creating any crime map is to obtain the crime and other data
+necessary. In many cases preparing the data for analysis and mapping will be a 
+substantial task, but in this case we are going to use some pre-prepared crime
+data together with a pre-drawn street map (which we will ask R to download
+automatically when it draws the final map).
+
+We can load the homicide data using the `read_csv()` function. Click the 
+`Run Code` button to load the data.
+
+```{r exercise2-setup, include=FALSE}
+# load the R packages we need to analyse this data
+suppressPackageStartupMessages(library("tidyverse"))
+```
+
+```{r exercise2, exercise=TRUE}
+# download the data directly from a URL and store it as an object
+homicides <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv")
+```
+
+The `read_csv()` function prints a message showing the name of each column in
+the data and the type of data (number, text etc) in each column. Again, you can
+ignore this message for now.
+
+We have stored the results of the `read_csv()` function in an R *object* called
+`homicides`. An object in R is anything that stores any type of data. There are
+many types of objects, but for this tutorial we don't need to explore these in
+any more detail. All you need to remember for now that objects store data and 
+functions do things.
+
+
+
+### Viewing the data
+
+To check the data has been loaded correctly, we can view the loaded data by just
+typing the name of the object in which we stored the data. Click `Run Code` to
+view the data.
+
+
+
+```{r exercise3-setup, message=FALSE, warning=FALSE, include=FALSE}
+# load the R packages we need to analyse this data
+suppressPackageStartupMessages(library("tidyverse"))
+
+# download the data directly from a URL and store it as an object
+homicides <- read_csv(
+  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  col_types = cols(
+    report_number = col_double(),
+    label = col_character(),
+    longitude = col_double(),
+    latitude = col_double()
+  )
+)
+```
+
+```{r exercise3, exercise=TRUE}
+# display the data
+homicides
+```
+
+
+
+The data contain four columns: a unique identifier for a homicide, a label 
+describing when and where that homicide occurred, and the longitude and latitude 
+of the homicide location. Depending on the width of your screen, you may need to 
+click on the '▸' symbol to view all the columns in the data. We can use this 
+data to plot the homicides on a map.
+
+
+
+## Processing the data
+
+Before we can plot the data on a map, we have to complete some pre-processing 
+steps. Having to process data before being able to analyse or visualise it is 
+common in all types of data analysis, but spatial analysis often involves
+additional processing that takes account of the special features of spatial
+data.
+
+
+
+### Converting the data into a spatial format
+
+Two data-processing tasks are needed to produce this map. The first is to 
+convert the data into a simple features or SF object, which is a special type of
+R object that can be used by functions that process spatial data. We will cover
+the details of the `st_as_sf()` function that converts our data into into an SF
+object later on. Click `Run Code` to convert the data into SF format.
+
+
+
+```{r exercise4-setup, message=FALSE, warning=FALSE, include=FALSE}
+# load the R packages we need to analyse this data
+suppressPackageStartupMessages(library("tidyverse"))
+
+# download the data directly from a URL and store it as an object
+homicides <- read_csv(
+  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  col_types = cols(
+    report_number = col_double(),
+    label = col_character(),
+    longitude = col_double(),
+    latitude = col_double()
+  )
+)
+```
+
+```{r exercise4, exercise=TRUE, exercise.lines=5}
+# convert the data to a simple features object, which we can use in functions 
+# that work on spatial data
+homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), 
+                      crs = 4326, remove = FALSE)
+```
+
+When you clicked `Run Code` above, it looked like nothing happened. This is
+because the results of the code are stored in the `homicides` object. Do you 
+remember what R code to use to view the contents of this object? Type that code 
+into the box below and click `Run Code` to view the data. If you need help, 
+click the `Solution` button.
+
+
+```{r exercise5-setup, message=FALSE, warning=FALSE, include=FALSE}
+# load the R packages we need to analyse this data
+suppressPackageStartupMessages(library("sf"))
+suppressPackageStartupMessages(library("tidyverse"))
+
+# download the data directly from a URL and store it as an object
+homicides <- read_csv(
+  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  col_types = cols(
+    report_number = col_double(),
+    label = col_character(),
+    longitude = col_double(),
+    latitude = col_double()
+  )
+)
+
+# convert the data to a simple features object, which we can use in functions 
+# that work on spatial data
+homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), 
+                      crs = 4326, remove = FALSE)
+```
+
+```{r exercise5, exercise=TRUE}
+
+```
+
+```{r exercise5-solution}
+# To view an object in R, simply type the name of the object. To view the 
+# contents of the homicides object, copy the next line into the box below and
+# click Run Code.
+homicides
+```
+
+The data looks identical to before running the function `st_as_sf()`, except 
+that there is now an extra column called `geometry`.
+
+
+
+### Defining the area covered by the map
+
+The second data-processing task is to define the area that we want to be covered
+by the map. In this case, we will define an area that covers the data and 500
+metres in every direction around the data, meaning we can see the area 
+surrounding the homicide locations.
+
+Defining the area of the map relative to the data requires us to use several R
+functions one after the other, connected using `%>%` (which we will cover 
+later). One of the benefits of mapping in R rather than [WYSIWYG](https://en.wikipedia.org/wiki/WYSIWYG)
+mapping software is that you can connect all of these commands together and run
+them at once, rather than having to open the relevant dialog boxes or clicking
+the right button for each command in turn.
+
+
+
+```{r exercise6, exercise=TRUE, exercise.setup = "exercise5-setup", exercise.lines=13}
+# define the area included in the map, based on a 500m buffer around the data
+map_boundary <- homicides %>% 
+  st_bbox() %>% 
+  st_as_sfc() %>% 
+  st_as_sf() %>% 
+  st_transform(26967) %>% 
+  st_buffer(500 * 3.3) %>% 
+  st_transform(4326) %>% 
+  st_bbox() %>% 
+  as.numeric()
+
+map_boundary
+```
+
+
+
+This code produces an R object representing the lower-left and upper-right 
+corners of our map. Now that we've completed the data processing, we can go on
+to produce the map itself.
+
+
+
+## Draw the map
+
+We are now ready to produce our map of homicides in downtown Atlanta. So that
+people viewing the map will understand where the homicides occurred, we will
+plot the homicides on top of a base layer showing streets, parks and other 
+geographic features obtained from an 
+[online web mapping service](http://maps.stamen.com/). Click `Run Code` to 
+create the map.
+
+
+
+```{r exercise7-setup, message=FALSE, warning=FALSE, include=FALSE}
+# load the R packages we need to analyse this data
+suppressPackageStartupMessages(library("ggmap"))
+suppressPackageStartupMessages(library("sf"))
+suppressPackageStartupMessages(library("tidyverse"))
+
+# download the data directly from a URL and store it as an object
+homicides <- read_csv(
+  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  col_types = cols(
+    report_number = col_double(),
+    label = col_character(),
+    longitude = col_double(),
+    latitude = col_double()
+  )
+)
+
+# convert the data to a simple features object, which we can use in functions 
+# that work on spatial data
+homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+# define the area included in the map, based on a 500m buffer around the data
+map_boundary <- homicides %>% 
+  st_bbox() %>% 
+  st_as_sfc() %>% 
+  st_as_sf() %>% 
+  st_transform(26967) %>% 
+  st_buffer(500 * 3.3) %>% 
+  st_transform(4326) %>% 
+  st_bbox() %>% 
+  as.numeric()
+```
+
+```{r exercise7, exercise=TRUE, exercise.lines=13, fig.width=7, fig.asp=1}
+suppressMessages(get_stamenmap(map_boundary, zoom = 14, maptype = "toner-lite")) %>% 
+  ggmap() +
+  geom_label(
+    aes(longitude, latitude, label = label), data = homicides, size = 2.5,
+    lineheight = 1, hjust = 1, nudge_x = -0.0005
+  ) +
+  geom_point(
+    aes(longitude, latitude), data = homicides, colour = "white", 
+    fill = "orangered1", size = 4, shape = 21
+  ) +
+  labs(title = "Homicides in Downtown Atlanta, 2019") +
+  theme_nothing()
+```
+
+You can change the appearance of the map by changing various parts of the code
+above and clicking `Run Code` again. For example, you can change the colour of
+the points that mark the homicides by changing the code `fill = "orangered1"` to
+`fill = "mediumblue"`, or change the base map to a different style by changing
+the code `maptype = "toner-lite"` to `maptype = "terrain"`. Each time you change
+part of the code, click `Run Code` to see what changes on the map.
+
+Once you have finished experimenting with changing the appearance of the map,
+click `Next Topic` below.
+
+
+
+## Putting the code together
+
+Now we have walked through the different parts of the code, we can create a map
+from scratch in a single block of code. In this example, we will map homicides
+from in Glenrose Heights neighbourhood of Atlanta, and a different style of base
+map. Since the area covered by the map is derived from the data itself, the
+extent of the map will update automatically. Click `Run Code`.
+
+
+```{r exercise8, exercise=TRUE, exercise.lines=33, fig.width=7, fig.asp=1}
+# load the R packages we need to analyse this data
+# suppressPackageStartupMessages() hides the start-up messages we saw earlier
+suppressPackageStartupMessages(library("ggmap"))
+suppressPackageStartupMessages(library("sf"))
+suppressPackageStartupMessages(library("tidyverse"))
+
+# download the data directly from a URL and store it as an object
+# suppressMessages() hides the column-specification messages we saw earlier
+homicides <- suppressMessages(read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/glenrose_heights_homicides.csv"))
+
+# convert the data to a simple features object, which we can use in functions 
+# that work on spatial data
+homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), 
+                      crs = 4326, remove = FALSE)
+
+# define the area included in the map, based on a 500m buffer around the data
+map_boundary <- homicides %>% st_bbox() %>% st_as_sfc() %>% st_as_sf() %>% 
+  st_transform(26967) %>% st_buffer(500 * 3.3) %>% st_transform(4326) %>% 
+  st_bbox() %>% as.numeric()
+
+# plot the map
+suppressMessages(get_stamenmap(map_boundary, zoom = 14, maptype = "toner")) %>% 
+  ggmap() +
+  geom_label(
+    aes(longitude, latitude, label = label), data = homicides, size = 2.5,
+    lineheight = 1, hjust = 0, vjust = 1, nudge_x = 0.0005
+  ) +
+  geom_point(
+    aes(longitude, latitude), data = homicides, colour = "white", 
+    fill = "mediumblue", size = 4, shape = 21
+  ) +
+  labs(title = "Homicides in Glenrose Heights, 2019") +
+  theme_nothing()
+```
+
+
+
+### In summary
+
+This map is effective for showing the locations of just a few crimes, but is
+too limited to show more complicated patterns or larger datasets. In the 
+following tutorials, we will learn how to produce more sophisticated maps and
+spatial analysis.
