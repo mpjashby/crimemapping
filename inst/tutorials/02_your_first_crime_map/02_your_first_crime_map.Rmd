@@ -1,5 +1,5 @@
 ---
-title: "Crime Mapping: Your first crime map"
+title: "Your first crime map"
 description: "Quickly walk (or jog) through the process of creating a complete crime map in R."
 output: 
   learnr::tutorial:

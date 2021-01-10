@@ -1,5 +1,5 @@
 ---
-title: "Crime Mapping: Wrangling data"
+title: "Wrangling data"
 description: "Learn the building blocks of data analysis: loading, filtering, manipulating and saving data for using crime mapping."
 output: learnr::tutorial
 runtime: shiny_prerendered

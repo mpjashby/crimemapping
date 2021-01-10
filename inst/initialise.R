@@ -11,6 +11,9 @@ message(
   "it).\n\n-------------------------\n\n"
 )
 
+# download only binary packages
+options(install.packages.check.source = "no")
+
 # load packages
 message("\nInstalling the tidyverse suite of packages for data science")
 install.packages("tidyverse")
