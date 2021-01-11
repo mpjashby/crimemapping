@@ -1,5 +1,5 @@
 ---
-title: "Getting started"
+title: "Crime Mapping: Getting started"
 description: "Get started with crime mapping by learning about why putting crime on maps is useful, and get a tour of the RStudio software we will use throughout this course."
 output: 
   learnr::tutorial:
