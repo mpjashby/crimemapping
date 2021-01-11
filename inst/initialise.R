@@ -25,10 +25,6 @@ message("\nInstalling the remotes package for installing packages from GitHub")
 install.packages("remotes")
 message("\nInstalling the crimemapping package of crime mapping tutorials")
 remotes::install_github("mpjashby/crimemapping")
-if (!"rstudioapi" %in% rownames(installed.packages())) {
-  message("\nInstalling the rstudioapi package for restarting R")
-  install.packages("rstudioapi")
-}
 
 # print final message
 message(
@@ -41,4 +37,8 @@ message(
 )
 
 # restart R to load tutorials into Tutorial tab
-rstudioapi::restartSession()
+if ("rstudioapi" %in% rownames(installed.packages())) {
+  rstudioapi::restartSession()
+} else {
+  message("IMPORTANT! Click 'Session' > 'Restart R' to complete the installation process.\n\n-------------------------\n\n")
+}
