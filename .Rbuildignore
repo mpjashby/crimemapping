@@ -1,9 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-^inst/tutorials/01_getting_started/01_getting_started\.Rmd$
-^inst/tutorials/02_dive_into_r/02_dive_into_r\.Rmd$
-^inst/tutorials/02_your_first_crime_map/02_your_first_crime_map\.Rmd$
 ^inst/tutorials/prep
 ^inst/tutorials/old
 ^inst/initialise.R$
