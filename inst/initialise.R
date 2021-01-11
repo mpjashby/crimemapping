@@ -11,6 +11,12 @@ message(
   "it).\n\n-------------------------\n\n"
 )
 
+# restart R to avoid conflicts if some packages are installed already
+message("\nInstalling the rstudioapi package for restarting R")
+options(install.packages.check.source = "no")
+install.packages("rstudioapi")
+rstudioapi::restartSession()
+
 # download only binary packages
 options(install.packages.check.source = "no")
 
@@ -35,3 +41,6 @@ message(
   "\n\n(be warned that R may have wrapped this URL by inserting spaces into ",
   "it).\n\n-------------------------\n\n"
 )
+
+# restart R to load tutorials into Tutorial tab
+rstudioapi::restartSession()
