@@ -25,8 +25,10 @@ message("\nInstalling the remotes package for installing packages from GitHub")
 install.packages("remotes")
 message("\nInstalling the crimemapping package of crime mapping tutorials")
 remotes::install_github("mpjashby/crimemapping")
-message("\nInstalling the rstudioapi package for restarting R")
-install.packages("rstudioapi")
+if (!"rstudioapi" %in% rownames(installed.packages())) {
+  message("\nInstalling the rstudioapi package for restarting R")
+  install.packages("rstudioapi")
+}
 
 # print final message
 message(
