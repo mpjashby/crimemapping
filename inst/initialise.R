@@ -11,14 +11,6 @@ message(
   "it).\n\n-------------------------\n\n"
 )
 
-# restart R to avoid conflicts if some packages are installed already
-if (!"rstudioapi" %in% rownames(installed.packages())) {
-  message("\nInstalling the rstudioapi package for restarting R")
-  options(install.packages.check.source = "no")
-  install.packages("rstudioapi")
-}
-rstudioapi::restartSession()
-
 # download only binary packages
 options(install.packages.check.source = "no")
 
@@ -33,6 +25,8 @@ message("\nInstalling the remotes package for installing packages from GitHub")
 install.packages("remotes")
 message("\nInstalling the crimemapping package of crime mapping tutorials")
 remotes::install_github("mpjashby/crimemapping")
+message("\nInstalling the rstudioapi package for restarting R")
+install.packages("rstudioapi")
 
 # print final message
 message(
