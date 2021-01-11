@@ -12,9 +12,11 @@ message(
 )
 
 # restart R to avoid conflicts if some packages are installed already
-message("\nInstalling the rstudioapi package for restarting R")
-options(install.packages.check.source = "no")
-install.packages("rstudioapi")
+if (!"rstudioapi" %in% rownames(installed.packages())) {
+  message("\nInstalling the rstudioapi package for restarting R")
+  options(install.packages.check.source = "no")
+  install.packages("rstudioapi")
+}
 rstudioapi::restartSession()
 
 # download only binary packages
