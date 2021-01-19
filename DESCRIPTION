@@ -16,6 +16,7 @@ Imports:
     ggmap,
     janitor,
     learnr,
+    rnaturalearth,
     sf,
     tidyverse
 RoxygenNote: 7.1.1
