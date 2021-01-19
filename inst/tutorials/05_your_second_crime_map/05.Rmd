@@ -823,7 +823,7 @@ generate a map with:
      colour scheme.
 
 ```{r basemap-exercise1, exercise=TRUE, exercise.lines=5}
-ggplot() +
+ggplot()
   
 ```
 
