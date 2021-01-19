@@ -662,7 +662,7 @@ quiz(
       message = "The `|` (or) operator is used when we want to find rows that match one criteria or the other, not both together."
     ),
     answer(
-      "Offences that occurred anywhere *except* restaurants or shopping malls (e.g. in homes).",
+      "Offences that occurred anywhere *except* restaurants or shopping malls (e.g. in homes)",
       message = "The `|` (or) operator is used when we want to find rows that match one criteria or the other (or both), but they must match at least one of the two."
     ),
     answer(

@@ -11,4 +11,5 @@ crimes <- read_csv(str_glue("{tempdir()}/vancouver_crime_data/crimedata_csv_all_
 
 crimes %>%
   filter(YEAR %in% 2020, str_detect(TYPE, "Theft")) %>%
+  arrange(YEAR, MONTH, DAY, HOUR) %>%
   write_csv(here::here("inst/extdata/vancouver_thefts.csv.gz"))

@@ -31,6 +31,7 @@ This course is about how we can use maps and other spatial analysis tools to hel
 
 ```{r why-maps-quiz}
 quiz(
+  caption = "",
   question("Which *one* of these statements is true?",
     answer("Crime is usually not geographically concentrated at micro places"),
     answer("Crime is very geographically concentrated – we can expect half of crime to be concentrated in about 5% of micro places", correct = TRUE),
@@ -64,6 +65,7 @@ Why is crime concentrated in space? Watch this video to find out more about how 
 
 ```{r why-concentrated-quiz}
 quiz(
+  caption = "",
   question(
     "What are the three 'almost always' elements of an opportunity for a crime to occur that are outlined in the routine activities apporach?",
     answer("offender, target, place", correct = TRUE),
