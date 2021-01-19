@@ -154,14 +154,12 @@ on. To do this, stick to three principles:
   3. use file names that will by-default by _sorted_ in a meaningful way.
 
 Computers can increasingly read file names that contain any characters you can
-think of -- some systems might even allow file names containing emojis 
-`r emo::ji("shrug")` -- but many different characters make referencing your file
-names in your code more difficult than need be. To keep your code simple, stick
-to files names that contain only _lowercase_ letters (so you don't have to 
-remember if each letter is uppercase or lowercase), numbers, hyphens (`-`) and
-underscores (`_`) -- that's it. If your language uses letters with accents, its
-best to not use those accents in file names. So, instead of having files with
-names like this:
+think of, but many different characters make referencing your file names in your 
+code more difficult than need be. To keep your code simple, stick to files names 
+that contain only _lowercase_ letters (so you don't have to remember if each 
+letter is uppercase or lowercase), numbers, hyphens (`-`) and underscores (`_`) 
+-- that's it. If your language uses letters with accents, its best to not use 
+those accents in file names. So, instead of having files with names like this:
 
 ```
 John's raw data.csv
