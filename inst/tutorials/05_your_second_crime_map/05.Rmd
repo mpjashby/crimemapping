@@ -190,7 +190,7 @@ Now that you have stored the data in the `thefts` object, what code is needed
 to view the first few rows of data? Type the code into the box and click 
 `Run Code` to check the result.
 
-```{r read-exercise2, exercise=TRUE}
+```{r read-exercise2, exercise=TRUE, exercise.setup="read-exercise1-solution"}
 
 ```
 
@@ -228,7 +228,7 @@ functions from the `janitor` package, so instead of loading the whole package we
 will use this one function directly. To do this, we write the function name with
 the package name added to the front, separated by `::`.
 
-```{r read-exercise3, exercise=TRUE}
+```{r read-exercise3, exercise=TRUE, exercise.setup="read-exercise1-solution"}
 thefts <- janitor::clean_names(thefts)
 
 thefts
@@ -999,13 +999,21 @@ sure the base map covers the entire area we are interested in.
 
 Putting all this together, we get our final map:
 
+```{r layers-exercise2-setup}
+bike_theft_coords <- bike_thefts %>% 
+  st_transform(4326) %>% 
+  st_coordinates() %>% 
+  as_tibble() %>% 
+  janitor::clean_names()
+```
+
 ```{r layers-exercise2, exercise=TRUE, exercise.lines=21, message=FALSE, warning=FALSE, out.width="100%"}
 nbhds %>% 
   st_bbox() %>% 
   set_names(c("left", "bottom", "right", "top")) %>% 
   get_stamenmap(zoom = 12, maptype = "toner-background") %>% 
   ggmap() +
-  geom_density_2d_filled(aes(x = x, y = y), data = bike_theft_coords, bins = 9, 
+  geom_density_2d_filled(aes(x = x, y = y), data = bike_theft_coords, bins = 9,
                          alpha = 0.75, na.rm = TRUE) +
   # NEW CODE STARTS HERE
   # add the neighbourhood boundaries
@@ -1038,6 +1046,8 @@ In the next tutorial, we will learn how to improve this map further.
 You can find out more about some of the things we have covered in this tutorial
 using these resources:
 
+  * Understand more about the history of trying to develop accurate map 
+    projections in this short video: [Why all world maps are wrong](https://youtu.be/kIID5FDi2JQ).
   * Find out more about making all sorts of charts (not just maps) with the 
     `ggplot2` package in the [Data Visualisation chapter of *R for Data Science*](https://r4ds.had.co.nz/data-visualisation.html)
     by Hadley Wickham and Garrett Grolemund.
