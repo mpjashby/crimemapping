@@ -1,0 +1,333 @@
+---
+title: "Crime Mapping: Code with style"
+description: "Learn how to format your code so that it is easier to read, both for you and for others"
+output: 
+  learnr::tutorial:
+    progressive: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## Introduction
+
+Now that you're beginning to write code in R, it's time to introduce a few
+conventions for how to write code so that it's easier to read. This is 
+particularly important because it is much easier to find mistakes in 
+well-written code, and your code will inevitably contain mistakes (everyone's
+code contains mistakes!).
+
+This tutorial introduces some basic guidelines on formatting your code. This is
+a condensed version of the [The tidyverse style guide](https://style.tidyverse.org/),
+which provides lots more detail. All the code you see in the tutorials in this
+course was written following this style guide.
+
+```{r on-perl, fig.align="center", out.width="100%"}
+knitr::include_graphics("images/on_perl.png")
+```
+
+<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+[On Perl](http://www.threepanelsoul.com/comic/on-perl) from [Three Panel Soul](http://www.threepanelsoul.com/).
+</p>
+
+
+
+## Organising your code
+
+Up until now we have only written code in the code boxes within these 
+interactive tutorials, but when you move on to make maps using your own R code
+you will typically write that code in the RStudio source panel. Your code will
+usually be in one or more files with the `.R` file extension. Whether you keep
+all your code for a specific project in one file or split it into multiple files
+is up to you. Generally you should do whatever makes it easier to understand how
+your code is structured.
+
+Within each `.R` file, you can make your code easier to understand in several
+ways. First, add a comment (one or more lines beginning with `#` followed by a
+space) at the top of the file to explain what the code in that file does. This 
+will make it easier for you to know that you've found the right file if you are 
+looking for it in a few weeks when you've forgotten (which you will) what file 
+contains what code.
+
+```r
+# This code produces a density map of bike thefts in Vancouver in 2020
+```
+
+Unless your code is very simple, it will probably consist of several separate
+tasks that are completed one after another. For example your code might download
+some data, wrangle it and then plot it on a map. In that case, it can be useful 
+to split your code up into blocks by leaving a blank line between the code
+needed for each task. For example, if we take the code:
+
+```r
+library(lubridate)
+library(tidyverse)
+crimes <- read_csv("crime_data.csv")
+crimes <- janitor::clean_names(crimes)
+burglaries <- filter(crimes, type == "burglary")
+burglaries <- mutate(burglaries, month = month(date_time))
+ggplot() + 
+  geom_point(aes(x = lon, y = lat, colour = month)) +
+  theme_void()
+```
+
+it becomes easier to read if we split the code up into four tasks: loading the
+necessary packages, reading the data, wrangling the data and plotting the data.
+
+```r
+library(lubridate)
+library(tidyverse)
+
+crimes <- read_csv("crime_data.csv")
+
+crimes <- janitor::clean_names(crimes)
+burglaries <- filter(crimes, type == "burglary")
+burglaries <- mutate(burglaries, month = month(date_time))
+
+ggplot() + 
+  geom_point(aes(x = lon, y = lat, colour = month)) +
+  theme_void()
+```
+
+Since data wrangling involves several steps and each function uses the result of
+the previous step, we could use the pipe operator `%>%` from the `magrittr` 
+package to make that code a bit cleaner:
+
+```r
+library(lubridate)
+library(tidyverse)
+
+crimes <- read_csv("crime_data.csv")
+
+burglaries <- crimes %>% 
+  janitor::clean_names() %>% 
+  filter(type == "burglary") %>% 
+  mutate(month = month(date_time))
+
+ggplot() + 
+  geom_point(aes(x = lon, y = lat, colour = month)) +
+  theme_void()
+```
+
+If your code includes very long tasks (e.g. where the code takes up more than a
+full screen on your computer), you might want to use header comments to divide
+your code into sections. You can do this by writing a comment that is followed
+by four of more hyphens (`----`):
+
+```r
+# Load data ----
+
+… some code …
+
+
+# Wrangle data ----
+
+… some code …
+
+
+# Plot data ----
+
+… some code …
+```
+
+RStudio will recognise lines that end in four or more hyphens as being headings,
+and will create a table of contents for your code. You can use this to move 
+between headings by clicking on the Jump To menu at the bottom of the Source
+panel in RStudio:
+
+```{r jump-to-menu, fig.align="center"}
+knitr::include_graphics("images/rstudio_code_sections.png")
+```
+
+In general, writing code that is readable is more important than writing the
+shortest code possible, so don't be afraid to let your code breathe by using
+space to separate your code into meaningful chunks.
+
+
+
+## Naming objects
+
+R objects can have any name you like, as long as the name starts with a letter
+and contains only letters, numbers, dots (`.`) and underscores (`_`). That said,
+you will find coding easier if you follow a few conventions.
+
+  * Use only lower-case letters in the names of objects, which avoids you having
+    to remember whether a particular letter was upper- or lower-case.
+  * Use *snake case* (`object_name`, with words separated by underscores) for 
+    object names rather than camel case (`objectName`) or kebab case 
+    (`object-name`), and don't use dots in object names.
+  * Don't give objects the same names as R functions, because re-using function
+    names makes reading your code more difficult.
+
+```{r snake-case, fig.align="center", out.width="80%"}
+knitr::include_graphics("images/snake_case.jpeg")
+```
+
+Just as `crime_data_atlanta_2020.csv` is a more-useful file name than
+`data_file_23.csv`, you will find it easier to read your code if you give your
+objects meaningful names. So when you load data into R (e.g. with `read_csv()`)
+don't just call it `data` (not least because there is a function named `data()`)
+but instead give it a name like `atl_crimes` if it contains (for example) crime
+data from Atlanta.
+
+<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
+</p>
+
+
+
+## Spacing
+
+Spacing out code makes it much easier to read, but (just as in any language)
+code is easiest to read if spaces are used where people expect them to be by
+convention. 
+
+Mostly in R, we use spaces where we would expect them in English: after commas 
+but not before, outside parentheses but not inside, etc.
+
+```r
+# Good
+x[, 1]
+
+# Bad
+x[,1]
+x[ ,1]
+x[ , 1]
+```
+
+Don't put spaces inside parentheses, or between the names of functions and the
+parentheses:
+
+```r
+# Good
+mean(x, na.rm = TRUE)
+
+# Bad
+mean (x, na.rm = TRUE)
+mean( x, na.rm = TRUE )
+```
+
+Do put spaces around most operators (`==`, `+`, `-`, `<-`, etc):
+
+```r
+# Good
+height <- (feet * 12) + inches
+mean(x, na.rm = TRUE)
+
+# Bad
+height<-feet*12+inches
+mean(x, na.rm=TRUE)
+```
+
+Although there are some operators that shouldn't have spaces around them: `$`, 
+`@`, `[`, `[[`, `^`, `:` and `?`.
+
+```{r spacing-quiz}
+question(
+  "Which of these lines of code has the optimal spacing?",
+  answer('`burglary <- filter(crimes, type == "burglary")`', correct = TRUE),
+  answer('`burglary<-filter(crimes,type=="burglary")`'),
+  answer('`burglary <- filter(crimes, type=="burglary")`'),
+  answer('`burglary <- filter ( crimes , type == "burglary" )`'),
+  correct = random_praise(),
+  incorrect = random_encouragement(),
+  allow_retry = TRUE,
+  random_answer_order = FALSE
+)
+```
+
+
+
+## Functions
+
+We've now got used to calling functions to do things in R, like calling 
+`read_csv()` to load data from a CSV file or `filter()` to choose certain rows
+from a dataset. We know that we can change the behaviour of functions by using
+arguments. For example, we can wrap a a string of text into shorter lines using
+the `str_wrap()` function from the `stringr` package. `str_wrap()` needs two
+arguments: the text to be wrapped into multiple lines and the maximum length of
+a line of text before the next word is wrapped onto a new line. These arguments
+are called `string` and `width`, so we can call the function as:
+
+```r
+str_wrap(string = "some text to be wrapped", width = 10)
+```
+
+The `string` argument provides the *data* that the `str_wrap()` function will 
+work on, while the `width` argument provides the details of how that work should
+be done. Since the data argument to a function is typically required (the 
+function makes no sense without it) and is often the first argument, you should
+omit the name of data arguments to functions. For all other arguments, it is
+best to give the argument name. So to use `str_wrap()`:
+
+```r
+str_wrap("some text to be wrapped", width = 10)
+```
+
+In general, you should keep lines of code to a maximum of 80 characters long,
+since they can easily fit on most screens and are easy to read.
+When calling a function, put all of the parameters on a single line if they will 
+fit into 80 characters or less:
+
+```r
+do_something_simple("something", with = "only", short, "arguments")
+```
+
+But if the function call is longer than 80 characters, use one line each for the 
+function name, each argument, and the closing `)`, with the arguments indented
+by two spaces. This makes the code much easier to read.
+
+```r
+# Good
+do_something_very_complicated(
+  something = "that",
+  requires = many,
+  arguments = "some of which may be long"
+)
+
+# Bad
+do_something_very_complicated("that", requires, many, arguments,
+                              "some of which may be long"
+                              )
+```
+
+When combining multiple functions using the pipe operator (`%>%`), put each 
+function on a single line, with all but the first line indented by two spaces:
+
+```r
+a_function() %>% 
+  another_function() %>% 
+  and_a_third_function()
+```
+
+Once you learn about other types of R code you will need to know how best to 
+style it, but we will learn about those when we need to.
+
+
+
+## Styling your code automatically
+
+You can get help on styling your R code using the [`styler`](https://styler.r-lib.org) 
+package, which can automatically format your code for you. After you install
+the `styler` package with the code `install.packages("styler")`, you can style
+your code by:
+
+  1. selecting the code you want to style,
+  2. opening the `Addins` menu at the top of the Source panel in RStudio,
+  3. clicking 'Style selection' in the 'Styler' section of the list of addins.
+  
+```{r styler-gif, fig.align="center"}
+knitr::include_graphics("images/styler.gif")
+```
+
+RStudio will also try to help style your code as you type, for example by
+automatically indenting lines.
+
+<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+[The tidyverse style guide](https://style.tidyverse.org/) licensed under the [Creative Commons Attribution-ShareAlike licence](https://github.com/tidyverse/style/blob/master/LICENSE.md).
+</p>
