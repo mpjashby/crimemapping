@@ -257,28 +257,34 @@ of the globe. The 'N' at the end of the zone name refers to the northern
 hemisphere.
 
 ```{r utm-map-data, cache=TRUE, include=FALSE, message=FALSE, warning=FALSE}
-vancouver <- st_point(c(-123.1207, 49.2827), dim = "XY") %>% 
-  st_sfc(crs = 4326) %>% 
-  st_as_sf() %>% 
-  mutate(name = "Vancouver")
+if (!file.exists("images/utm_vancouver.jpg")) {
+  
+  vancouver <- st_point(c(-123.1207, 49.2827), dim = "XY") %>% 
+    st_sfc(crs = 4326) %>% 
+    st_as_sf() %>% 
+    mutate(name = "Vancouver")
+  
+  land <- suppressMessages(rnaturalearth::ne_download(
+    scale = 50, type = "land", category = "physical", returnclass = "sf"
+  )) %>% 
+    filter(scalerank == 0)
+  
+  utm_zones <- st_read("https://opendata.arcgis.com/datasets/b294795270aa4fb3bd25286bf09edc51_0.geojson") %>% 
+    janitor::clean_names() %>% 
+    mutate(
+      hemisphere = ifelse(row %in% LETTERS[1:13], "southern", "northern")
+    ) %>% 
+    select(zone, hemisphere, geometry) %>% 
+    group_by(zone, hemisphere) %>% 
+    summarise()
 
-land <- suppressMessages(rnaturalearth::ne_download(
-  scale = 50, type = "land", category = "physical", returnclass = "sf"
-)) %>% 
-  filter(scalerank == 0)
-
-utm_zones <- st_read("https://opendata.arcgis.com/datasets/b294795270aa4fb3bd25286bf09edc51_0.geojson") %>% 
-  janitor::clean_names() %>% 
-  mutate(
-    hemisphere = ifelse(row %in% LETTERS[1:13], "southern", "northern")
-  ) %>% 
-  select(zone, hemisphere, geometry) %>% 
-  group_by(zone, hemisphere) %>% 
-  summarise()
+}
 ```
 
 ```{r utm-map, cache=TRUE, message=FALSE, warning=FALSE, fig.align="center", out.width="80%"}
-bbox <- utm_zones %>% 
+if (!file.exists("images/utm_vancouver.jpg")) {
+
+  bbox <- utm_zones %>% 
   filter(zone %in% 8:12, hemisphere == "northern") %>% 
   st_buffer(1) %>% 
   st_bbox()
@@ -288,7 +294,7 @@ utm_centroids <- utm_zones %>%
   mutate(zone_label = str_glue("zone {zone}{str_to_upper(str_sub(hemisphere, 1, 1))}")) %>% 
   st_crop(bbox)
 
-ggplot() +
+utm_vancouver <- ggplot() +
   geom_sf(data = st_crop(land, bbox), colour = NA) +
   geom_sf(data = st_crop(st_cast(utm_zones, "LINESTRING"), bbox), 
           colour = "grey50", fill = NA, linetype = "24") +
@@ -303,6 +309,14 @@ ggplot() +
        caption = "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com") +
   theme_minimal() +
   theme(plot.caption = element_text(colour = "grey50"))
+
+ggsave("images/utm_vancouver.jpg", utm_vancouver, width = 800 / 150, height = 500 / 150, dpi = 150)
+
+} else {
+  
+  knitr::include_graphics("images/utm_vancouver.jpg")
+  
+}
 ```
 
 We can convert the `thefts` tibble to an SF object using the `st_as_sf()`
