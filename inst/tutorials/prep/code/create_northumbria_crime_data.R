@@ -18,11 +18,8 @@ northumbria_asb <- crimes_dir %>%
   map_dfr(read_csv, col_types = cols()) %>%
   clean_names() %>%
   filter(crime_type == "Anti-social behaviour") %>%
-  select(month, longitude, latitude, location, crime_type) %>%
-  mutate(
-    location = str_remove(location, "On or near "),
-    month = as.Date(str_glue("{month}-01"))
-  ) %>%
+  select(month, longitude, latitude) %>%
+  mutate(month = as.Date(str_glue("{month}-01"))) %>%
   write_tsv("inst/extdata/northumbria_asb_2020.tab")
 
 
@@ -36,7 +33,7 @@ districts <- read_sf("https://opendata.arcgis.com/datasets/3b374840ce1b4160b85b8
                          "South Tyneside", "Sunderland", "Northumberland"))
 
 # write_sf silently returns a data.frame, so we run this outside the pipeline
-write_sf(districts, "inst/extdata/nortumbria_districts.geojson", overwrite = TRUE)
+write_sf(districts, "inst/extdata/northumbria_districts.geojson", overwrite = TRUE)
 
 
 
