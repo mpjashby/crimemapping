@@ -1,7 +1,7 @@
 Package: crimemapping
 Type: Package
 Title: Crime Mapping with R
-Version: 0.3.0
+Version: 0.4.0
 Author: Matt Ashby
 Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
 Description: Learn how to effectively map crimes in R using a series of 
@@ -20,5 +20,6 @@ Imports:
     rnaturalearth,
     rgdal,
     sf,
-    tidyverse
+    tidyverse,
+    tmap
 RoxygenNote: 7.1.1

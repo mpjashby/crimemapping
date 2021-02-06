@@ -4,4 +4,5 @@
 ^inst/tutorials/prep
 ^inst/tutorials/old
 ^inst/initialise.R$
-
+^inst/tutorials/.*?_cache
+^inst/tutorials/.*?_files
