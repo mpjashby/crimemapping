@@ -8,3 +8,43 @@ This package provides an introductory course in crime mapping: using maps and
 spatial analysis to understand and respond to crime. The course consists of 
 interactive tutorials built using the 
 [`learnr` package](https://rstudio.github.io/learnr/).
+
+
+
+## Installation
+
+We will use R and RStudio to produce most of the maps and spatial analysis that 
+we will work on in this module. Most of the sessions will take the form of 
+interactive tutorials inside RStudio. As a first step, install R and RStudio on 
+your computer – both are free software and available for Mac, Windows and Linux.
+
+First, [Download R](https://cran.r-project.org/) (**choose the 'latest
+release'**) for your computer from the R website and install it. If you already
+have R installed on your machine, please update it to the latest release.
+
+<iframe title="vimeo-player" src="https://player.vimeo.com/video/203516510" width="640" height="400" frameborder="0" allowfullscreen></iframe>
+
+Second, [Download **RStudio
+Desktop**](https://rstudio.com/products/rstudio/download/) (Open Source License)
+for your computer from the RStudio website and install. If you already have
+RStudio Desktop installed on your machine, please update it to the latest
+release.
+
+<iframe title="vimeo-player" src="https://player.vimeo.com/video/203516968" width="640" height="400" frameborder="0" allowfullscreen></iframe>
+
+Third, open RStudio and paste the following two lines of code exactly as they
+are just to the right of the `>` symbol in the bottom-left corner (there may be 
+a flashing cursor to the right of the `>` symbol).
+
+```r
+install.packages("remotes")
+remotes::install_github("mpjashby/crimemapping")
+```
+
+Finally, load the first tutorial by pasting the following line of code into the
+same place, just to the right of the `>` symbol.
+
+```r
+crimemapping::tutorial("01_getting_started")
+```
+

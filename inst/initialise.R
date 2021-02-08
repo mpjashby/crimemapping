@@ -1,6 +1,6 @@
 # print initial message
 message(
-  "\n\n-------------------------\n\nCRIME MAPPING MODULE SETUP\n\nThis code ",
+  "\n\n-------------------------\n\nCRIME MAPPING COURSE SETUP\n\nThis code ",
   "sets up RStudio for the UCL Crime Mapping module (SECU0005). More ",
   "specifically, it installs R packages that you will need for this module. ",
   "The code may take a few minutes to run and R will print messages for each ",
@@ -28,7 +28,7 @@ remotes::install_github("mpjashby/crimemapping")
 
 # print final message
 message(
-  "\n\n-------------------------\n\nCRIME MAPPING MODULE SETUP COMPLETED\n\n",
+  "\n\n-------------------------\n\nCRIME MAPPING COURSE SETUP COMPLETED\n\n",
   "If any errors occurred during setup, please post the complete error ",
   "message on the module Q&A forum on Moodle at:\n\n    ",
   "https://moodle.ucl.ac.uk/mod/hsuforum/view.php?id=1753357",
@@ -40,5 +40,8 @@ message(
 if ("rstudioapi" %in% rownames(installed.packages())) {
   rstudioapi::restartSession()
 } else {
-  message("IMPORTANT! Click 'Session' > 'Restart R' to complete the installation process.\n\n-------------------------\n\n")
+  message(
+    "IMPORTANT! Click 'Session' > 'Restart R' to complete the installation ",
+    "process.\n\n-------------------------\n\n"
+    )
 }
