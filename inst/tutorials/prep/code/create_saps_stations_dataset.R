@@ -21,7 +21,8 @@ saps_dir %>%
   mutate(station = str_to_title(station)) %>%
   write_sf(str_glue("{saps_dir}/stations.shp"))
 
-zip(
-  here::here("inst/extdata/saps_stations.zip"),
-  dir(saps_dir, pattern = "^stations", full.names = TRUE)
-)
+out_file <- here::here("inst/extdata/saps_stations.zip")
+old_wd <- getwd()
+setwd(saps_dir)
+zip(out_file, dir(saps_dir, pattern = "^stations"))
+setwd(old_wd)
