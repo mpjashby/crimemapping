@@ -22,5 +22,5 @@ robberies %>%
     premisetype = str_to_lower(premisetype)
   ) %>%
   arrange(occurrencedate, event_unique_id) %>%
-  select(occurrencedate, offence, premisetype) %>%
+  select(occurrencedate, offence, premisetype, lon = long, lat) %>%
   write_sf("inst/extdata/toronto_robberies.gpkg")
