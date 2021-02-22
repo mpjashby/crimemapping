@@ -49,6 +49,14 @@ notts_crime %>%
   select(-crime_type, -district) %>%
   write_csv("inst/extdata/nottingham_burglaries.csv.gz")
 
+notts_crime %>%
+  filter(
+    district == "Nottingham",
+    crime_type == "Robbery"
+  ) %>%
+  select(-crime_type, -district) %>%
+  write_csv("inst/extdata/nottingham_robberies.csv.gz")
+
 read_sf("https://opendata.arcgis.com/datasets/1d78d47c87df4212b79fe2323aae8e08_0.geojson") %>%
   select(district_code = lad19cd, district_name = lad19nm) %>%
   filter(district_name %in% c(
