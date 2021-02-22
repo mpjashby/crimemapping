@@ -52,6 +52,14 @@ notts_crime %>%
 notts_crime %>%
   filter(
     district == "Nottingham",
+    crime_type == "Violence and sexual offences"
+  ) %>%
+  select(-crime_type, -district) %>%
+  write_csv("inst/extdata/nottingham_violence.csv.gz")
+
+notts_crime %>%
+  filter(
+    district == "Nottingham",
     crime_type == "Robbery"
   ) %>%
   select(-crime_type, -district) %>%
