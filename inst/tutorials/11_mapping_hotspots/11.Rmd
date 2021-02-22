@@ -1184,7 +1184,7 @@ code will not run in this tutorial because of limits on how long code can run in
 an R tutorial. If that happens, paste the code below into a blank R script in
 RStudio and run it from there to see the map.
 
-```{r final-exercise1, exercise=TRUE, exercise.lines=117}
+```{r final-exercise1, exercise=TRUE, exercise.lines=117, message=FALSE, fig.asp=1, out.width="100%"}
 # Prepare ----------------------------------------------------------------------
 
 # Load packages
