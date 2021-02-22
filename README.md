@@ -30,17 +30,32 @@ your computer – both are free software and available for Mac, Windows and Linu
      the latest release. If you need help, [watch this Install RStudio 
      video](https://vimeo.com/203516968).
   3. Open RStudio and paste the following two lines of code exactly as they
-     are just to the right of the `>` symbol in the bottom-left corner (there 
-     may be a flashing cursor to the right of the `>` symbol).
+     are into the Console panel just to the right of the `>` symbol in the 
+     bottom-left corner (there may be a flashing cursor to the right of the `>` 
+     symbol).
 
 ```r
 install.packages("remotes")
 remotes::install_github("mpjashby/crimemapping")
 ```
 
-  4. Load the first tutorial by pasting the following line of code into the same 
-     place, just to the right of the `>` symbol.
+  4. Load the first tutorial by pasting the following line of code into Console.
 
 ```r
 crimemapping::tutorial("01_getting_started")
+```
+
+
+## Usage
+
+You can see a list of available tutorials by typing:
+
+```r
+crimemapping::tutorial()
+```
+
+You can load any tutorial by specifying the short name of the tutorial, e.g.
+
+```r
+crimemapping::tutorial("02_your_first_crime_map")
 ```

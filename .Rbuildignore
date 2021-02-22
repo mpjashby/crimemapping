@@ -1,6 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^inst/tutorials/css
 ^inst/tutorials/prep
 ^inst/tutorials/old
 ^inst/initialise.R$

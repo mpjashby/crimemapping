@@ -1,8 +1,21 @@
+# crimemapping 0.5.0
+
+* Added content for Week 6, including tutorials on 'Using data about places' and
+  'Mapping hotspots' as well as data for various offences in Nottingham and
+  personal robberies in Toronto.
+* Began roll-out of new UCL theme for tutorials.
+* Began to speed up tutorial loading by pre-processing code that produces static 
+  images in tutorials so that it only needs to be run at run-time if the 
+  relevant static image is not present.
+* Added data for anti-social behaviour in Northumbria.
+* Added installation instructions to README.
+
+
 # crimemapping 0.4.0
 
 * Added content for Week 4, including tutorials on 'Handling bugs in your code'
   and 'Mapping area data' as well as data for frauds in Kansas City, road deaths
-  in the United Kingdom and murders in Uttar Pradesh.
+  in the United Kingdom, murders in Uttar Pradesh and stalking in Queensland.
 * Removed need for user to download Natural Earth data when launching the 
   'Wrangling data' tutorial if the resulting map already exists as an image file
   (which it should do).
