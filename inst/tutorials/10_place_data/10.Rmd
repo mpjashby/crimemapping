@@ -475,7 +475,7 @@ download.file(
 divisions_dir <- str_glue("{tempdir()}/tps_divisions")
 
 # Step 3: unzip file
-unzip(divisions_file, divisions_dir)
+unzip(divisions_file, exdir = divisions_dir)
 
 # Step 4: load the data
 divisions <- read_sf(str_glue("{divisions_dir}/Police Boundaries Data.shp"))

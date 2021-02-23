@@ -1,3 +1,8 @@
+# crimemapping 0.5.1
+
+* Fixed a mistake in the 'Using data about places' tutorial that caused an error
+  when trying to unzip a file to a specific directory.
+
 # crimemapping 0.5.0
 
 * Added content for Week 6, including tutorials on 'Using data about places' and
