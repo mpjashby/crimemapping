@@ -36,21 +36,21 @@ nottingham_boundary <- districts %>%
   filter(district_name == "Nottingham") %>% 
   st_transform(27700)
 
-wards <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_wards.gpkg") %>% 
+wards <- read_sf("../../extdata/nottingham_wards.gpkg") %>% 
   filter(ward_name %in% c("Castle", "Lenton & Wollaton East", "Meadows"))
 
 wards_grid <- wards %>% 
   st_transform(27700) %>% 
   create_grid_rectangular(cell_size = 50)
 
-weapons <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_weapons.gpkg") %>% 
+weapons <- read_sf("../../extdata/nottingham_weapons.gpkg") %>% 
   st_transform(27700)
 
 weapons_grid <- create_grid_rectangular(weapons, cell_size = 50)
 
 weapons_kde <- kde(weapons, band_width = 100, grid = weapons_grid)
 
-burglaries <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_burglaries.csv.gz") %>% 
+burglaries <- read_csv("../../extdata/nottingham_burglaries.csv.gz") %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
   st_intersection(wards)
 
@@ -63,6 +63,83 @@ if (file.exists("www/nottingham_buildings.Rds")) {
     add_osm_feature(key = "building") %>% 
     osmdata_sf()
 }
+
+nottingham_building_centroids <- bind_rows(
+  st_centroid(pluck(nottingham_buildings, "osm_polygons")),
+  st_centroid(pluck(nottingham_buildings, "osm_multipolygons"))
+) %>% 
+  st_intersection(wards)
+
+if (file.exists("www/nottingham_kde_risk.Rds")) {
+  
+  kde_risk <- read_rds("www/nottingham_kde_risk.Rds")
+  
+} else {
+  
+  kde_burglaries <- burglaries %>% 
+    st_transform(27700) %>% 
+    kde(band_width = 1000, grid = wards_grid) %>% 
+    rename(kde_burglary = kde_value)
+  kde_buildings <- nottingham_building_centroids %>% 
+    st_transform(27700) %>% 
+    kde(band_width = 1000, grid = wards_grid) %>% 
+    rename(kde_building = kde_value)
+  
+  kde_risk <- kde_burglaries %>% 
+    bind_cols(st_drop_geometry(kde_buildings)) %>% 
+    mutate(
+      id = row_number(),
+      kde_risk = kde_burglary / kde_building,
+      kde_risk = ifelse(is.finite(kde_risk), kde_risk, 0)
+    ) %>% 
+    st_transform(4326) %>% 
+    st_intersection(wards)
+  
+  write_rds(kde_risk, "www/nottingham_kde_risk.Rds", compress = "gz")
+}
+
+kde_risk_with_counts <- nottingham_building_centroids %>% 
+  st_join(select(kde_risk, id)) %>% 
+  st_drop_geometry() %>% 
+  count(id, name = "building_count") %>% 
+  right_join(kde_risk, by = "id") %>% 
+  replace_na(list(building_count = 0)) %>% 
+  st_as_sf()
+
+robbery <- read_csv("../../extdata/nottingham_robberies.csv.gz") %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+robbery_grid <- robbery %>% 
+  st_transform(27700) %>% 
+  create_grid_rectangular(cell_size = 100) %>% 
+  mutate(id = row_number())
+
+robbery_counts <- robbery %>% 
+  st_transform(27700) %>% 
+  st_join(robbery_grid) %>% 
+  st_drop_geometry() %>% 
+  count(id, name = "robbery_count") %>% 
+  right_join(robbery_grid, by = "id") %>% 
+  replace_na(list(robbery_count = 0)) %>% 
+  st_as_sf()
+
+robbery_neighbours <- robbery_grid %>% 
+  st_centroid() %>% 
+  st_coordinates() %>% 
+  dnearneigh(0, 150) %>% 
+  include.self()
+
+robbery_gi <- robbery_counts %>% 
+  pull(robbery_count) %>% 
+  localG(listw = nb2listw(robbery_neighbours, style = "B"))
+
+robbery_counts_gi <- robbery_counts %>% 
+  add_column(gistar = robbery_gi) %>%
+  mutate(
+    pvalue = 2 * pnorm(-abs(as.numeric(robbery_gi))),
+    significant = p.adjustSP(pvalue, robbery_neighbours) < 0.05
+  ) %>% 
+  select(-pvalue)
 ```
 
 
@@ -937,7 +1014,7 @@ will use `st_join()` to find out which grid cell each building is in, `count()`
 to find the number of buildings in each cell and `right_join()` to join these
 counts to the relevant grid cells.
 
-```{r hotspot-exercise1, exercise=TRUE, exercise.lines=19, exercise.setup="risk-exercise7"}
+```{r hotspot-exercise1, exercise=TRUE, exercise.lines=19}
 # Add a unique identifier for each grid cell, which we will use to join the 
 # counts to later in the process
 kde_risk <- mutate(kde_risk, id = row_number())
@@ -963,7 +1040,7 @@ top and calculate the *cumulative total* (also called a running total) using the
 `cumsum()` function. We can use this running total to find the 100 buildings in 
 the cells with highest burglary risk
 
-```{r hotspot-exercise2, exercise=TRUE, exercise.lines=13, exercise.setup="hotspot-exercise1"}
+```{r hotspot-exercise2, exercise=TRUE, exercise.lines=13}
 cells_for_prevention <- kde_risk_with_counts %>% 
   # Arrange cells from highest to lowest burglary risk
   arrange(desc(kde_risk)) %>% 
@@ -1081,7 +1158,7 @@ The `dnearneigh()` and `localG()` functions need data in different formats, so
 we will also convert between different formats as explained in the comments in
 the next block of code.
 
-```{r hotspot-exercise4, exercise=TRUE, exercise.setup="hotspot-exercise3"}
+```{r hotspot-exercise4, exercise=TRUE}
 robbery_neighbours <- robbery_grid %>% 
   # Calculate the co-ordinates of the centre of each cell
   st_centroid() %>% 
@@ -1106,7 +1183,7 @@ Now we have everything else ready, we can extract the `robbery_count` column
 from `robbery_counts` using the `pull()` function, then calculate the Gi* 
 statistic using `localG()`.
 
-```{r hotspot-exercise5, exercise=TRUE, exercise.setup="hotspot-exercise4"}
+```{r hotspot-exercise5, exercise=TRUE}
 robbery_gi <- robbery_counts %>% 
   pull(robbery_count) %>% 
   localG(listw = nb2listw(robbery_neighbours, style = "B"))
@@ -1136,7 +1213,7 @@ formula. It is easy for a statistician, but the formula --
 probably easiest just to look up this formula if you need it again rather than 
 understanding it in detail.
 
-```{r hotspot-exercise6, exercise=TRUE, exercise.lines=15, exercise.setup="hotspot-exercise5"}
+```{r hotspot-exercise6, exercise=TRUE, exercise.lines=15}
 robbery_counts_gi <- robbery_counts %>% 
   add_column(gistar = robbery_gi) %>%
   mutate(

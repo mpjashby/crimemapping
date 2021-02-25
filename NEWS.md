@@ -1,3 +1,10 @@
+# crimemapping 0.5.2
+
+* Fixed a problem in which some users were unable to access objects within 
+  tutorial 11 that relied on daisy-chaining of learnr chunks via the 
+  exercise.setup chunk option, so moved the necessary objects into the setup
+  chunk.
+
 # crimemapping 0.5.1
 
 * Fixed a mistake in the 'Using data about places' tutorial that caused an error

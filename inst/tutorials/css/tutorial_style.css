@@ -51,6 +51,7 @@ h3 {
 p.full-width-image {
   margin-top: 1.5em;
   margin-bottom: 1.5em;
+  text-align: center;
 }
 p.full-width-image > img {
   width: 800px;
