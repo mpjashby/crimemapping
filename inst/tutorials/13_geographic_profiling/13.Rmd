@@ -1,0 +1,954 @@
+---
+title: "Crime Mapping: Mapping crime series"
+description: ""
+output: 
+  learnr::tutorial:
+    progressive: true
+    css: "css/tutorial_style.css"
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+library(learnr)
+tutorial_options(exercise.timelimit = 120)
+knitr::opts_chunk$set(echo = FALSE, fig.align='center')
+
+# Load packages
+library(ggmap)
+library(ggrepel)
+library(ggspatial)
+library(patchwork)
+library(rgeoprofile)
+library(sf)
+library(tidyverse)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
+
+# Load data --------------------------------------------------------------------
+
+
+## Hungerford data ----
+hungerford_shootings <- tribble(
+  ~latitude, ~longitude, ~victims,
+  51.4078, -1.6683, "Susan GODFREY†",
+  51.4094, -1.5779, "Kakaub DEAN",
+  51.4116, -1.5147, "Roland MASON†\nSheila MASON†\nMarjorie JACKSON\nLisa MILDENHALL",
+  51.4112, -1.5119, "Kenneth CLEMENTS†",
+  51.4115, -1.5140, "Roger BRERETON†\nLinda CHAPMAN\nAlison CHAPMAN",
+  51.4116, -1.5151, "Abdur KHAN†\nAlan LEPETIT\nHazel HASLETT\nGeorge WHITE†\nDorothy RYAN†\nIvor JACKSON",
+  51.4103, -1.5132, "Betty TOLLADAY",
+  51.4081, -1.5132, "Francis BUTLER†",
+  51.4079, -1.5144, "Marcus BARNARD†",
+  51.4080, -1.5150, "Ann HONEYBONE",
+  51.4098, -1.5156, "John STORMS",
+  51.4102, -1.5156, "Douglas WAINWRIGHT†\nKathleen WAINWRIGHT\nKevin LANCE\nEric VARDY†",
+  51.4088, -1.5173, "Sandra HILL†",
+  51.4076, -1.5174, "Victor GIBBS†\nMyrtle GIBBS†\nMichael JENNINGS\nMyra GEATER",
+  51.4065, -1.5175, "Ian PLAYLE†",
+  51.4062, -1.5152, "George NOON"
+) %>% 
+  mutate(order = row_number()) %>% 
+  select(victims, order, longitude, latitude) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(27700) %>% 
+  {
+    bind_cols(., as_tibble(st_coordinates(.))) %>% 
+      rename(easting = X, northing = Y)
+  } %>% 
+  st_drop_geometry() %>% 
+  mutate(across(c(easting, northing), as.integer))
+
+hungerford_sf <- hungerford_shootings %>%
+  arrange(order) %>% 
+  st_as_sf(coords = c("easting", "northing"), crs = 27700) %>% 
+  st_transform(4326)
+
+hungerford_wgs84 <- hungerford_sf %>% 
+  st_coordinates() %>% 
+  as_tibble() %>% 
+  janitor::clean_names() %>% 
+  mutate(order = row_number())
+
+hungerford_lines <- hungerford_wgs84 %>% 
+  rename(x_end = x, y_end = y) %>% 
+  mutate(x_start = lag(x_end), y_start = lag(y_end)) %>% 
+  slice(2:n())
+
+hungerford_basemap <- hungerford_sf %>% 
+  st_transform(27700) %>% 
+  st_buffer(1000) %>% 
+  st_transform(4326) %>% 
+  st_bbox() %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 13, maptype = "toner-lite")
+
+hungerford_town_bbox <- hungerford_sf %>% 
+  slice(3:n()) %>% 
+  st_transform(27700) %>% 
+  st_buffer(100) %>% 
+  st_transform(4326) %>% 
+  st_bbox()
+
+hungerford_town_basemap <- hungerford_town_bbox %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 16, maptype = "toner-lite")
+
+
+## Canal data ----
+
+canal_murders <- tribble(
+  ~date_of_discovery, ~latitude, ~longitude,
+  "1976-09-07", 50.625, 8.985, # footpath in a forest between Atzenhain and Lehnheim
+  "1982-05-23", 50.027, 8.659, # Dreileich treatment works
+  "1982-09-19", 49.951, 8.650, # somewhere in or near Darmstadt-Erzhausen
+  "1983-07-02", 50.027, 8.659, # Dreileich treatment works
+  "1983-09-09", 50.086, 8.625, # Frankfurt-Niederrad treatment works
+  "1983-10-11", 50.086, 8.625, # Frankfurt-Niederrad treatment works
+  "1989-06-21", 50.075, 8.753  # a drainage canal in Offenbach-Rosenhöhe
+) %>% 
+  type_convert() %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+if (file.exists("www/canal_geoprofile.Rds")) {
+  canal_geoprofile <- read_rds("www/canal_geoprofile.Rds")
+} else {
+  canal_geoprofile <- neg_exp_profile(
+    lat = pull(canal_murders, "latitude"),
+    lon = pull(canal_murders, "longitude"),
+    method = "CrimeStat"
+  )
+  write_rds(canal_geoprofile, "www/canal_geoprofile.Rds", compress = "gz")
+}
+
+# Create stored maps -----------------------------------------------------------
+
+hungerford_map_overall <- ggmap(hungerford_basemap) +
+  geom_curve(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    curvature = -0.2,
+    colour = "orange3"
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  geom_label_repel(
+    aes(x = x, y = y, label = order),
+    data = filter(hungerford_wgs84, order %in% 1:2), 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    colour = "white",
+    fill = "orange3",
+    fontface = "bold",
+    label.size = NA,
+  ) +
+  annotation_scale(style = "ticks", line_col = "grey40", text_col = "grey40") +
+  labs(
+    title = " Shootings in Wiltshire"
+  ) +
+  coord_sf(crs = 4326) +
+  theme_void() +
+  theme(
+    panel.border = element_rect(colour = "grey20", fill = NA),
+    plot.title = element_text(margin = margin(b = -18))
+  )
+
+hungerford_map_town <- ggmap(hungerford_town_basemap) +
+  geom_curve(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    curvature = -0.2,
+    colour = "orange3",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  geom_label_repel(
+    aes(x = x, y = y, label = order),
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    colour = "white",
+    fill = "orange3",
+    fontface = "bold",
+    label.size = NA,
+  ) +
+  annotation_scale(style = "ticks", line_col = "grey40", text_col = "grey40") +
+  coord_sf(crs = 4326) +
+  labs(
+    title = "Shootings in Hungerford town"
+  ) +
+  theme_void() +
+  theme(
+    panel.border = element_rect(colour = "grey20", fill = NA),
+    plot.margin = margin(t = 12)
+  )
+
+hungerford_map_overall2 <- hungerford_map_overall + 
+  geom_sf(
+    data = st_as_sfc(hungerford_town_bbox), 
+    inherit.aes = FALSE, 
+    fill = NA
+  ) +
+  annotate(
+    geom = "label", 
+    x = pluck(hungerford_town_bbox, "xmin"), 
+    y = pluck(hungerford_town_bbox, "ymin"),
+    label = "area covered\nby map below",
+    hjust = 1,
+    label.size = NA,
+    lineheight = 0.9,
+    size = 2.5,
+    vjust = 1
+  )
+```
+
+
+<!-- Case linkage: http://eknygos.lsmuni.lt/springer/605/117-133.pdf -->
+
+
+## Introduction
+
+It's common in crime mapping to treat each crime as a separate event. But a 
+large proportion of crimes are committed by a relatively small proportion of all
+the people who commit crime. These persistent or repeat offenders commit crimes
+frequently, maybe several times a day in the case of some people. One type of
+repeat offending is the *crime series*, in which an offender or group of 
+offenders commits the same or related crimes in different places over time. 
+
+When you read about serial offenders you might think about serial killers, but
+many types of crime can occur in series. One of the most common is burglary, in
+which a serial burglar breaks into many properties in an area over a period of
+days, weeks or months. Watch this short video to find out how police used crime
+mapping to help catch a serial burglar.
+
+![](https://youtu.be/fbrJNa9mBG8)
+
+In this video you can hear the police officers explaining that they had linked
+the offences they believed were committed by this serial offender because of 
+similarities in the items stolen and the method used to gain entry to the 
+houses. *Case linkage* is the process of identifying crime series by looking for
+similarities in the method used by an offender (e.g. entering a house by 
+breaking a lock on a side door out of sight from the street) or by evidence left
+at the scene (such as fingerprints or DNA). Case linkage is typically an 
+imperfect process -- investigators might believe that two offences were 
+committed by the same person, but in most cases they are unlikely to know for 
+sure.
+
+Crime mapping can help police and other agencies to understand crime series. In
+this tutorial we will learn how to map linked cases and how to estimate where 
+offenders are most likely to be based using geographic profiling.
+
+
+### The cases used in this tutorial
+
+Due to the uncertainty of case linkage, there is little publicly available data
+on the locations of serial crimes. The available data tends to focus on serial
+murders. To minimise the likelihood of anyone taking this course having been
+directly affected by -- or know anyone affected by -- the cases we use in the
+examples, this tutorial will use two historical examples.
+
+```{r include=FALSE}
+hungerford_murder_count <- hungerford_shootings %>% 
+  mutate(murder_count = str_count(victims, "†")) %>% 
+  summarise(murder_count = sum(murder_count)) %>% 
+  pull(murder_count)
+```
+
+<p class="full-width-image image-border"><img src="images/roger_brereton.jpg" alt="Photograph from the funeral of police constable Roger Brereton, one of the people killed in the Hungerford Massacre"></p>
+
+The [Hungerford massacre](https://en.wikipedia.org/wiki/Hungerford_massacre) 
+occurred in southern England in August 1987, when a marauding attacker killed 
+`r hungerford_murder_count` people and shot many others in the space of about 90 
+minutes. We will use a dataset called `hungerford_shootings` that contains the
+names of each victim and the approximate location at which they were shot 
+(recorded as eastings and northings in the British National Grid). This data is 
+taken from the 
+[official report into the massacre](https://www.jesip.org.uk/uploads/media/incident_reports_and_inquiries/Hungerford%20Shootings.pdf). The `order` column shows the order in which the victims were
+shot. These are the first few rows of the dataset (the dagger symbol † shows 
+that the victim was killed):
+
+```{r}
+hungerford_shootings %>% 
+  head(5) %>% 
+  knitr::kable() %>% 
+  kableExtra::kable_styling(full_width = FALSE)
+```
+
+The [canal murders](https://en.wikipedia.org/wiki/Sewer_Murders) were a series
+of murders of teenage boys near Frankfurt between 1982 and 1983. In each case
+the victims' bodies were placed into drainage channels near to sewage treatment
+plants. Two of the bodies were found at the locations of previous bodies, 
+several months after the first body at each place had been found. 
+
+Not all the victims could be identified due to the time that had elapsed
+before their bodies were discovered. The cases were linked not only by the 
+similarity in the locations where the bodies were found, but also the age and 
+sex of the victims and the cause of death. Nevertheless it is possible that not
+all of the offences were committed by the same offender. The data are stored in
+the `canal_murders` SF object, of which these are the first five rows:
+
+```{r}
+canal_murders %>% 
+  head(5) %>% 
+  knitr::kable() %>% 
+  kableExtra::kable_styling(full_width = FALSE)
+```
+
+<p class="credits"><a href="https://www.getreading.co.uk/news/berkshire-history/gallery/30-years-hungerford-massacre-13495555">Photograph of PC Roger Brereton's funeral from Berkshire Live</a></p>
+
+## Mapping linked cases
+
+Mapping crime series can be useful for several reasons. For example, a map of a
+crime series might help the jurors in a criminal trial to better understand the
+sequence of events that the suspect is accused of. This can be especially 
+helpful if the sequence is complicated or especially long.
+
+At the moment, the `hungerford_shootings` dataset contains the *point* location 
+of each event and the order in which they occurred. To show a sequence of events 
+on a map, we need to link each event with those that happened immediately before 
+and after it. 
+
+```{r}
+hungerford_shootings %>% 
+  head(5) %>% 
+  knitr::kable() %>% 
+  kableExtra::kable_styling(full_width = FALSE)
+```
+
+One way to do this is to draw lines on the map connecting each incident in turn. 
+To generate lines between the points, we:
+
+  1. `arrange()` the data using so that the rows are sorted from the first 
+     shooting to the last (this will be important at step 6).
+  2. Since the co-ordinates are represented using the British National Grid but
+     we will need to plot them on a map that uses the WGS84 co-ordinate system,
+     convert the data to an SF object using `st_as_sf()` and then transform it
+     to WGS84 using `st_transform()`.
+  3. Extract the co-ordinates from this transformed SF object using 
+     `st_coordinates()` since we want to manipulate the co-ordinates directly
+     (at step 6) and because the `geom_segment()` function we will use to plot 
+     the lines needs the co-ordinates stored in separate columns because it does 
+     not understand SF objects. Convert the result produced by 
+     `st_coordinates()` to a tibble with `as_tibble()` and add a column 
+     representing the order in which the shootings took place using `mutate()`.
+  4. `rename()` the columns containing the co-ordinates to make it clear these 
+      co-ordinates will represent the *end* of each line.
+  5. Use `mutate()` and `lag()` to create two new columns containing the `x` 
+     and `y` co-ordinates from the line *above* each line in the data. These 
+     co-ordinates will represent the start of each line.
+  6. `slice()` the data to remove the first line, since the number of lines 
+     connecting the points is one fewer than the number of points. `n()` in the
+     code below is a helper function representing the number of rows in the
+     dataset.
+
+We will store the result of step 2 in an object called `hungerford_sf` since
+we can also use this to generate a bounding box later, and the result of step 3
+in an object called `hungerford_wgs84` because we can use it to plot the points
+themselves on the map.
+
+```{r linked-exercise1, exercise=TRUE, exercise.lines=21, out.width="100%"}
+library(sf)
+library(tidyverse)
+
+hungerford_sf <- hungerford_shootings %>%
+  arrange(order) %>% 
+  st_as_sf(coords = c("easting", "northing"), crs = 27700) %>% 
+  st_transform(4326)
+
+hungerford_wgs84 <- hungerford_sf %>% 
+  st_coordinates() %>% 
+  as_tibble() %>% 
+  janitor::clean_names() %>% 
+  mutate(order = row_number())
+
+hungerford_lines <- hungerford_wgs84 %>% 
+  rename(x_end = x, y_end = y) %>% 
+  mutate(x_start = lag(x_end), y_start = lag(y_end)) %>% 
+  slice(2:n())
+
+head(hungerford_lines)
+```
+
+Now we have an object containing the start and end points of lines linking each 
+point in the sequence of shootings at Hungerford, we can plot these on a map 
+with a base map.
+
+```{r linked-exercise2, exercise=TRUE, exercise.lines=27, out.width="100%"}
+library(ggmap)
+
+# Transform the points to use the British National Grid, so we can generate a
+# 1km buffer around it to make it easier to see the data points. Then transform 
+# the points back to the WGS84 co-ordinate system used by functions from the 
+# ggmap() package and download the base map tiles.
+hungerford_basemap <- hungerford_sf %>% 
+  st_transform(27700) %>% 
+  st_buffer(1000) %>% 
+  st_transform(4326) %>% 
+  st_bbox() %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 13, maptype = "toner-lite")
+
+# Plot the map
+ggmap(hungerford_basemap) +
+  # Plot sequence of events as lines
+  geom_segment(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    colour = "grey40"
+  ) +
+  # Plot shooting locations as points
+  geom_point(aes(x = x, y = y), data = hungerford_wgs84, inherit.aes = FALSE) +
+  theme_void()
+```
+
+This map shows the sequence of events, but there are at least three ways that we
+can make it better.
+
+  1. We don't know which order to move through the sequence of lines. We can 
+     deal with this by adding arrows to show the direction of travel.
+  2. The straight lines make it look like the offender travelled across fields
+     between locations, which is probably not true. Since we do not have data on
+     what routes the offender took, we can replace the straight lines with 
+     curves to indicate that the exact route is unknown.
+  3. Because the first two shootings occurred outside the town, the map has to
+     cover a large area and this makes it harder to see the sequence of events 
+     in the town itself.
+
+### Adding arrows and curves
+
+To add an arrow to the end of each line segment we can use the `arrow()`
+helper function from the `ggplot2` package to specify the `arrow` argument of
+the `geom_segment()` function in our `ggmap()` stack. Here, we make the arrow
+head smaller than the default by setting `length = unit(3, "mm")` and choose the
+style of the arrow head with `type = "closed"`.
+
+To prevent the arrow heads from obscuring the points, we will give the points a
+thin white border by specifying `shape = 21` (a circle with a separate border)
+and `colour = "white"`, as well as making the points slightly bigger with 
+`size = 3`.
+
+```{r linked-exercise3, exercise=TRUE, exercise.lines=19, out.width="100%"}
+ggmap(hungerford_basemap) +
+  geom_segment(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    colour = "orange3"
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  theme_void()
+```
+
+This makes it easier to see that the shootings started at the point on the left
+of the map, but makes the problem of understanding the sequence of events in the
+town itself even worse. We will deal with this in the next section.
+
+In the map above, we used the `geom_segment()` function to add the lines to our
+map. If we change this to `geom_curve()` the lines will become curved rather
+than straight. By specifying `curvature = -0.2` we get a slightly straighter
+line than the default, and a left-hand curve because the value of `curvature` is
+negative (play around with this in the code box below to see how this argument
+works).
+
+Behind the scenes, R has to make various calculations to create the curved line
+between each shooting. These calculations are made more complicated by the base
+map layer on the map being an SF object and the point and line layers being
+data frames. To make these calculations possible, we have to specify 
+`coord_sf(crs = 4326)` -- if you forget to do this you will see a warning 
+`geom_curve is not implemented for non-linear coordinates` and the curves on the
+map will be obviously incorrect. We will save this map as an object because we
+will need it later on.
+
+The other layer we can add to our map is a layer of labels showing the order in
+which the shootings occurred. We don't want the labels to overlap the points, so
+we will use `geom_label_repel()` from the `ggrepel` package to create labels 
+that are automatically offset from the points they relate to. For now, we will
+just label the first two locations. 
+
+At this point we can also make some minor changes to the map -- adding a title
+and scale bar, putting a neat line around the map -- the purpose of which will
+become clear in the next section.
+
+```{r linked-exercise4, exercise=TRUE, exercise.lines=42, out.width="100%"}
+library(ggrepel)
+
+hungerford_map_overall <- ggmap(hungerford_basemap) +
+  geom_curve(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    curvature = -0.2,
+    colour = "orange3"
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  geom_label_repel(
+    aes(x = x, y = y, label = order),
+    data = filter(hungerford_wgs84, order %in% 1:2), 
+    inherit.aes = FALSE,
+    colour = "white",
+    fill = "orange3",
+    fontface = "bold",
+    label.size = NA,
+  ) +
+  annotation_scale(style = "ticks", line_col = "grey40", text_col = "grey40") +
+  labs(
+    title = " Shootings in Wiltshire"
+  ) +
+  coord_sf(crs = 4326) +
+  theme_void() +
+  theme(
+    panel.border = element_rect(colour = "grey20", fill = NA),
+    plot.title = element_text(margin = margin(b = -18))
+  )
+
+hungerford_map_overall
+```
+
+Now we have added arrow heads and curved lines, in the next section we will
+learn how to solve the problem of the events in the town itself being unclear on
+the map.
+
+
+
+## Multiple maps
+
+Our existing map is difficult to understand because we have a mix of some events
+very close together (including several on the same street) and some that 
+occurred further away. This means the closer events overlap on the map, 
+especially now that we have made the points larger to distinguish them from the
+lines linking each event.
+
+To deal with this problem we can display two maps: one showing the whole area 
+covered by the points and a second (sometimes called an *inset map*) showing 
+only the events in the town of Hungerford itself. We will do this using the 
+[`patchwork` package](https://patchwork.data-imaginist.com/) to combine multiple
+maps made using `ggmap()`.
+
+We have already saved the first map as `hungerford_map_overall`. We can create a
+map showing only the shootings in Hungerford itself by removing the first two
+points from `hungerford_sf` then downloading a new base map based on that layer 
+and plotting the result. Because some rows in the data will be outside the map
+area, we will add `na.rm = TRUE` to each layer to specify that off-map rows 
+should be removed from the data without generating a warning.
+
+We will use the `plot.margin` argument to the `theme()` function to add a small 
+amount of space at the top of this map, which will help separate it from the 
+first map when we put them together.
+
+```{r multiple-exercise1, exercise=TRUE, exercise.lines=52, fig.asp=1}
+hungerford_town_bbox <- hungerford_sf %>% 
+  slice(3:n()) %>% 
+  st_transform(27700) %>% 
+  st_buffer(100) %>% 
+  st_transform(4326) %>% 
+  st_bbox()
+
+hungerford_town_basemap <- hungerford_town_bbox %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 16, maptype = "toner-lite")
+
+hungerford_map_town <- ggmap(hungerford_town_basemap) +
+  geom_curve(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    curvature = -0.2,
+    colour = "orange3",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  geom_label_repel(
+    aes(x = x, y = y, label = order),
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    colour = "white",
+    fill = "orange3",
+    fontface = "bold",
+    label.size = NA,
+  ) +
+  annotation_scale(style = "ticks", line_col = "grey40", text_col = "grey40") +
+  coord_sf(crs = 4326) +
+  labs(
+    title = "Shootings in Hungerford town"
+  ) +
+  theme_void() +
+  theme(
+    panel.border = element_rect(colour = "grey20", fill = NA),
+    plot.margin = margin(t = 12)
+  )
+
+hungerford_map_town
+```
+
+We can now combine the two maps using the `patchwork` package. To place two 
+plots next to each other using `patchwork` you just add one map object to the
+other using the `|` operator. To place one plot on top of the other, you use the
+`/` operator (you can combine plots in more-complicated ways by combining these
+operators, together with parentheses).
+
+```{r multiple-exercise2, exercise=TRUE, fig.asp=1}
+library(patchwork)
+
+(hungerford_map_overall / hungerford_map_town)
+```
+
+When we created the `hungerford_map_overall` object in the previous section, we
+gave the map title a negative border using the `plot.title` argument to the
+`theme()` function. This had the effect of moving the title downwards onto the
+map to save space, since the top-left corner of the map was empty. We also added
+a scale bar, since when you present two related maps of different scales next to 
+one another, it is useful to show the scales of both maps to help readers relate
+them to one another.
+
+When we present two maps together and one of them shows an area that includes
+the area covered by the other one, it is also helpful to readers to show the
+area of the larger-scale map on the smaller-scale map. Since the area covered by
+the Hungerford town map is determined by a buffered bounding box around the
+shooting locations, we can add this same area to the overall shootings map. To
+do this, we convert the bounding box of the town shootings we stored as
+`hungerford_town_bbox` to an SF object using the `st_as_sfc()` function.
+
+We will also add a label explaining what the box shows using the `annotate()`
+function from `ggplot2`. `annotate()` acts like the `geom_` family of functions,
+except that we can specify the values of aesthetics like `x` and `y` directly
+as arguments, rather than by pointing to columns in a dataset.
+
+```{r multiple-exercise3, exercise=TRUE, exercise.lines=20, fig.asp=1}
+hungerford_map_overall2 <- hungerford_map_overall + 
+  geom_sf(
+    data = st_as_sfc(hungerford_town_bbox), 
+    inherit.aes = FALSE, 
+    fill = NA
+  ) +
+  annotate(
+    geom = "label", 
+    x = pluck(hungerford_town_bbox, "xmin"), 
+    y = pluck(hungerford_town_bbox, "ymin"),
+    label = "area covered\nby map below",
+    hjust = 1,
+    label.size = NA,
+    lineheight = 0.9,
+    size = 2.5,
+    vjust = 1
+  )
+
+(hungerford_map_overall2 / hungerford_map_town)
+```
+
+We can add shared titles and captions to combined maps created with `patchwork`
+using the `plot_annotation()` function. This function has a `theme` argument,
+which we can use to change the appearance of the shared title and caption just
+as we use `theme()` to change the appearance of elements on single maps.
+
+```{r multiple-exercise4, exercise=TRUE, fig.asp=1}
+(hungerford_map_overall2 / hungerford_map_town) + plot_annotation(
+  title = "Shootings during the Hungerford massacre",
+  caption = "data from the official report into the shootings",
+  theme = theme(
+    plot.caption = element_text(colour = "grey40"),
+    plot.title = element_text(colour = "grey50", face = "bold", size = 16)
+  )
+)
+```
+
+There are various other improvements that we could make to this map based on the
+mapping skills we have already learned during this course. For example, we could
+add the locations of buildings or particular facilities using data from 
+OpenStreetMap. What information we choose to present on the map will depend on 
+what information we think it is important to communicate to our audience.
+
+
+## Geographic profiling
+
+Geographic profiling is a technique used to analyse serial crimes to predict the 
+most-probable area in which the offender is based. This may be their home, or
+another anchor point such as their place of work (if they typically offend
+while travelling from work rather than from home).
+
+Watch this video (you only need to watch the first three minutes) in which Kim 
+Rossmo, who developed the techniques of geographic profiling, explain what 
+geographic profiling is used for and how it works. Kim talks about using the 
+software Rigel to carry out geographic profiling, but we will do it in R.
+
+![](https://youtu.be/fXbCR0nGj_E)
+
+While geographic profiling cannot solve a crime, it can help police prioritise
+different pieces of information. For example, if two different people in 
+different parts of a city contacted police as the result of a witness appeal,
+both saying they suspected a neighbour might be the offender, police could use
+a geographic profile to decide which tip to follow up more urgently.
+
+Geographic profiling will become more effective as the number of crimes in the 
+series goes up -- geographic profiling is only likely to be useful when a series 
+contains at least five crimes. 
+When we use geographic profiling it is important to remember that it is only
+likely to be accurate if certain assumptions about the crime series are true.
+Specifically, geographic profiling assumes that:
+
+  1. every crime believed to be part of the series was actually committed by the
+     same offender or group of offenders (i.e. the series doesn't contain any
+     crimes that were actually committed by someone else),
+  2. all (or at least most of) the crimes committed by the offender are known
+     about (i.e. there are no missing crimes),
+  3. the offender does not 'commute' into an area to commit their offences,
+  4. the offender's anchor point has not moved during the series (e.g. if they
+     moved home or changed jobs), and
+  5. the distribution of suitable targets is not highly concentrated in a 
+     particular place (if so, the profile will reflect the distribution of 
+     targets more than the movement patterns of the offender).
+
+Unfortunately, it is often difficult to know for sure if these assumptions are
+true in any particular case. For example, if multiple separate offenders are
+committing similar crimes in an area, police may not know which crimes were
+committed by which offender unless one is caught and confesses. The risk of
+mis-attribution of cases to particular crime series can be reduced by
+good-quality investigation of each offence, since evidence such as DNA or video
+from CCTV surveillance cameras can help attribute particular crimes to
+particular offenders with greater certainty.
+
+One part of the process of geographic profiling is creating a *geo-profile* or 
+*jeopardy surface*, which shows the relative probabilities of an offender's 
+anchor point being in a particular place. A geo-profile is created by placing a 
+grid over the area covered by the locations of crimes suspected to be part of 
+the series and then (for each cell in the grid) calculating the weighted distance
+from each crime to that cell. Just as with kernel density estimation, there are
+different methods of weighting the distances between each cell and each crime.
+We will use the *negative exponential profile* method, which is appropriate for
+places where streets are not aligned to a grid system (as is commonly the case
+in European countries).
+
+We can calculate geo-profiles in R using the 
+[`rgeoprofile` package](https://github.com/JSSpaulding/rgeoprofile). This 
+package contains functions to calculate geo-profiles using several different
+weighting methods, with the negative exponential method available in the 
+`neg_exp_profile()` function.
+`neg_exp_profile()` calculates a score for each cell in a grid covering the 
+bounding box of the offence locations. Higher scores indicate a greater 
+probability that the offender's anchor point is in that cell.
+
+We will calculate a geo-profile for the canal murders introduced at the start of
+this tutorial. `neg_exp_profile()` bases the profiles on the latitude and 
+longitude of each offence location (or, in this case, the locations where the 
+bodies were found) passed as separate vectors to the `lat` and `lon` arguments.
+There are two methods available within the `neg_exp_profile()` function, of 
+which we will use the `CrimeStat` method.
+
+```{r}
+canal_murders %>% 
+  knitr::kable() %>% 
+  kableExtra::kable_styling(full_width = FALSE)
+```
+
+<!--
+Research into offender decision making has often shown that people typically do
+not offend at places very close to their home because they perceived that there
+is an increased risk of being caught in an area where they are more likely to be
+recognised. This finding is often incorporated into geographic profiling by
+specifying a *buffer zone* around each crime within which the offender is 
+unlikely to live (since if they did live there they would have been unlikely to
+offend so close to home). Although we cannot know for sure what an unknown 
+offender considers to be 'too close' to home to offend, we will specify that our
+geo-profile include a buffer using the `buffer = TRUE` argument.
+-->
+
+Calculating a geo-profile can take several minutes, so it is possible that this
+next code block will not be able to run within the time limit for running R code
+within tutorials. If you see an error saying 
+`Your code ran longer than the permitted timelimit for this exercise` or 
+`reached elapsed time limit`, you can continue with the rest of the tutorial as
+usual.
+
+```{r geo-exercise1, exercise=TRUE}
+library(rgeoprofile)
+
+canal_geoprofile <- neg_exp_profile(
+  lat = pull(canal_murders, "latitude"),
+  lon = pull(canal_murders, "longitude"),
+  method = "CrimeStat"
+)
+```
+
+`neg_exp_profile()` produces a data frame containing the latitude and longitude 
+of each cell in the grid covering the bounding box of the offence locations, 
+together with a `sums` column containing the relative score for that cell. To 
+display the scores on a map we will first download a base map based on the
+locations at which the bodies were discovered, then add a layer for the
+geo-profile. 
+
+Since the data frame produced by `neg_exp_profile()` function contains the
+latitudes and longitudes for the centre of each grid cell, we will use the
+`geom_contour_filled()` function that is designed to summarise data consisting
+of an `x` and `y` co-ordinate together with a `z` value (in this case, `sums`)
+representing the thing we are interested in. As with the KDE maps we have
+produced previously, the exact values in the `sums` column are less important
+than knowing that higher values indicate higher probabilities, so we will
+replace the default legend labels with ones of our own.
+
+For reference, we will add the locations at which the bodies were discovered to
+the map. Since bodies were found at some locations more than once, this brings
+back the problem of overlapping points that we have discussed in earlier
+tutorials. To deal with this here, we will use the `position_jitter()` helper
+function to move the crime locations very slightly so that they do not overlap.
+How far to move the points (using the `width` and `height` arguments) is
+probably best determined by trial and error. Jittering points introduces some
+minor inaccuracy into the map, but at this map scale this is unlikely to matter,
+especially since some of the bodies were found in large open areas and so the
+recorded locations are likely to be approximate.
+
+```{r geo-exercise2, exercise=TRUE, exercise.lines=35, fig.asp=1}
+canal_murders_basemap <- canal_murders %>% 
+  st_transform(25832) %>% 
+  st_buffer(2000) %>% 
+  st_transform(4326) %>% 
+  st_bbox() %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap()
+
+ggmap(canal_murders_basemap) +
+  geom_contour_filled(
+    aes(x = lons, y = lats, z = sums), 
+    data = canal_geoprofile, 
+    inherit.aes = FALSE,
+    alpha = 0.75,
+    bins = 16
+  ) +
+  # Add the body locations
+  geom_point(
+    aes(x = longitude, y = latitude), 
+    data = canal_murders, 
+    inherit.aes = FALSE, 
+    position = position_jitter(width = 0.003, height = 0.003),
+    shape = 22
+  ) +
+  # Use a viridis scale, which highlights the highest probability locations
+  scale_fill_viridis_d(
+    labels = c("lower", rep("", times = 13), "higher"),
+    direction = 1,
+    guide = guide_legend(reverse = TRUE)
+  ) +
+  coord_sf(crs = 4326) +
+  labs(fill = "probability of\noffender\nanchor point") +
+  theme_void() +
+  theme(legend.key.height = unit(6, "pt"))
+```
+
+We can see from this geo-profile that the areas with the highest probability of
+containing the offender's anchor point are in the bottom-left of the map (about
+half-way between the cities of Darmstadt and Frankfurt). This information could
+be very useful for detectives who need to prioritise different lines of enquiry
+or different potential suspects.
+
+We can also see that there is one point in the top-left of the map that is far 
+away from all the other locations. It may be worth checking the strength of the 
+evidence that led each point to be included in the crime series. Is the evidence 
+for including this distant point as strong as for the other points?
+
+Geographic profiling cannot tell you who committed a crime, or exactly where an
+offender is based. What it can do is provide information that can be combined
+with other sources to help make decisions that can help an investigation into a
+crime series.
+
+
+<!--
+## Plotting the journey to crime
+
+For many crimes (especially predatory crimes), offenders must travel to and from 
+the location of the offence. Investigators will sometimes know some points along
+this journey, but not the whole route. For example, detectives investigating a
+kidnapping murder may know where the victim was taken from and where the body 
+was found, but not know where the offender or victim were between those points.
+For a more-common crime such as car theft, police may know where a car was 
+stolen from and where it was recovered, but not have any information about where
+it was between those times.
+
+When investigating crimes involving travel between points, it will often be 
+useful to work out the route taken between two points. For example, establishing
+a possible route might make it possible to check CCTV cameras, analyse toll-road 
+records or seek witnesses along the way. A potential route might also allow an
+analyst to consider whether any other crimes along that route might be part of a
+crime series. If pairs of points are known for multiple crimes that are believed
+to be a linked series, it is possible that looking for overlapping parts of the 
+routes between pairs of points might help identify the offender's anchor point.
+
+We can plot the fastest route between two locations on foot or in a vehicle 
+using tools that were designed for transport planning. The 
+[`stplanr` package](https://docs.ropensci.org/stplanr/) uses data from the
+OpenStreetMap routing service to work out the fastest route between two points.
+-->
+
+
+
+## In summary
+
+In this tutorial we have learned how to map crime series, focusing on displaying
+a sequence of events on a map and on using the locations of crimes to assist in
+identifying an offender's anchor point using geographic profiling. We have also
+learned how to combine maps using the `patchwork` package.
+
+You can find out more about the techniques introduced in this tutorial:
+
+  * [Introduction to `rgeoprofile`](https://cran.r-project.org/web/packages/rgeoprofile/vignettes/rgeoprofile.html)
+    to find out about the different methods available for calculating 
+    geo-profiles.
+  * [Getting started with `patchwork`](https://patchwork.data-imaginist.com/articles/patchwork.html)
+    for more information about combining plots in different ways, including
+    shared legends and more-complicated layouts.
+
