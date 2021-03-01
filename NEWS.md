@@ -1,3 +1,8 @@
+# crimemappin 0.6.0
+
+* Added content for Week 7, including tutorials on 'Handling messy data' and
+  'Mapping crime series' as well as data for addresses in Chicago for geocoding.
+
 # crimemapping 0.5.2
 
 * Fixed a problem in which some users were unable to access objects within 
