@@ -61,6 +61,13 @@ if (file.exists("www/chicago_addresses_geocoded.Rds")) {
   write_rds(addresses_geocoded, "www/chicago_addresses_geocoded.Rds")
 }
 
+monthly_counts <- tribble(
+  ~area, ~jan_2020, ~feb_2020, ~mar_2020, ~apr_2020, ~may_2020,
+  "Northville", 13, 10, 12, 9, 10,
+  "Middletown", 21, 19, 22, 19, 20,
+  "Southam", 15, 13, 16, 15, 14
+)
+
 uk_data <- tribble(
   ~month, ~longitude, ~latitude, ~location, ~lsoa_name,
   "2020-01", -1.12, 53.3, "On or near Supermarket", "Bassetlaw 013C",
@@ -178,13 +185,6 @@ observations are made of some value over time. For example, we might have
 monthly counts of crimes for different areas.
 
 ```{r monthly-table}
-monthly_counts <- tribble(
-  ~area, ~jan_2020, ~feb_2020, ~mar_2020, ~apr_2020, ~may_2020,
-  "Northville", 13, 10, 12, 9, 10,
-  "Middletown", 21, 19, 22, 19, 20,
-  "Southam", 15, 13, 16, 15, 14
-)
-
 monthly_counts %>% 
   knitr::kable() %>%
   kableExtra::kable_styling(full_width = FALSE)

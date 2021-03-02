@@ -1,4 +1,9 @@
-# crimemappin 0.6.0
+# crimemapping 0.6.1
+
+* Fixed a problem in which some users found the `monthly_counts` variable was
+  not found in tutorial 12.
+
+# crimemapping 0.6.0
 
 * Added content for Week 7, including tutorials on 'Handling messy data' and
   'Mapping crime series' as well as data for addresses in Chicago for geocoding.
