@@ -68,6 +68,8 @@ monthly_counts <- tribble(
   "Southam", 15, 13, 16, 15, 14
 )
 
+burglary_values <- c(1320, 653, 2068, -1, 580)
+
 uk_data <- tribble(
   ~month, ~longitude, ~latitude, ~location, ~lsoa_name,
   "2020-01", -1.12, 53.3, "On or near Supermarket", "Bassetlaw 013C",

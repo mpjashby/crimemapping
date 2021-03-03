@@ -1,6 +1,11 @@
+# crimemapping 0.6.2
+
+* Fixed a problem in which some users found the `burglary_values` object was
+  missing in tutorial 12.
+
 # crimemapping 0.6.1
 
-* Fixed a problem in which some users found the `monthly_counts` variable was
+* Fixed a problem in which some users found the `monthly_counts` object was
   not found in tutorial 12.
 
 # crimemapping 0.6.0
