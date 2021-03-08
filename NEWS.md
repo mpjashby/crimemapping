@@ -1,3 +1,8 @@
+# crimemapping 0.7.0
+
+* Added content for Week 8, including tutorials on 'Writing reports in R' and
+  'Presenting spatial data without maps' as well as several new datasets.
+
 # crimemapping 0.6.2
 
 * Fixed a problem in which some users found the `burglary_values` object was
