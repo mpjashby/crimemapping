@@ -55,7 +55,17 @@ gdp <- read_html("https://en.wikipedia.org/wiki/List_of_Japanese_prefectures_by_
 crime_data <- crime %>%
   mutate(prefecture = recode(prefecture, "Gumma" = "Gunma")) %>%
   full_join(gdp, by = "prefecture") %>%
-  filter(prefecture != "Japan")
+  filter(prefecture != "Japan") %>%
+  mutate(gdp_per_capita = gdp_per_capita / 1000) %>%
+  pivot_longer(-prefecture, names_to = "measure", values_to = "value") %>%
+  mutate(measure = recode(
+    measure,
+    "homicide" = "number of homicides",
+    "robbery" = "number of robberies",
+    "rape" = "number of rapes",
+    "violence" = "number of violent crimes",
+    "gdp_per_capita" = "GDP per capita (¥1000)"
+  ))
 
 write_rds(
   crime_data,
