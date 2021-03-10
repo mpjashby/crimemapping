@@ -52,9 +52,27 @@ gdp <- read_html("https://en.wikipedia.org/wiki/List_of_Japanese_prefectures_by_
   select(prefecture, gdp_per_capita = x2014_gdp_per_capitain_jp) %>%
   mutate(gdp_per_capita = parse_number(gdp_per_capita))
 
+pop <- read_html("https://en.wikipedia.org/wiki/Prefectures_of_Japan") %>%
+  html_nodes(".wikitable") %>%
+  magrittr::extract2(2) %>%
+  html_table() %>%
+  as_tibble(.name_repair = "universal") %>%
+  janitor::clean_names() %>%
+  select(prefecture = prefecture_1, population) %>%
+  mutate(
+    prefecture = recode(
+      prefecture,
+      "Hyōgo" = "Hyogo",
+      "Kōchi" = "Kochi",
+      "Ōita" = "Oita"
+    ),
+    population = parse_number(population)
+  )
+
 crime_data <- crime %>%
   mutate(prefecture = recode(prefecture, "Gumma" = "Gunma")) %>%
   full_join(gdp, by = "prefecture") %>%
+  full_join(pop, by = "prefecture") %>%
   filter(prefecture != "Japan") %>%
   mutate(gdp_per_capita = gdp_per_capita / 1000) %>%
   pivot_longer(-prefecture, names_to = "measure", values_to = "value") %>%
