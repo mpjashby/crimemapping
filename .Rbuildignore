@@ -7,3 +7,4 @@
 ^inst/initialise.R$
 ^inst/tutorials/.*?_cache
 ^inst/tutorials/.*?_files
+^inst/tutorials/16_mapping_time/images/chicago_animated.*?\.gif

@@ -1,22 +1,32 @@
+# crimemapping 0.8.0
+
+* Added content for Week 9, including a tutorial on Mapping 'Mapping crime over 
+  time' and data on aggravated assaults in Chicago.
+
+
 # crimemapping 0.7.0
 
 * Added content for Week 8, including tutorials on 'Writing reports in R' and
   'Presenting spatial data without maps' as well as several new datasets.
+
 
 # crimemapping 0.6.2
 
 * Fixed a problem in which some users found the `burglary_values` object was
   missing in tutorial 12.
 
+
 # crimemapping 0.6.1
 
 * Fixed a problem in which some users found the `monthly_counts` object was
   not found in tutorial 12.
 
+
 # crimemapping 0.6.0
 
 * Added content for Week 7, including tutorials on 'Handling messy data' and
   'Mapping crime series' as well as data for addresses in Chicago for geocoding.
+
 
 # crimemapping 0.5.2
 
@@ -25,10 +35,12 @@
   exercise.setup chunk option, so moved the necessary objects into the setup
   chunk.
 
+
 # crimemapping 0.5.1
 
 * Fixed a mistake in the 'Using data about places' tutorial that caused an error
   when trying to unzip a file to a specific directory.
+
 
 # crimemapping 0.5.0
 

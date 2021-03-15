@@ -1,0 +1,88 @@
+/* tutorial theme */
+.tutorialTitle {
+}
+.tutorialTitle::before {
+  content: "";
+  display: block;
+  height: 60px;
+  width: 200px;
+  margin-bottom: 0.75em;
+  background-color: #FFFFFF;
+  background-image: url("ucl_logo_black.png");
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+.topicsFooter > .resetButton {
+  display: inline-block;
+  border: 1pt solid #CCCCCC;
+  border-radius: 0.2em;
+  padding: 0.2em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+}
+.topicsFooter > .resetButton:hover {
+  border-color: #808080;
+  color: #808080;
+}
+
+
+
+/* headings */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  clear: both;
+  font-family: "Helvetica", "Arial", sans-serif;
+}
+
+h3 {
+  margin-top: 2em;
+}
+
+
+
+/* figures */
+.tutorial-video-container {
+  clear: both;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+p.full-width-image, p.centered-image, table.gt_table {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  text-align: center;
+}
+p.full-width-image > img {
+  width: 800px;
+  max-width: 100%;
+}
+p.centered-image > img {
+  max-width: 100%;
+}
+.right-side-image {
+  float: right;
+  width: 33%;
+  max-width: 200px;
+  margin: 0 0 2em 2em;
+}
+.image-border > img {
+  border: 1px solid #333;
+}
+
+
+
+/* credits */
+.credits {
+  clear: both;
+  margin: 2em 0;
+  padding: 0.5em;
+  border: 1px solid #CCCCCC;
+  border-radius: 0.2em;
+  color: #808080;
+  background-color: #F2F2F2;
+  font-size: 80%;
+}
+.credits a {
+  color: #808080;
+}
