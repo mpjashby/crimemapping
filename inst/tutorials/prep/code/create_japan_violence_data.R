@@ -36,14 +36,6 @@ crime <- pdf %>%
   mutate(across(-prefecture, parse_number)) %>%
   select(prefecture, homicide, robbery, rape, violence)
 
-read_csv("~/Downloads/REGION_ECONOM_10032021171830889.csv", guess_max = 100000) %>%
-  janitor::clean_names() %>%
-  filter(
-    measure == "National currency per head, current prices",
-    str_detect(unit, "Yen"),
-    year == 2012
-  )
-
 gdp <- read_html("https://en.wikipedia.org/wiki/List_of_Japanese_prefectures_by_GDP_per_capita") %>%
   html_node(".wikitable") %>%
   html_table() %>%
@@ -87,6 +79,5 @@ crime_data <- crime %>%
 
 write_rds(
   crime_data,
-  file = here::here("inst/extdata/japan_violence_counts.rds"),
-  compress = "gz"
+  file = here::here("inst/extdata/japan_violence_counts.rds")
 )
