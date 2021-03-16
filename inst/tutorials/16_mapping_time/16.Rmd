@@ -915,7 +915,7 @@ of the day needs 24 KDE layers, in this case it is particularly useful to use
 `map_dfr()` to avoid having to create 24 different objects and then binding them
 together.
 
-```{r animated-exercise1, exercise=TRUE, exercise.lines=25}
+```{r animated-exercise1, exercise=TRUE, exercise.lines=27}
 library(gganimate)
 
 assaults_by_hour <- assaults %>% 
