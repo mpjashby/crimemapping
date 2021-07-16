@@ -24,3 +24,17 @@ robberies %>%
   arrange(occurrencedate, event_unique_id) %>%
   select(occurrencedate, offence, premisetype, lon = long, lat) %>%
   write_sf("inst/extdata/toronto_robberies.gpkg")
+
+
+
+# Create downtown Toronto KSI collisions for LSA assessment
+sf::read_sf("https://opendata.arcgis.com/datasets/cf76fac0660f458e9c216b1cb0809734_0.geojson") %>%
+  janitor::clean_names() %>%
+  filter(year %in% 2014:2019, division %in% 51:53) %>%
+  select(date, time, lon = longitude, lat = latitude, location_type = loccoord, type = acclass) %>%
+  mutate(
+    date = lubridate::as_date(date),
+    time = str_pad(time, width = 4, side = "left", pad = "0"),
+    across(where(is.character), str_to_lower)
+  ) %>%
+  sf::write_sf("inst/extdata/toronto_downtown_collisions.gpkg")
