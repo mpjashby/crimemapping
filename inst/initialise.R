@@ -14,9 +14,6 @@ message(
 # download only binary packages
 options(install.packages.check.source = "no")
 
-# Update existing packages before installing new ones
-update.packages(ask = FALSE, quiet = TRUE)
-
 # load packages
 install.packages(c("tidyverse", "crimedata", "learnr", "remotes"), quiet = TRUE)
 remotes::install_github("mpjashby/crimemapping", upgrade = "always", quiet = TRUE)
