@@ -4,12 +4,21 @@ description: "Get started with crime mapping by learning about why putting crime
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
 library(learnr)
+library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
 ```
 
 
@@ -95,6 +104,15 @@ We will use RStudio for almost all of this course. Watch this video to find your
 ![](https://youtu.be/6bonySXb2_g)
 
 
+### Slightly adjusting how RStudio works
+
+Before we start using RStudio, we should make a few changes to how it is set up that will make it easier to fix any mistakes we make while coding. To do this, click on the `Tools` menu in RStudio and then on `Global Options…`. In the dialogue box that opens, click on `General` in the left-hand panel if `General` is not selected already.
+
+<p class="centered-image"><img src="images/workspace_options.png" alt="A screen shot of the RStudio Global Options dialogue box, showing which options should be selected."></p>
+
+In the "Workspace" section of the right-hand panel, find an option that says "Restore .RData into workspace at startup" and make sure the checkbox to the left of that option is **not checked**. On the next line down, click the drop-down menu labelled "Save workspace to .RData on exit:" and choose the option **Never**. Click `Apply` and then `OK` to close the dialogue box.
+
+
 #### Further reading
 
 The [RStudio IDE Cheat Sheet](https://github.com/rstudio/cheatsheets/blob/master/rstudio-ide.pdf) highlights some of the features available in RStudio and gives a list of available keyboard shortcuts.
@@ -108,13 +126,9 @@ Now that you know why crime mapping is useful for understanding crime, why crime
 
 If you're not feeling too confident at this point in the course, don't worry – learning something new is always a bit of a rollercoaster and there is lots of help available in subsequent tutorials.
 
-```{r datawrangling-image, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/r_rollercoaster.png")
-```
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/01_getting_started/images/r_rollercoaster.png" alt="Cartoon line chart showing how you become more confident in using R over time, then less confident and then more confident again."></p>
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
+<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
 
 
 
