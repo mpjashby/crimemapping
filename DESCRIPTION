@@ -1,7 +1,7 @@
 Package: crimemapping
 Type: Package
 Title: Crime Mapping with R
-Version: 0.8.0
+Version: 0.9.0
 Date: 2021-03-15
 Author: Matt Ashby
 Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
@@ -13,29 +13,27 @@ License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    cowplot,
-    gganimate,
     ggmap,
     ggrepel,
-    ggridges,
     ggspatial,
-    gifski,
-    gt,
     janitor,
-    kableExtra,
     learnr,
     lubridate,
     osmdata,
-    patchwork,
     rnaturalearth,
     rgdal,
-    rgeoprofile,
     sf,
     slider,
-    SpatialKDE,
-    spdep,
-    tidygeocoder,
     tidyverse,
     tmap,
     transformr
+Suggests:
+    cowplot,
+    gganimate,
+    ggridges,
+    gifski,
+    gt,
+    kableExtra,
+    patchwork,
+    tidygeocoder
 RoxygenNote: 7.1.1
