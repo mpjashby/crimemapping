@@ -14,17 +14,12 @@ message(
 # download only binary packages
 options(install.packages.check.source = "no")
 
+# Update existing packages before installing new ones
+update.packages(ask = FALSE, quiet = TRUE)
+
 # load packages
-message("\nInstalling the tidyverse suite of packages for data science")
-install.packages("tidyverse")
-message("\nInstalling the crimedata package for accessing crime data")
-install.packages("crimedata")
-message("\nInstalling the learnr package for interactive tutorials in RStudio")
-install.packages("learnr")
-message("\nInstalling the remotes package for installing packages from GitHub")
-install.packages("remotes")
-message("\nInstalling the crimemapping package of crime mapping tutorials")
-remotes::install_github("mpjashby/crimemapping")
+install.packages(c("tidyverse", "crimedata", "learnr", "remotes"), quiet = TRUE)
+remotes::install_github("mpjashby/crimemapping", upgrade = "always", quiet = TRUE)
 
 # print final message
 message(
