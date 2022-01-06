@@ -313,6 +313,32 @@ load files from a URL, instead only loading files that are present on your
 computer. To get round this file, we will first download an Excel file and store
 it in a temporary directory (to avoid cluttering up our computers).
 
+<div class="box notewell">
+
+**Using `download.file()` on Windows**
+
+If you are using a Windows computer, you may find that the `download.file()`
+function in the code below does not work as expected. This is because Windows
+handles files in a way that distinguishes between *plain-text* files such as
+`.txt` and `.csv` files and *binary* files, which includes most other file types
+(including compressed files). Since `aggravated_assaults.xlsx` is not a 
+plain-text file, on Windows you need to specify that you want it to be 
+downloaded as a binary file. To do this, add the argument `mode = "wb"` to the
+`download.file()` function so that it reads:
+
+```r
+download.file(
+  url = "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/aggravated_assaults.xlsx",
+  destfile = temp_file,
+  mode = "wb"
+)
+```
+
+If you are using a Mac or a Linux computer then you do not need to worry about
+this.
+
+</div>
+
 ```{r read-exercise3, exercise=TRUE}
 # Specify the name of and location of our temporary file: it does not matter
 # what this file is called or where it is stored, so we use the tempfile()
