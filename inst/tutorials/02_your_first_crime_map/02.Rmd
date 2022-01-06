@@ -4,12 +4,21 @@ description: "Quickly walk (or jog) through the process of creating a complete c
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
 library(learnr)
+library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
 ```
 
 
@@ -21,7 +30,7 @@ skip over lots of the detail of how R works and what choices we should make in
 creating maps. We will return to all these details in future sessions.
 
 This tutorial includes short chunks of R code that you can run directly in this
-window. We will uses these chunks of code to walk through the code we need to
+window. We will use these chunks of code to walk through the code we need to
 produce a map. To run the code in each chunk, just click the `Run Code` button
 in the top-right corner of each chunk. If you want to re-run a chunk of code,
 you can click the `Start Over` button in the top-left corner of each chunk.
@@ -49,20 +58,47 @@ Now click `Next Topic` below to start this tutorial.
 
 ### Loading packages
 
-The data we will use will be records of homicides in the Downtown neighbourhood
-of Atlanta, Georgia, in 2019. Before we can work with the data, we first load
-packages of functions for use in the analysis. To load these packages, click
-`Run Code`. This will produce various messages, all of which you can safely
-ignore for now.
+Before we can work with our data, we first load packages of functions for use in
+the analysis. To load these packages, click `Run Code`. This will produce
+various messages, all of which you can safely ignore for now.
 
 
 
 ```{r exercise1, exercise=TRUE, exercise.lines=5}
-# load the R packages we need to analyse this data
+# Load the R packages we need to analyse this data
 library("ggmap")
 library("sf")
 library("tidyverse")
 ```
+
+<div class="box extra-detail">
+
+<h5 id="loading-box1-title" class="box-title">What do these messages mean?</h5>
+
+<div id="loading-box1" class="box-content">
+For now you don't need to worry about these messages, but if you really want to
+know what they mean …
+
+Some R packages make use of external services. For example, the `ggmap` package
+can make use of mapping services provided by Google. Google requires anyone
+using their service to comply with their terms of service, so the `ggmap`
+package prints a message when you load it to remind you of this.
+
+Other packages make use of other apps and utilities on your computer. For
+example, the `sf` package makes use of a piece of software call GDAL that is 
+used for managing spatial data. So that you know which version of GDAL is being
+used, `sf` prints a message telling you.
+
+In general, R packages use start-up messages to remind you of information that 
+is not likely to be critical to your work, but which it might be useful to know
+at some point in the future.
+</div>
+
+</div>
+
+<script>
+$("#loading-box1-title").click(function () { $("#section-loading-box1").toggle("slow") })
+</script>
 
 
 
@@ -74,44 +110,45 @@ substantial task, but in this case we are going to use some pre-prepared crime
 data together with a pre-drawn street map (which we will ask R to download
 automatically when it draws the final map).
 
-We can load the homicide data using the `read_csv()` function. Click the 
-`Run Code` button to load the data.
+The data we will use will be records of homicides in the Downtown neighbourhood
+of Atlanta, Georgia, in 2019. We can load the homicide data using the
+`read_csv()` function. Click the `Run Code` button to load the data.
 
 ```{r exercise2-setup, include=FALSE}
-# load the R packages we need to analyse this data
+# Load the R packages we need to analyse this data
 suppressPackageStartupMessages(library("tidyverse"))
 ```
 
 ```{r exercise2, exercise=TRUE}
-# download the data directly from a URL and store it as an object
+# Download the data directly from a URL and store it as an object
 homicides <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv")
 ```
 
 The `read_csv()` function prints a message showing the name of each column in
-the data and the type of data (number, text etc) in each column. Again, you can
+the data and the type of data (number, text etc.) in each column. Again, you can
 ignore this message for now.
 
 We have stored the results of the `read_csv()` function in an R *object* called
 `homicides`. An object in R is anything that stores any type of data. There are
 many types of objects, but for this tutorial we don't need to explore these in
-any more detail. All you need to remember for now that objects store data and 
+any more detail. All you need to remember for now is that objects store data and 
 functions do things.
 
 
 
 ### Viewing the data
 
-To check the data has been loaded correctly, we can view the loaded data by just
-typing the name of the object in which we stored the data. Click `Run Code` to
-view the data.
+To check the data has been loaded correctly, we can view the loaded data using
+the `head()` function, which by default prints the first six rows of a dataset
+stored in an object. Click `Run Code` to view the data.
 
 
 
 ```{r exercise3-setup, message=FALSE, warning=FALSE, include=FALSE}
-# load the R packages we need to analyse this data
+# Load the R packages we need to analyse this data
 suppressPackageStartupMessages(library("tidyverse"))
 
-# download the data directly from a URL and store it as an object
+# Download the data directly from a URL and store it as an object
 homicides <- read_csv(
   "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
   col_types = cols(
@@ -124,8 +161,8 @@ homicides <- read_csv(
 ```
 
 ```{r exercise3, exercise=TRUE}
-# display the data
-homicides
+# Display the data
+head(homicides)
 ```
 
 
@@ -136,6 +173,23 @@ of the homicide location. Depending on the width of your screen, you may need to
 click on the '▸' symbol to view all the columns in the data. We can use this 
 data to plot the homicides on a map.
 
+<div class="notewell">
+
+**In the code `head(homicides)`, there are no quote marks around the word
+`homicides`.**
+
+Almost all programming languages will interpret words differently depending on
+whether they have quotes around them. In this case, if you type the code
+`head(homicides)` then R will print the first few rows of the data stored in the
+`homicides` object. 
+
+On the other hand, if you type the code `head("homicides")` or
+`head('homicides')`, R will interpret this as an instruction to print the first
+few elements of the literal text 'homicides'. Since the text 'homicides' contains
+only one element (more about that later), `head("homicides")` will just print
+the word 'homicides'.
+
+</div>
 
 
 ## Processing the data
@@ -151,18 +205,19 @@ data.
 ### Converting the data into a spatial format
 
 Two data-processing tasks are needed to produce this map. The first is to 
-convert the data into a simple features or SF object, which is a special type of
-R object that can be used by functions that process spatial data. We will cover
-the details of the `st_as_sf()` function that converts our data into into an SF
-object later on. Click `Run Code` to convert the data into SF format.
+convert the data into a *simple features* or SF object, which is a special type 
+of R object that can be used by functions that process spatial data. We will 
+cover the details of the `st_as_sf()` function that converts our data into into 
+an SF object later on. Click `Run Code` to convert the data into SF format.
 
 
 
 ```{r exercise4-setup, message=FALSE, warning=FALSE, include=FALSE}
-# load the R packages we need to analyse this data
+# Load the R packages we need to analyse this data
+suppressPackageStartupMessages(library("sf"))
 suppressPackageStartupMessages(library("tidyverse"))
 
-# download the data directly from a URL and store it as an object
+# Download the data directly from a URL and store it as an object
 homicides <- read_csv(
   "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
   col_types = cols(
@@ -174,26 +229,45 @@ homicides <- read_csv(
 )
 ```
 
-```{r exercise4, exercise=TRUE, exercise.lines=5}
-# convert the data to a simple features object, which we can use in functions 
+```{r exercise4, exercise=TRUE}
+# Convert the data to a simple features object, which we can use in functions 
 # that work on spatial data
-homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), 
-                      crs = 4326, remove = FALSE)
+homicides <- st_as_sf(
+  homicides, 
+  coords = c("longitude", "latitude"), 
+  crs = 4326, 
+  remove = FALSE
+)
 ```
 
 When you clicked `Run Code` above, it looked like nothing happened. This is
 because the results of the code are stored in the `homicides` object. Do you 
 remember what R code to use to view the contents of this object? Type that code 
-into the box below and click `Run Code` to view the data. If you need help, 
-click the `Solution` button.
+into the box below and click `Run Code` to view the data.
+
+<div class="box notewell">
+
+**If you cannot remember how to view the contents of an object, you can click on
+the `Solution` button to get help.**
+
+As you go through these tutorials, try to avoid using the `Solution` button 
+unless you have tried to input the correct code yourself. You will learn much
+more if you try to work out the answer by referring back to an earlier page in
+the tutorial or to your own notes.
+
+Don't worry about getting the answer wrong – nothing bad will happen if you run
+the wrong code in this tutorial and you can have as many attempts as you like to
+get the answer right.
+
+</div>
 
 
 ```{r exercise5-setup, message=FALSE, warning=FALSE, include=FALSE}
-# load the R packages we need to analyse this data
+# Load the R packages we need to analyse this data
 suppressPackageStartupMessages(library("sf"))
 suppressPackageStartupMessages(library("tidyverse"))
 
-# download the data directly from a URL and store it as an object
+# Download the data directly from a URL and store it as an object
 homicides <- read_csv(
   "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
   col_types = cols(
@@ -204,10 +278,14 @@ homicides <- read_csv(
   )
 )
 
-# convert the data to a simple features object, which we can use in functions 
+# Convert the data to a simple features object, which we can use in functions 
 # that work on spatial data
-homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), 
-                      crs = 4326, remove = FALSE)
+homicides <- st_as_sf(
+  homicides, 
+  coords = c("longitude", "latitude"), 
+  crs = 4326, 
+  remove = FALSE
+)
 ```
 
 ```{r exercise5, exercise=TRUE}
@@ -215,14 +293,15 @@ homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"),
 ```
 
 ```{r exercise5-solution}
-# To view an object in R, simply type the name of the object. To view the 
-# contents of the homicides object, copy the next line into the box below and
-# click Run Code.
-homicides
+# To view an object in R, use the `head()` function. To view the contents of the
+# homicides object, copy the next line into the box below and click Run Code.
+head(homicides)
 ```
 
 The data looks identical to before running the function `st_as_sf()`, except 
-that there is now an extra column called `geometry`.
+that there is now an extra column called `geometry`. This column is important
+because lots of functions in R can use that column to analyse and map the data
+in space.
 
 
 
@@ -234,16 +313,19 @@ metres in every direction around the data, meaning we can see the area
 surrounding the homicide locations.
 
 Defining the area of the map relative to the data requires us to use several R
-functions one after the other, connected using `%>%` (which we will cover 
-later). One of the benefits of mapping in R rather than [WYSIWYG](https://en.wikipedia.org/wiki/WYSIWYG)
-mapping software is that you can connect all of these commands together and run
-them at once, rather than having to open the relevant dialog boxes or clicking
-the right button for each command in turn.
+functions one after the other, connected using the characters `%>%` (which are
+called the *pipe* in R – we will cover it later). One of the benefits of mapping
+in R rather than [WYSIWYG](https://en.wikipedia.org/wiki/WYSIWYG) mapping
+software is that you can connect all of these commands together and run them at
+once, rather than having to open the relevant dialogue boxes or clicking the
+right button for each command in turn.
 
+You don't need to understand what each of these R functions does – we will cover
+them all in a future tutorial.
 
 
 ```{r exercise6, exercise=TRUE, exercise.setup = "exercise5-setup", exercise.lines=13}
-# define the area included in the map, based on a 500m buffer around the data
+# Define the area included in the map, based on a 500m buffer around the data
 map_boundary <- homicides %>% 
   st_bbox() %>% 
   st_as_sfc() %>% 
@@ -254,14 +336,15 @@ map_boundary <- homicides %>%
   st_bbox() %>% 
   as.numeric()
 
-map_boundary
+head(map_boundary)
 ```
 
 
 
-This code produces an R object representing the lower-left and upper-right 
-corners of our map. Now that we've completed the data processing, we can go on
-to produce the map itself.
+This code produces an R object containing co-ordinates that represent the
+lower-left and upper-right corners of our map. For now, we won't worry about how
+to interpret these numbers. Now that we've completed the data processing, we can
+go on to produce the map itself.
 
 
 
@@ -277,12 +360,12 @@ create the map.
 
 
 ```{r exercise7-setup, message=FALSE, warning=FALSE, include=FALSE}
-# load the R packages we need to analyse this data
+# Load the R packages we need to analyse this data
 suppressPackageStartupMessages(library("ggmap"))
 suppressPackageStartupMessages(library("sf"))
 suppressPackageStartupMessages(library("tidyverse"))
 
-# download the data directly from a URL and store it as an object
+# Download the data directly from a URL and store it as an object
 homicides <- read_csv(
   "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
   col_types = cols(
@@ -293,11 +376,16 @@ homicides <- read_csv(
   )
 )
 
-# convert the data to a simple features object, which we can use in functions 
+# Convert the data to a simple features object, which we can use in functions 
 # that work on spatial data
-homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+homicides <- st_as_sf(
+  homicides, 
+  coords = c("longitude", "latitude"), 
+  crs = 4326, 
+  remove = FALSE
+)
 
-# define the area included in the map, based on a 500m buffer around the data
+# Define the area included in the map, based on a 500m buffer around the data
 map_boundary <- homicides %>% 
   st_bbox() %>% 
   st_as_sfc() %>% 
@@ -346,27 +434,31 @@ extent of the map will update automatically. Click `Run Code`.
 
 
 ```{r exercise8, exercise=TRUE, exercise.lines=33, fig.width=7, fig.asp=1}
-# load the R packages we need to analyse this data
-# suppressPackageStartupMessages() hides the start-up messages we saw earlier
+# Load the R packages we need to analyse this data
+# `suppressPackageStartupMessages()` hides the start-up messages we saw earlier
 suppressPackageStartupMessages(library("ggmap"))
 suppressPackageStartupMessages(library("sf"))
 suppressPackageStartupMessages(library("tidyverse"))
 
-# download the data directly from a URL and store it as an object
-# suppressMessages() hides the column-specification messages we saw earlier
+# Download the data directly from a URL and store it as an object
+# `suppressMessages()` hides the column-specification messages we saw earlier
 homicides <- suppressMessages(read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/glenrose_heights_homicides.csv"))
 
-# convert the data to a simple features object, which we can use in functions 
+# Convert the data to a simple features object, which we can use in functions 
 # that work on spatial data
-homicides <- st_as_sf(homicides, coords = c("longitude", "latitude"), 
-                      crs = 4326, remove = FALSE)
+homicides <- st_as_sf(
+  homicides, 
+  coords = c("longitude", "latitude"), 
+  crs = 4326, 
+  remove = FALSE
+)
 
-# define the area included in the map, based on a 500m buffer around the data
+# Define the area included in the map, based on a 500m buffer around the data
 map_boundary <- homicides %>% st_bbox() %>% st_as_sfc() %>% st_as_sf() %>% 
   st_transform(26967) %>% st_buffer(500 * 3.3) %>% st_transform(4326) %>% 
   st_bbox() %>% as.numeric()
 
-# plot the map
+# Plot the map
 suppressMessages(get_stamenmap(map_boundary, zoom = 14, maptype = "toner")) %>% 
   ggmap() +
   geom_label(
@@ -383,9 +475,19 @@ suppressMessages(get_stamenmap(map_boundary, zoom = 14, maptype = "toner")) %>%
 
 
 
-### In summary
+## In summary
 
-This map is effective for showing the locations of just a few crimes, but is
+<div class="box welldone">
+
+**Well done – you have finished your first mapping tutorial.**
+
+</div>
+
+In this tutorial you have learned how to load data into R, prepare it for use in
+making a map and then used it to make your first crime map of this course. 
+
+The map we have produced in this tutorial is effective for showing the locations of just a few crimes, but is
 too limited to show more complicated patterns or larger datasets. In the 
 following tutorials, we will learn how to produce more sophisticated maps and
-spatial analysis.
+spatial analysis. We will also learn how each of the functions that we have used
+in this tutorial work.

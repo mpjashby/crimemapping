@@ -55,13 +55,15 @@ quiz(
 ```
 
 
-#### Further reading
+<div class="box reading">
 
 Weisburd, D. (2015). [The law of crime concentration and the criminology of place](https://doi.org/10.1111/1745-9125.12070). *Criminology*, 53(2), 133-157.
 
 Johnson, S. (2010). [A brief history of the analysis of crime concentration](https://doi.org/10.1017/S0956792510000082). *European Journal of Applied Mathematics*, 21(4-5), 349.
 
 Farrell, G. (2015). [Crime concentration theory](https://doi.org/10.1057/cpcs.2015.17). *Crime Prevention and Community Safety*, 17(4), 233-248.
+
+</div>
 
 
 
@@ -89,11 +91,13 @@ quiz(
 ```
 
 
-#### Further reading
+<div class="box reading">
 
 Santos, R. B. (2015). [Routine Activity Theory: A Cornerstone of Police Crime Analyst Work](https://ebookcentral.proquest.com/lib/ucl/reader.action?docID=1952969&ppg=130). In _The Criminal Act: _
 
 Cohen, L. E., and Felson, M. (1979). [Social Change and Crime Rate Trends: A Routine Activity Approach](https://doi.org/10.2307/2094589). *American Sociological Review*, 44(4), 588–608.
+
+</div>
 
 
 
@@ -110,21 +114,23 @@ Before we start using RStudio, we should make a few changes to how it is set up 
 
 <p class="centered-image"><img src="images/workspace_options.png" alt="A screen shot of the RStudio Global Options dialogue box, showing which options should be selected."></p>
 
-In the "Workspace" section of the right-hand panel, find an option that says "Restore .RData into workspace at startup" and make sure the checkbox to the left of that option is **not checked**. On the next line down, click the drop-down menu labelled "Save workspace to .RData on exit:" and choose the option **Never**. Click `Apply` and then `OK` to close the dialogue box.
+In the "Workspace" section of the right-hand panel, find an option that says "Restore .RData into workspace at startup" and make sure the check box to the left of that option is **not checked**. On the next line down, click the drop-down menu labelled "Save workspace to .RData on exit:" and choose the option **Never**. Click `Apply` and then `OK` to close the dialogue box.
 
 
-#### Further reading
+<div class="box reading">
 
-The [RStudio IDE Cheat Sheet](https://github.com/rstudio/cheatsheets/blob/master/rstudio-ide.pdf) highlights some of the features available in RStudio and gives a list of available keyboard shortcuts.
+The [RStudio IDE Cheat Sheet](https://github.com/rstudio/cheatsheets/blob/master/rstudio-ide.pdf) highlights some of the features available in RStudio and gives a list of available keyboard short-cuts.
 
 [Writing Code in RStudio](https://rstudio.com/resources/webinars/programming-part-1-writing-code-in-rstudio/) is a webinar that talks you through RStudio in more detail.
 
+</div>
 
-## Next steps
+
+## In summary
 
 Now that you know why crime mapping is useful for understanding crime, why crime is typically concentrated in space and how to find your way around RStudio, in the next tutorial we will produce our first crime map in R.
 
-If you're not feeling too confident at this point in the course, don't worry – learning something new is always a bit of a rollercoaster and there is lots of help available in subsequent tutorials.
+If you're not feeling too confident at this point in the course, don't worry – learning something new is always a bit of a roller coaster and there is lots of help available in subsequent tutorials.
 
 <p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/01_getting_started/images/r_rollercoaster.png" alt="Cartoon line chart showing how you become more confident in using R over time, then less confident and then more confident again."></p>
 
