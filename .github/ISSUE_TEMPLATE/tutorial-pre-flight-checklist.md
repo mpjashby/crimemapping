@@ -2,8 +2,8 @@
 name: Tutorial pre-flight checklist
 about: Checklist of actions required before a tutorial is published
 title: ''
-labels: ''
-assignees: ''
+labels: Release
+assignees: mpjashby
 
 ---
 
