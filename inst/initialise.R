@@ -11,11 +11,8 @@ message(
   "it).\n\n-------------------------\n\n"
 )
 
-# download only binary packages
-options(install.packages.check.source = "no")
-
 # load packages
-install.packages(c("tidyverse", "crimedata", "learnr", "remotes"), quiet = TRUE)
+install.packages(c("tidyverse", "crimedata", "learnr", "remotes"), type = "source", quiet = TRUE)
 remotes::install_github("mpjashby/crimemapping", upgrade = "always", quiet = TRUE)
 
 # print final message
