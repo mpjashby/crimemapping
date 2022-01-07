@@ -17,7 +17,7 @@ message(
 invisible(lapply(
   c("tidyverse", "crimedata", "learnr", "remotes"),
   function (x) {
-    if (!x %in% available.packages()) {
+    if (!x %in% installed.packages()) {
       install.packages(x, verbose = FALSE)
     } else {
       message(paste("package", x, "already installed"))
