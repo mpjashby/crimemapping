@@ -13,15 +13,18 @@ message(
   "-------------------------\n\n"
 )
 
-# load packages
-install.packages(
-  c("tidyverse", "crimedata", "learnr", "remotes")
-  verbose = FALSE
-)
-remotes::install_github(
-  "mpjashby/crimemapping",
-  upgrade = "always"
-)
+# install packages
+invisible(lapply(
+  c("tidyverse", "crimedata", "learnr", "remotes"),
+  function (x) {
+    if (!x %in% available.packages()) {
+      install.packages(x, verbose = FALSE)
+    } else {
+      message(paste("package", x, "already installed"))
+    }
+  }
+))
+remotes::install_github("mpjashby/crimemapping", upgrade = "always")
 
 # print final message
 message(
