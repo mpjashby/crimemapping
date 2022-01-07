@@ -15,8 +15,7 @@ message(
 
 # load packages
 install.packages(
-  c("tidyverse", "crimedata", "learnr", "remotes"),
-  type = "source",
+  c("tidyverse", "crimedata", "learnr", "remotes")
   verbose = FALSE
 )
 remotes::install_github(
