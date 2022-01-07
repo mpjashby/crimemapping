@@ -17,10 +17,10 @@ message(
 invisible(lapply(
   c("tidyverse", "crimedata", "learnr", "remotes"),
   function (x) {
-    if (!x %in% installed.packages()) {
-      install.packages(x, verbose = FALSE)
-    } else {
+    if (x %in% installed.packages()) {
       message(paste("package", x, "already installed"))
+    } else {
+      install.packages(x, verbose = FALSE)
     }
   }
 ))
