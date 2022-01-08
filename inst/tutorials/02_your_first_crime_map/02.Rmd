@@ -27,7 +27,9 @@ walk(
 
 In this tutorial we will use R to produce a simple crime map. To do this we will
 skip over lots of the detail of how R works and what choices we should make in
-creating maps. We will return to all these details in future sessions.
+creating maps. We will return to all these details in future sessions, so 
+for-now please don't worry about understanding every single line of code. 
+Everything will become clear as we work through the tutorials in this course.
 
 This tutorial includes short chunks of R code that you can run directly in this
 window. We will use these chunks of code to walk through the code we need to

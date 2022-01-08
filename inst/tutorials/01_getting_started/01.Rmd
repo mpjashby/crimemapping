@@ -29,6 +29,8 @@ Welcome to this course on crime mapping! This course uses interactive tutorials 
 
 ![](https://youtu.be/7JKWUamnBaE)
 
+Now click `Next Topic` below to start this tutorial.
+
 
 
 ## Why put crimes on maps?
@@ -124,6 +126,61 @@ The [RStudio IDE Cheat Sheet](https://github.com/rstudio/cheatsheets/blob/master
 [Writing Code in RStudio](https://rstudio.com/resources/webinars/programming-part-1-writing-code-in-rstudio/) is a webinar that talks you through RStudio in more detail.
 
 </div>
+
+
+## Navigating these tutorials
+
+The tutorials that make up this course include short chunks of R code that you 
+can run directly in this window. To run the code in each chunk, just click the 
+`Run Code` button in the top-right corner of each chunk. If you want to re-run a 
+chunk of code, you can click the `Start Over` button in the top-left corner of 
+each chunk. Some of the chunks will have pre-filled code for you to run, while
+for others you will be asked to type the code needed to complete a task based on
+what you have already learned.
+
+When you click `Run Code`, the output of the chunk will appear below it (there
+may be a delay of a few seconds for more-complicated chunks).
+
+To try out using a code chunk, click `Run Code` below – you should see the
+message 'Hello, world!' printed below the box.
+
+```{r exercise0, exercise=TRUE}
+message("Hello, world!")
+```
+
+<div class="box notewell">
+
+Some of the tutorials include boxes like this one that contain information that
+it is particularly important for you to know to avoid common mistakes in writing
+code. Pay special attention to these points and remember to ask questions if
+anything isn't clear.
+
+</div>
+
+<div class="box extra-detail">
+
+<h5 id="intro-box1-title" class="box-title">More information you might like 
+to know <- **click here**</h5>
+
+<div id="intro-box1" class="box-content">
+
+In these tutorials you will also see lines marked 'Extra detail' that you can
+click on to find out more information about a particular issue. This is 
+generally information that you do not need to know to complete the tutorial, but
+which might be useful in other circumstances or which might answer some 
+questions that you have. You can skip these boxes if you want to, or come back
+to them later if you have a question.
+
+</div>
+
+</div>
+
+<script>
+$("#intro-box1-title").click(function () { $("#section-intro-box1").toggle("slow") })
+</script>
+
+
+
 
 
 ## In summary

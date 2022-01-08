@@ -54,8 +54,10 @@ p.full-width-image, p.centered-image, table.gt_table {
   text-align: center;
 }
 p.full-width-image > img {
-  width: 800px;
-  max-width: 100%;
+  max-width: 80%;
+  max-height: 400px;
+  height: auto;
+  width: auto;
 }
 p.centered-image > img {
   max-width: 100%;
@@ -63,13 +65,17 @@ p.centered-image > img {
 .right-side-image {
   float: right;
   width: 33%;
-  max-width: 200px;
+  max-width: 150px;
   margin: 0 0 2em 2em;
 }
 .image-border > img {
   border: 1px solid #333;
 }
 
+
+.tutorial-exercise-input {
+  clear: both;
+}
 
 
 /* credits */
@@ -90,27 +96,31 @@ p.centered-image > img {
 
 
 /* Boxes */
-.box-title, .box-content, .notewell, .reading, .welldone {
+.box {
   clear: both;
+  margin: 2em 0;
   border: 1px solid #f8f8f8;
   border-left: 2px solid #000000;
   padding: 10px;
 }
-
-.box-title::after,
-.box-content::after,
-.notewell::after,
-.reading::after,
-.welldone::after {
+/* Clearfix hack to clear content after a float */
+.box::after {
   content: "";
   display: table;
   clear: both
 }
 
+.extra-detail {
+  padding: 0;
+}
+
 .box-title {
-  margin: 2em 0 0;
+  margin: 0;
+  padding: 10px;
   color: #666666;
   background-color: #f8f8f8;
+  font-size: 1em;
+  font-weight: normal;
   cursor: pointer;
 }
 
@@ -123,7 +133,8 @@ p.centered-image > img {
 
 .box-content {
   display: none;
-  margin: 0 0 2em;
+  padding: 10px;
+  font-size: 0.9em;
 }
 
 .box-content::before {
@@ -138,19 +149,6 @@ p.centered-image > img {
   background-position: top right;
   background-repeat: no-repeat;
   background-size: 100%;
-}
-
-h5.box-title {
-  font-size: 1em;
-  font-weight: normal;
-}
-
-.box-content p, .box-content li {
-  font-size: 0.9em;
-}
-
-.notewell, .welldone {
-  margin: 2em 0;
 }
 
 .notewell::before, .welldone::before {
@@ -177,7 +175,6 @@ h5.box-title {
 }
 
 .reading {
-  margin: 2em 0;
   font-size: 0.9em;
 }
 
