@@ -104,7 +104,7 @@ different packages. Some packages that are still in the early stages of
 development are not available on CRAN, but all the packages we will use are
 there.
 
-<a href="https://tidyverse.org/" title="tidyverse website"><img src="images/tidyverse.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
+<a href="https://tidyverse.org/" title="tidyverse website"><img src="images/tidyverse.png" class="right-side-image"></a>
 
 So to install (for example) the package called `tidyverse`, which we will use
 extensively in this tutorial, we run the R code:

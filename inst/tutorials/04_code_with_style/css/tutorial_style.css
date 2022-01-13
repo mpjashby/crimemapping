@@ -1,0 +1,187 @@
+/* tutorial theme */
+.tutorialTitle {
+}
+.tutorialTitle::before {
+  content: "";
+  display: block;
+  height: 60px;
+  width: 200px;
+  margin-bottom: 0.75em;
+  background-color: #FFFFFF;
+  background-image: url("ucl_logo_black.png");
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+.topicsFooter > .resetButton {
+  display: inline-block;
+  border: 1pt solid #CCCCCC;
+  border-radius: 0.2em;
+  padding: 0.2em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+}
+.topicsFooter > .resetButton:hover {
+  border-color: #808080;
+  color: #808080;
+}
+
+
+
+/* headings */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  clear: both;
+  font-family: "Helvetica", "Arial", sans-serif;
+}
+
+h3 {
+  margin-top: 2em;
+}
+
+
+
+/* figures */
+.tutorial-video-container {
+  clear: both;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+p.full-width-image, p.centered-image, table.gt_table {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  text-align: center;
+}
+p.full-width-image > img {
+  max-width: 80%;
+  max-height: 400px;
+  height: auto;
+  width: auto;
+}
+p.centered-image > img {
+  max-width: 100%;
+}
+.right-side-image {
+  float: right;
+  width: 33%;
+  max-width: 150px;
+  margin: 0 0 2em 2em;
+}
+.image-border > img {
+  border: 1px solid #333;
+}
+
+
+.tutorial-exercise-input {
+  clear: both;
+}
+
+
+/* credits */
+.credits {
+  clear: both;
+  margin: 2em 0;
+  padding: 0.5em;
+  border: 1px solid #CCCCCC;
+  border-radius: 0.2em;
+  color: #808080;
+  background-color: #F2F2F2;
+  font-size: 80%;
+}
+.credits a {
+  color: #808080;
+}
+
+
+
+/* Boxes */
+.box {
+  clear: both;
+  margin: 2em 0;
+  border: 1px solid #f8f8f8;
+  border-left: 2px solid #000000;
+  padding: 10px;
+}
+/* Clearfix hack to clear content after a float */
+.box::after {
+  content: "";
+  display: table;
+  clear: both
+}
+
+.extra-detail {
+  padding: 0;
+}
+
+.box-title {
+  margin: 0;
+  padding: 10px;
+  color: #666666;
+  background-color: #f8f8f8;
+  font-size: 1em;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.box-title::before {
+  content: "Extra detail";
+  display: inline-block;
+  margin-right: 1em;
+  font-weight: bold;
+}
+
+.box-content {
+  display: none;
+  padding: 10px;
+  font-size: 0.9em;
+}
+
+.box-content::before {
+  content: "";
+  float: right;
+  height: 105px;
+  width: 150px;
+  margin-left: 0.75em;
+  margin-bottom: 0.75em;
+  background-color: #FFFFFF;
+  background-image: url("matt_idea.png");
+  background-position: top right;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+
+.notewell::before, .welldone::before {
+  content: "";
+  float: left;
+  margin-right: 0.75em;
+  margin-bottom: 0.75em;
+  background-color: #FFFFFF;
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+
+.notewell::before {
+  height: 125px;
+  width: 125px;
+  background-image: url("matt_note.png");
+}
+
+.welldone::before {
+  height: 90px;
+  width: 87px;
+  background-image: url("matt_welldone.png");
+}
+
+.reading {
+  font-size: 0.9em;
+}
+
+.reading::before {
+  content: "Further information on this topic";
+  display: block;
+  margin-bottom: 1em;
+  font-weight: bold;
+}
+

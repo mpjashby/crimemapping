@@ -4,6 +4,7 @@ description: "Learn how to format your code so that it is easier to read, both f
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
@@ -11,6 +12,13 @@ runtime: shiny_prerendered
 library(learnr)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
 ```
 
 
@@ -22,18 +30,23 @@ particularly important because it is much easier to find mistakes in
 well-written code, and your code will inevitably contain mistakes (everyone's
 code contains mistakes!).
 
+It's been said that in data science that there are always at least two people 
+working on a project: you and future you. The problem is that *[past you does 
+not answer emails](https://datasciencecampus.ons.gov.uk/taking-reproducible-analytical-pipelines-on-a-virtual-tour-first-stop-the-caribbean/)*. So you can save yourself a lot of hassle later by writing
+readable code.
+
 This tutorial introduces some basic guidelines on formatting your code. This is
 a condensed version of the [The tidyverse style guide](https://style.tidyverse.org/),
 which provides lots more detail. All the code you see in the tutorials in this
 course was written following this style guide.
 
-```{r on-perl, fig.align="center", out.width="100%"}
-knitr::include_graphics("images/on_perl.png")
-```
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/04_code_with_style/images/on_perl.png" alt="A three-panel cartoon. In the first panel a man says 'this is the worst code I've ever seen'. In the second panel, he says 'the comments are useless, there's variables that do nothing …' and 'what depraved madman wrote this?'. In the third panel, he says 'wait, I did this two weeks ago'."></p>
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
-[On Perl](http://www.threepanelsoul.com/comic/on-perl) from [Three Panel Soul](http://www.threepanelsoul.com/).
+<p class="credits">
+[On Perl](http://www.threepanelsoul.com/comic/on-perl) from [Three Panel Soul](http://www.threepanelsoul.com/). Some content on this page contains public sector information licensed under the Open Government Licence v3.
 </p>
+
+
 
 
 
@@ -175,7 +188,7 @@ don't just call it `data` (not least because there is a function named `data()`)
 but instead give it a name like `atl_crimes` if it contains (for example) crime
 data from Atlanta.
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+<p class="credits">
 [Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
 </p>
 
@@ -212,7 +225,7 @@ mean (x, na.rm = TRUE)
 mean( x, na.rm = TRUE )
 ```
 
-Do put spaces around most operators (`==`, `+`, `-`, `<-`, etc):
+*Do* put spaces around most operators (`==`, `+`, `-`, `<-`, etc.):
 
 ```r
 # Good
@@ -328,6 +341,22 @@ knitr::include_graphics("images/styler.gif")
 RStudio will also try to help style your code as you type, for example by
 automatically indenting lines.
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+
+
+## In summary
+
+<div class="box welldone">
+
+You now know how to write your R code so that it is easy to read, which makes it
+much easier to understand. Understanding code when you read it is important 
+because it allows you to work out what the code is trying to achieve and because
+it makes it much easier to find and fix problems when your code is not behaving
+as you want it to.
+
+
+
+</div>
+
+<p class="credits">
 [The tidyverse style guide](https://style.tidyverse.org/) licensed under the [Creative Commons Attribution-ShareAlike licence](https://github.com/tidyverse/style/blob/master/LICENSE.md).
 </p>
