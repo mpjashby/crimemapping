@@ -4,6 +4,7 @@ description: "Walk through each stage in the process of creating a map showing t
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
@@ -14,6 +15,13 @@ library(learnr)
 library(sf)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
 
 # read data
 thefts <- janitor::clean_names(read_csv("../../extdata/vancouver_thefts.csv.gz"))
@@ -32,7 +40,7 @@ crime map, this time focusing more on each step in the process.
 
 In this tutorial we will make a map of bicycle thefts in Vancouver in 2020. At
 the end of this tutorial, the final map will look something like this. We will
-then improve it further in the next tutorial on what makes a good map.
+then improve it further in a future tutorial on what makes a good map.
 
 ```{r final-map, message=FALSE, warning=FALSE, out.width="100%"}
 bike_thefts <- st_transform(bike_thefts, 4326)
@@ -124,11 +132,10 @@ systems we can use to do this.
 knitr::include_graphics("images/sf.jpg")
 ```
 
-There are two different R packages that implement the concepts needed to handle
-spatial data. There are several packages that handle raster data from different
-sources – one of them is the [`ggmap` package](https://github.com/dkahle/ggmap)
-that we already used to load the base map of Atlanta for the homicide map we 
-made in one of the earlier tutorials.
+There are several packages that handle raster map data from different sources – 
+one of them is the [`ggmap` package](https://github.com/dkahle/ggmap) that we 
+have already used to load the base map of Atlanta for the homicide map we made 
+in one of the earlier tutorials.
 
 <a href="https://r-spatial.github.io/sf/" title="sf website"><img src="images/sf-package.gif" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
 
@@ -195,44 +202,54 @@ to view the first few rows of data? Type the code into the box and click
 ```
 
 ```{r read-exercise2-solution}
-# To view the contents of an object in R, just type the name of the object. If
-# the object is a tibble (which we know is the type of object returned by
-# `read_csv()`) then only the first few rows will be printed.
-
-thefts
+head(thefts)
 ```
 
 The data consists of `r scales::comma(nrow(thefts))` rows, each representing one
 theft. Before we can map this data, we will need to do some minor data wrangling
 to get it into the format we want.
 
-```{r snake-case-image, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/janitor_clean_names.jpg")
-```
 
-In the earlier tutorial about naming files, I recommended using file
-names that were lower case, used only letters, numbers, hyphens and underscores,
-and used underscores to separate words. These recommendations also apply to
-choosing object names and the names of columns in data frames. Doing this makes
-it much easier to refer to objects and columns in your code, without having to
-worry about whether a particular letter was upper- or lower-case, or whether it
-had an accent etc. This style of naming objects is called *snake case*, since it
-makes object names look a bit like a snake.
+### Cleaning column names
 
-At the moment, the column names are upper-case letters. Rather than having to
-remember this, we can easily convert them to snake case using the 
-`clean_names()` function from the [`janitor` package](https://github.com/sfirke/janitor).
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/04_your_second_crime_map/images/janitor_clean_names.jpg" alt="Cartoon showing a beaver feeding variables with messy names into a machine marked 'clean_names()' that has consistent variable names coming out of the other side."></p>
+
+In a previous tutorial we recommended choosing `snake_case` object names, e.g.
+calling a data object `atlanta_robberies_2020` rather than 
+`atlantarobberies2020`, `AtlantaRobberies2020` or `ATLANTAROBBERIES2020`. This 
+makes your code easier to read and means you don't have to remember whether you 
+named a variable using upper- or lower-case letters, since you know that you 
+only use lower case. 
+
+The same recommendation applies to variable names in datasets, for the same 
+reasons. Doing this makes it much easier to refer to objects and columns in your 
+code, without having to worry about whether a particular letter was upper- or 
+lower-case, or whether it had an accent etc. 
+
+<a href="http://sfirke.github.io/janitor/" title="janitor package website"><img src="images/janitor.png" class="right-side-image"></a>
+
+At the moment, the column names in the `thefts` dataset are upper-case letters. 
+Rather than having to remember this, we can easily convert them to snake case 
+using the `clean_names()` function from the [`janitor` package](http://sfirke.github.io/janitor/).
 To use a function from a package, we usually first load the package using the
 `library()` function. In this case, we probably won't want to use any other
 functions from the `janitor` package, so instead of loading the whole package we
 will use this one function directly. To do this, we write the function name with
-the package name added to the front, separated by `::`.
+the package name added to the front, separated by two colons `::`.
 
 ```{r read-exercise3, exercise=TRUE, exercise.setup="read-exercise1-solution"}
 thefts <- janitor::clean_names(thefts)
 
-thefts
+head(thefts)
 ```
+
+You can see that the data has stayed the same but all the column names are now
+in snake case. `clean_names()` would also have replaced any spaces with 
+underscores, tries to separate words in the variable names and cleaned up 
+several other potential problems with variable names. For this reason it is 
+common to call `janitor::clean_names()` straight away after loading a dataset so
+that you can be confident that the column names will be in the format you 
+expect.
 
 If we wanted to use the `clean_names()` function again, we would have to include
 the package name and `::` each time, so if our code was going to make repeated
@@ -341,12 +358,31 @@ thefts_sf
 ```
 
 If you look at the contents of the `thefts_sf` object, you'll see that there is
-a new column called `geometry` (you may need to use the ▸ button to see it). We
-need to specify `remove = FALSE` because by-default the `st_as_sf()` function
+a new column called `geometry` (you may need to use the ▸ button to see it). 
+This column contains the co-ordinates of each bike theft in a format that R 
+recognises represent locations on the surface of the earth, which means they can
+be used to make maps.
+
+
+<div class="box extra-detail">
+
+<h5 id="convert-box1-title" class="box-title">Why did we use the `remove = FALSE` argument?</h5>
+
+<div id="convert-box1" class="box-content">
+
+We need to specify `remove = FALSE` because by-default the `st_as_sf()` function
 removes the data columns containing map co-ordinates once it has converted them
 into a geometric object stored in the geometry column. This is useful for making
 very-large datasets smaller (by removing redundant columns), but in this case we
 will need the `x` and `y` columns later, so we want to keep them in the dataset.
+
+</div>
+
+</div>
+
+<script>
+$("#convert-box1-title").click(function () { $("#section-convert-box1").toggle("slow") })
+</script>
 
 
 ### Finding bike thefts in our data
@@ -400,7 +436,7 @@ bike_thefts <- filter(thefts_sf, type == "Theft of Bicycle")
 
 Our data is now ready for us to make our crime map!
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+<p class="credits">
 [Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
 </p>
 
@@ -418,26 +454,24 @@ few rows of the `bike_thefts` dataset and click `Run Code`.
 ```
 
 ```{r map-exercise1-solution}
-# To view the contents of an object in R, just type the name of the object. If
-# the object is an SF object derived from a tibble (which is the case for our
-# data) then only the first few rows will be printed.
-
-bike_thefts
+head(bike_thefts)
 ```
 
 
-### Introduction to `ggplot2`
+### Introduction to ggplot2
 
 ```{r ggplot2-image, fig.align="center", out.width="80%"}
 knitr::include_graphics("images/ggplot2_masterpiece.jpg")
 ```
 
-<a href="https://ggplot2.tidyverse.org/" title="ggplot2 website"><img src="images/ggplot2.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/05_your_second_crime_map/images/ggplot2_masterpiece.jpg" alt="Cartoon showing several furry monsters with paint brushes painting several different types of chart. Above them is the text 'ggplot2: build a data masterpiece'."></p>
 
 A map is a specialised type of chart, so we can make maps using the [`ggplot2`
 package](https://ggplot2.tidyverse.org/) that is widely used to create other 
 types of chart in R. `ggplot2` charts are made up of layers, so they're 
 well suited to making maps.
+
+<a href="https://ggplot2.tidyverse.org/" title="ggplot2 website"><img src="images/ggplot2.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
 
 The most-basic map that we can make simply plots the locations of crimes with no
 context. This almost never makes a *good* crime map, but we can use this type of
@@ -491,12 +525,16 @@ the first line is indented by two spaces. RStudio does this indenting
 automatically if the previous line ends with a `+` symbol, since RStudio then
 understands that there is more code to come on the next line.
 
+This map shows the bike-theft data, but it is obviously not a very useful map.
+Fortunately, we can use the features of the `ggplot2` package to build on this
+basic map.
+
 
 ### Controlling aesthetics
 
 We can change the appearance of the points by specifying various arguments to
 the `geom_sf()` function. These arguments are called *aesthetics*, because they
-control the aesthetic appearance of the geometric objects (points, lines etc)
+control the aesthetic appearance of the geometric objects (points, lines etc.)
 produced by a `geom_` function. There are lots of aesthetics, but some of the
 most common are:
 
@@ -559,8 +597,8 @@ ggplot() +
   geom_sf(data = bike_thefts, shape = 15, colour = "red")
 ```
 
-This basic map is accurate, but not very useful. We can see that there seems to
-be a cluster of bike thefts towards the top (north) of the map, but it is 
+As we have said, this basic map is not very useful. We can see that there seems 
+to be a cluster of bike thefts towards the top (north) of the map, but it is 
 difficult to see how important this cluster is because so many of the points
 overlap. Overlapping points are a particular problem in maps, because if there
 are multiple crimes at the same location then the points representing those 
@@ -594,15 +632,26 @@ location. To make our map useful, we need to use a different technique.
 
 ## Mapping crime density
 
+<div class="box notewell">
+
 Unless we want to produce a map of only a very small number of crimes (like the
 Atlanta downtown homicides map we produced in a previous tutorial), it is 
-unlikely that a point map will be very useful. In fact, if you find yourself
-making map with each crime represented by a separate point, you should probably 
-stop and ask yourself if that is really the best way to achieve your goal.
+unlikely that a point map will be very useful. 
+
+In fact, **if you find yourself making map with each crime represented by a 
+separate point, you should probably stop and ask yourself if that is really the 
+best way to achieve your goal**.
+
+</div>
 
 A better way to show where crime is concentrated on a map is to work out the
-*density* of crime in each area and then map that density. Fortunately, the
-`ggplot` package has a `geom_` function that does this for us automatically:
+*density* of crime in each area and then map that density. By *density* in this
+context we mean the relative concentration of points in each part of the area we
+are studying, i.e. how many points (representing bike thefts) are there in each
+part of the map relative to all the other areas of the map.
+
+Fortunately, the `ggplot2` package has a `geom_` function that estimates the 
+relative density of points in each part of our map for us automatically: 
 `geom_density_2d_filled()`.
 
 `geom_density_2d_filled()` is a function from the `ggplot2` package, not the
@@ -629,7 +678,7 @@ from the `bike_thefts` SF object the information needed to understand the
 co-ordinate system used when the data were first created by the Vancouver
 Police. The `geom_density_2d_filled()` function cannot do this because it does
 not understand SF objects, so instead we will provide this information manually
-by adding a call to the function `coord_sf()`. remember that `32610` is the EPSG
+by adding a call to the function `coord_sf()`. Remember that `32610` is the EPSG
 code for the UTM zone 10N co-ordinate system.
 
 ```{r map-exercise5, exercise=TRUE}
@@ -743,6 +792,10 @@ ggplot() +
   coord_sf(crs = 32610)
 ```
 
+Comparing this map to the first density map we produced, we can see that the
+slightly smaller bandwidth means we can see slightly more detail in the patterns
+of bike thefts.
+
 We can also fine-tune our density map by choosing the number of different 
 categories used to represent different densities on the map. If we use too few
 categories (such as the map below that uses only two) then areas with very
@@ -810,6 +863,30 @@ RColorBrewer::brewer.pal.info %>% rownames_to_column(var = "name") %>%
   plot_grid(plotlist = .)
 ```
 
+<div class="box notewell">
+
+It is important to only use the right type of colour scale in the right
+circumstances, since using the wrong type of scale could end up misleading
+people reading your map. For example, a diverging colour scale gives the strong
+impression that the central point in the scale is meaningful. 
+
+In some circumstances this might be useful, for example if you wanted to show
+areas in which crime had increased in shades of one colour and areas in which
+crime had decreased in shades of another colour. In that case, a diverging scale
+would be appropriate because the central point represents something meaningful:
+no change in crime. If the central point is not meaningful, use a sequential
+colour scheme instead.
+
+If you want to represent a categorical variable, you should use a categorical
+colour scale unless the categories have a natural order. For example, if you
+wanted to show ethnic groups on a map you would use a categorical colour scale
+since there is no one order of ethnic groups that is any more meaningful than
+any other. If you wanted to represent days of the week with colour, then you
+might want to use a sequential colour scheme since the days of the week have a
+meaningful order.
+
+</div>
+
 You can think of all the functions that we can add to `ggplot()` as being like a
 stack of pancakes, with each new function being placed on the top of the stack.
 To change the colour of our map, we just add `scale_fill_brewer()` to the 
@@ -823,6 +900,87 @@ ggplot() +
   scale_fill_brewer(palette = "Oranges") +
   coord_sf(crs = 32610)
 ```
+
+Try changing the code in this box to use one of the other Color Brewer palettes
+above. Which palette do you like best?
+
+
+### Check your understanding
+
+Answer the following questions to check your understanding of what we've learned
+in this section of this tutorial. If you get a question wrong, you can keep 
+trying until you get the right answer.
+
+```{r map-quiz}
+quiz(
+  caption = "",
+  
+  question(
+    "What R package do we use to make basic density maps using the `geom_density_2d_filled()` function?",
+    answer("`ggplot2`", correct = TRUE),
+    answer(
+      "`ggplot`",
+      message = "Almost right! The package that contains `geom_density_2d_filled()` is called `ggplot2`, not `ggplot`."
+    ),
+    answer(
+      "`sf`",
+      message = "The `sf` package contains lots of functions for manipulating spatial data, but not for making maps."
+    ),
+    answer(
+      "`dplyr`",
+      message = "The `dplyr` package contains functions for data wrangling, which we learned about in a previous tutorial."
+    ),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question(
+    "What is the `adjust` argument of the function `geom_density_2d_filled()` used for?",
+    answer(
+      "Adjusting the bandwidth of the density layer, relative to the default bandwidth.",
+      correct = TRUE
+    ),
+    answer(
+      "Adjusting the cell size of the density layer, relative to the default cell size.",
+      message = "We use the `n` argument of `geom_density_2d_filled()` to change the default cell size."
+    ),
+    answer(
+      "Adjusting the colour scheme used to represent density on the map.",
+      message = "We use the `scale_fill_brewer()` function to adjust the colour scheme used to represent density on the map."
+    ),
+    answer(
+      "Adjust the number of different categories of density represented by different colours.",
+      message = "We use the `bins` argument of `geom_density_2d_filled()` to adjust the number of different colours shown on a density map."
+    ),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question(
+    "In what circumstances is it appropriate to use a diverging colour scale, e.g. one that goes from blue to white to red?",
+    answer("To represent variation in a variable above and below a meaningful mid-point.", correct = TRUE),
+    answer(
+      "To represent variation in a variable from low to high.",
+      message = "In this case, you should use a sequential scale unless there is a mid-point in the scale that is meaningful."
+    ),
+    answer(
+      "To represent variation in a variable from high to low.",
+      message = "In this case, you should use a sequential scale unless there is a mid-point in the scale that is meaningful."
+    ),
+    answer(
+      "To represent categories in a categorical variable.",
+      message = "In this case, you should use a categorical colour scheme if the categories have no natural order and a sequential colour scheme if the categories do have a natural order."
+    ),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+  
+)
+```
+
 
 
 ## Adding a base map
@@ -947,11 +1105,16 @@ c("terrain", "terrain-background", "terrain-labels", "terrain-lines", "toner",
   plot_grid(plotlist = ., ncol = 3)
 ```
 
+Add the `maptype` argument to `get_stamenmap()` in the code above and change the
+style of the base map until you find a style that you think provides useful
+information while not distracting from crime density, which is the main purpose
+of the map.
+
 
 
 ## Adding more layers
 
-<img src="images/pancakes.jpg" alt="a stack of pancakes" style="width: 33%; max-width: 300px; float: right; margin: 0 0 2em 2em; border: 1px solid #333;">
+<img src="images/pancakes.jpg" alt="a stack of pancakes" class="right-side-image">
 
 Adding a base map underneath our density layer has made it much easier to 
 understand where the highest densities of bike theft in Vancouver are. But our
@@ -975,10 +1138,16 @@ map.
 nbhds <- st_read("https://opendata.vancouver.ca/explore/dataset/local-area-boundary/download/?format=geojson")
 ```
 
+
+<div class="box notewell">
+
 When we add the new layer using `geom_sf()`, we have to specify the argument
 `inherit.aes = FALSE` to tell `geom_sf()` not to try to use the aesthetics
 provided by the `ggmap()` function -- otherwise the code will produce an error
 complaining `object 'lon' not found`.
+
+</div>
+
 
 <a href="https://stringr.tidyverse.org/" title="stringr website"><img src="images/stringr.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
 
@@ -1044,9 +1213,19 @@ nbhds %>%
   theme(legend.position = "none")
 ```
 
+Now we can see that bike theft in Vancouver is heavily concentrated in a handful
+of neighbourhoods, particularly the Downtown and West End neighbourhoods. This
+map is much more useful than the first map that we produced in this tutorial
+showing only the point location of each crime, since in this latest map we can
+see not only the greatest concentrations of bike thefts but how they relate to
+the different areas of the city. 
+
 
 
 ## In summary
+
+
+<div class="box welldone">
 
 In this tutorial we have learned to produce a density map of crime. This type
 of map can be very useful in identifying where practitioners should focus 
@@ -1054,6 +1233,8 @@ efforts to respond to crime. For example, a map like this might help local
 police to decide where to send officers to carry out extra patrols, while a
 crime-prevention charity might decide to run events in particular areas to
 educate people on how best to protect their bikes.
+
+</div>
 
 In the next tutorial, we will learn how to improve this map further.
 
