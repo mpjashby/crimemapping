@@ -212,7 +212,7 @@ to get it into the format we want.
 
 ### Cleaning column names
 
-<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/04_your_second_crime_map/images/janitor_clean_names.jpg" alt="Cartoon showing a beaver feeding variables with messy names into a machine marked 'clean_names()' that has consistent variable names coming out of the other side."></p>
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/05_your_second_crime_map/images/janitor_clean_names.jpg" alt="Cartoon showing a beaver feeding variables with messy names into a machine marked 'clean_names()' that has consistent variable names coming out of the other side."></p>
 
 In a previous tutorial we recommended choosing `snake_case` object names, e.g.
 calling a data object `atlanta_robberies_2020` rather than 
@@ -459,10 +459,6 @@ head(bike_thefts)
 
 
 ### Introduction to ggplot2
-
-```{r ggplot2-image, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/ggplot2_masterpiece.jpg")
-```
 
 <p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/05_your_second_crime_map/images/ggplot2_masterpiece.jpg" alt="Cartoon showing several furry monsters with paint brushes painting several different types of chart. Above them is the text 'ggplot2: build a data masterpiece'."></p>
 
@@ -865,8 +861,8 @@ RColorBrewer::brewer.pal.info %>% rownames_to_column(var = "name") %>%
 
 <div class="box notewell">
 
-It is important to only use the right type of colour scale in the right
-circumstances, since using the wrong type of scale could end up misleading
+It is important to **only use the right type of colour scale in the right
+circumstances**, since using the wrong type of scale could end up misleading
 people reading your map. For example, a diverging colour scale gives the strong
 impression that the central point in the scale is meaningful. 
 
@@ -1061,8 +1057,12 @@ bike_thefts %>%
   ggmap() +
   # add the density layer, remembering to make it slightly transparent so that
   # we can see the base map behind it
-  geom_density_2d_filled(aes(x = x, y = y), data = bike_theft_coords, bins = 9, 
-                         alpha = 0.75) +
+  geom_density_2d_filled(
+    aes(x = x, y = y), 
+    data = bike_theft_coords, 
+    bins = 9, 
+    alpha = 0.75
+  ) +
   # set the sequential colour scheme of our choice
   scale_fill_brewer(palette = "Purples") +
   # suppress the map legend -- we will learn more about these next lines of code
