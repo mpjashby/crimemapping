@@ -392,8 +392,8 @@ console.
 
 <div class="box extra-detail">
 
-<h5 id="understanding-box1-title" class="box-title">Did you get an error saying
-`No documentation for ‘str_wrap’ in specified packages and libraries`?</h5>
+<h5 id="understanding-box1-title" class="box-title">Did you get an error 
+beginning `No documentation for ‘str_wrap’`?</h5>
 
 <div id="understanding-box1" class="box-content">
 
