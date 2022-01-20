@@ -4,6 +4,7 @@ description: "Learn how to deal with error messages and other problems with the 
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
@@ -13,6 +14,13 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Load packages
 library(tidyverse)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
 
 # Load data
 frauds <- read_csv("../../extdata/kansas_city_frauds.csv.gz")
@@ -25,7 +33,8 @@ frauds <- read_csv("../../extdata/kansas_city_frauds.csv.gz")
 In this tutorial we will learn how to deal with bugs in the R code that we 
 write. It's inevitable that you will make mistakes in the R code that you write. 
 Everyone types the wrong command every now and again, just as everyone sometimes 
-clicks the wrong button in other pieces of software. 
+clicks the wrong button in other pieces of software. Learning how to identify 
+and fix bugs is part of the process of learning to code.
 
 Some errors are easy to identify and easy to fix. If you try to select the
 column name `offense_category` from a dataset when you should have typed 
@@ -43,8 +52,9 @@ Error: Can't subset columns that don't exist. x Column `offense_category` doesn'
 
 In this case it is fairly easy to identify that one of the columns you have 
 tried to select does not exist. To find out what the correct column name is, 
-print the object (by typing the name `frauds` into the R console) or use the 
-`names()` function to print a list of column names present in the data:
+print the first few rows of the object (by typing the code `head0(frauds)` into 
+the R console) or use the `names()` function to print a list of column names 
+present in the data:
 
 ```{r intro-exercise2, exercise=TRUE}
 names(frauds)
@@ -67,11 +77,9 @@ roller coaster, but (like most things) it becomes much easier with practice, and
 if you approach errors in a systematic way.
 
 
-```{r debugging-cartoon, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/debugging.jpg")
-```
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/07_handling_bugs/images/debugging.jpg" alt="Cartoon showing 10 furry monsters showing different stages of learning to debug code. The monsters are marked '1. I got this', '2. Huh, really though that was it', '3. (...)', '4. Fine. Restarting.', '5. OH WTF', '6. Zombie meltdown', '7. [crying]', '8. A NEW HOPE!', '9. [insert awesome theme song]' and '10. I LOVE CODING!'"></p>
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+<p class="credits">
 [Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
 </p>
 
@@ -79,16 +87,18 @@ knitr::include_graphics("images/debugging.jpg")
 
 ## Errors, warnings and messages
 
+When something is not quite right, or just when there is an issue in your code
+that you should be aware of, R has three ways of communicating with you:
+messages, warnings and errors. 
+
 
 #### Messages
 
-When something is not quite right, or just when there is an issue in your code
-that you should be aware of, R has three ways of communicating with you. The
-first is by printing a *message* in the R console. Messages are usually for 
-information only and typically don't require you to take any action. For example,
-the function `get_crime_data()` from the `crimedata` package issues a message
-to tell you what data it is downloading because this sometimes takes a few 
-seconds and without a message you might wonder if the code was working.
+*Messages* are usually for information only and typically don't require
+you to take any action. For example, the function `get_crime_data()` from the
+`crimedata` package issues a message to tell you what data it is downloading. It
+does this because downloading data sometimes takes a few seconds and without a 
+message you might wonder if the code was working.
 
 By default, messages are displayed in RStudio in <span style="color: rgb(197, 6, 11); background-color: #FFFFFF; font-family: monospace; font-weight: normal;">dark red text</span>,
 although this might vary if you have changed any settings in the Appearance
@@ -134,6 +144,23 @@ have any missing values in it, you will need to investigate why `geom_point()`
 is warning you about missing values and whether those values have been 
 accidentally introduced by some part of your code.
 
+
+<div class="box notewell">
+
+**It is not safe to ignore warnings** unless you are sure why they occurred and
+certain that you don't need to take any action.
+
+One particularly dangerous scenario is where your code produces warnings but 
+still produces what looks like a reasonable result. In these circumstances it
+can be tempting to ignore the warnings and assume that everything is fine, since
+the code still produced roughly what you were expecting. However, it's possible
+that the plausible answer is nevertheless wrong because of whatever problem is
+generating the warning in R. Do not assume that warnings are safe to ignore just
+because they don't stop your code running.
+
+</div>
+
+
 Warnings are displayed in the same font as messages, but with the text 
 `Warning message:` at the start. You can generate your own warning messages
 using the `warning()` function:
@@ -169,6 +196,32 @@ stop("Something is defintely wrong. Don't go any further until you've fixed it."
 Now we know what errors, warning and messages are, we need to find out how to
 deal with them when they happen.
 
+
+### Check your understanding
+
+```{r intro-quiz}
+quiz(
+  caption = "",
+  
+  question(
+    "Which of the following terms is used in R to describe the way of communicating something for information only",
+    answer("A message", correct = TRUE),
+    answer(
+      "A warning",
+      message = "Not quite right: warnings in R communicate information that you need to investigate so you can decide what action to take."
+    ),
+    answer(
+      "An error",
+      message = "Not quite right: errors in R communicate problems that prevent your code from running."
+    ),
+    answer("A condition"),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+  
+)
+```
 
 
 ## Finding problems
@@ -249,11 +302,28 @@ frauds %>%
 #  arrange(date)
 ```
 
+
+<div class="box extra-detail">
+
+<h5 id="finding-box1-title" class="box-title">Did you get an error beginning
+`<text>:5:0: unexpected end of input 3`?</h5>
+
+<div id="finding-box1" class="box-content">
+
 If you get an error that begins `<text>:5:0: unexpected end of input 3`, you 
 have forgotten to remove the pipe operator `%>%` from the end of the last line
 of your code. Remember that R will ignore the lines that are commented out, so
 make sure every line in your pipeline ends with a `%>%` *except* the last line
 that is not commented out.
+
+</div>
+
+</div>
+
+<script>
+$("#finding-box1-title").click(function () { $("#section-finding-box1").toggle("slow") })
+</script>
+
 
 Have you found the problem? If you uncomment all but the last line and run the
 code, you will see that the line `filter(offense_code == "26G")` results in zero
@@ -316,12 +386,40 @@ manual page. You can access the manual page for a function by:
 
 Any of these options opens up a manual page for that function in the Help panel
 in RStudio. For example, this is the manual page for the `str_wrap()` function 
-from the `stringr` package. You can load it by typing ?str_wrap in the R 
+from the `stringr` package. You can load it by typing `?str_wrap` in the R 
 console.
 
-```{r man-page, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/man_page.png")
-```
+
+<div class="box extra-detail">
+
+<h5 id="understanding-box1-title" class="box-title">Did you get an error saying
+`No documentation for ‘str_wrap’ in specified packages and libraries`?</h5>
+
+<div id="understanding-box1" class="box-content">
+
+When you use the `?` operator to look up the manual page for a function, R 
+searches through all the functions in the packages you have loaded. If there is
+no function of the name you have given in the loaded packages, R will produce an
+error. 
+
+To access the manual page of a function in a package that is not loaded, you can
+specify the package in which R should look for the function using the package
+name and the `::` operator (this is the same way that we have already learned to
+call packages from functions that haven't been loaded). For example, you can use
+the code `?stringr::str_wrap` to access the manual page for the `str_wrap()` 
+function from the `stringr` package even if the `stringr` package is not loaded.
+
+</div>
+
+</div>
+
+<script>
+$("#understanding-box1-title").click(function () { $("#section-understanding-box1").toggle("slow") })
+</script>
+
+
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/07_handling_bugs/images/man_page.png" alt="Screenshot of the R manual page for the "></p>
+
 
 All manual pages have the same format.
 
@@ -340,12 +438,12 @@ All manual pages have the same format.
     particularly important to note the type of value expected. So the 
     `st_transform()` function from the `sf` package expects an SF object as its
     first argument -- if you provide another sort of object (such as a tibble),
-    this will result in an error.
+    this will cause an error.
   * **Value** explains the type of value that the function will return, and 
     whether this value might be of a different type depending on the values of
     particular arguments. For example, the `mean()` function in base R returns
     the arithmetic mean of a vector of numbers. However, if any of the numbers 
-    was `NA` then mean will return `NA` *unless* the argument `na.rm = TRUE` is
+    is `NA` then mean will return `NA` *unless* the argument `na.rm = TRUE` is
     used. In that case, `mean()` will ignore the missing values and return the
     mean of the values that are present.
   * **Examples** gives more examples of how the function can be used.
@@ -363,15 +461,56 @@ that you just can't understand. In that case, you will need to get some help
 from others.
 
 
-<!--
-## Fixing specific errors
 
-`there is no package called …` means you've either mis-typed a package name or that package is not installed
+## How to fix some common errors
 
-`could not find function …` means you've either mis-typed a function name or not loaded the relevant package
+There are some mistakes that it is common for people to make when writing code.
+The table on this page gives some common error messages and how to fix them.
+Read through this list now but you can also refer back to it later on if you 
+need to. You can [download a PDF version of this table for future reference](www/common_errors.pdf).
 
-`object not found …` usually means you've mis-typed an object name
--->
+In these error messages, the code `blah` represents the function, object or 
+value that the error relates to. 
+
+```{r common-errors, message=FALSE, warning=FALSE}
+common_errors <- tribble(
+  ~`Error message`, ~`How to fix it`,
+  "`there is no package called 'blah'`", "You have either mis-typed the package name or the package is not installed. Check the spelling or use `install.packages()` to install the package.",
+  '`could not find function "blah"`', "You have either mis-typed the function name or the package containing that function is not loaded. Check the spelling or use `library()` to load the package.",
+  "`object 'blah' not found`", "You have either mis-typed the name of the object or the object does not exist. Check the spelling and make sure you have run the code that creates the object. This error can also occur when you have forgotten to put quotes around a character value in an argument, since R treats words without quotes around them as the names of objects. In this case, check that you have used quote marks around any character values in your code.",
+  "`'blah' does not exist` `in current working directory`", "You have either mis-typed the name of a file that R is trying to access or the file does not exist in the location you have specified. Check the slepping and make sure the file exists.",
+  "`non-numeric argument to binary operator`", "You have tried to use a mathematical operator such as `+` or `-` with a non-numeric value. For example, you might have written the code `1 + blah` thinking that `blah` holds a numeric value, but if `blah` actually holds a character value then trying to add it to `1` makes no sense. Check that any objects in your code have the values you expect them to.",
+  "`object of type 'closure'` `is not subsettable`", "You have tried to use a function as if it is an object, which can happen when you store data in an object that has the same name as an R function. The circumstances that produce this error are often not simple to understand, so the best way to handle this error is to avoid it by not naming objects using the names of functions.",
+  "`no applicable method for 'blah' applied` `to an object of class \"blah\"`", "Some R functions (called generic functions) work in different ways depending on what type of object you use them on. But if you use a generic function on an object that it does not know how to handle, you will see this error. Check the object that you provided to the function causing the error to make sure it is the type of object you are expecting it to be.",
+  '`unexpected numeric constant in "blah"`, `unexpected string constant in "blah"` or `unexpected symbol in "blah"`', "You have a typo somewhere in your code. Check the line of code producing the error to make sure it is formatted correctly. The most common typos that cause this error are a missing comma or closing parenthesis, but there are [several other typos that can cause similar errors](https://stackoverflow.com/a/25889235/8222654).",
+  '`unused argument (var = "blah")`', "You have used an argument name in a function that does not understand it. Check the manual page for that function.",
+  '`argument "blah" is missing,` `with no default`', "You have used a function without providing all the necessary arguments. Check the manual page for that function."
+)
+
+# If the PDF version of this table does not already exist, create it
+if (!file.exists("www/common_errors.pdf")) {
+  
+  # Create markdown file
+  pander::panderOptions("knitr.auto.asis", FALSE)
+  pandoc_text <- pander::pander_return(
+    common_errors,
+    justify = "left", 
+    caption = "How to fix some common errors in R", 
+    split.tables = 80 * 2
+  )
+  readr::write_lines(pandoc_text, "www/common_errors.md")
+  
+  # Convert markdown to PDF
+  rmarkdown::render("www/common_errors.md", rmarkdown::pdf_document())
+  
+  # Remove temporary file
+  file.remove("www/common_errors.md")
+  
+}
+
+knitr::kable(common_errors)
+```
+
 
 
 ## Getting external help
@@ -386,7 +525,7 @@ who are asking their first question.
 
 ### Reproducible examples
 
-<img src="images/code_hero.jpg" style="width: 50%; max-width: 500px; float: right; margin: 0 0 2em 2em;">
+<img src="images/code_hero.jpg" style="width: 60%; max-width: 500px; float: right; margin: 0 0 2em 2em;">
 
 One of the things that makes it much more likely that you will find help with
 your problem in the R community is if you phrase your plea for help in a way
@@ -443,22 +582,23 @@ Seatbelts %>%
 ```
 
 ```{r reprex-exercise1-setup}
-# this code downloads the data and stores it in the temporary directory created
+# This code downloads the data and stores it in the temporary directory created
 # by learnr to run the following exercise, which allows us to mimic loading the
 # data from a local file (which is important in the narrative, since it makes
 # the example non-reproducible)
 # Source: https://github.com/rstudio/learnr/issues/99#issuecomment-500462786
-read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/road_deaths_data.csv") %>% write_csv("road_deaths_data.csv")
+read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/road_deaths_data.csv") %>%
+  write_csv("road_deaths_data.csv")
 ```
 
 ```{r reprex-exercise1, exercise=TRUE, exercise.lines=39}
-# load packages
+# Load packages
 library(dplyr)
 library(ggplot2)
 library(magrittr)
 library(readr)
 
-# load a dataset from your computer and wrangle it
+# Load a dataset from your computer and wrangle it
 road_deaths <- read_csv("road_deaths_data.csv") %>% 
   janitor::clean_names() %>% 
   rename(ksi_drivers = drivers, ksi_pass_front = front, ksi_pass_rear = rear) %>% 
@@ -468,7 +608,7 @@ road_deaths <- read_csv("road_deaths_data.csv") %>%
     ksi_driver_rate = ksi_drivers / (kms / 1000)
   )
 
-# make a time-series chart of two continuous variables, coloured by a 
+# Make a time-series chart of two continuous variables, coloured by a 
 # categorical variable, then add a trend line
 road_deaths + 
   ggplot(aes(x = month_beginning, y = ksi_driver_rate)) + 
@@ -526,14 +666,14 @@ we are interested in is showing code that produces a specific error. If you
 run this code, you will see it produces the same error as the code above.
 
 ```{r reprex-exercise2, exercise=TRUE, exercise.lines=13, exercise.setup="reprex-exercise1-setup"}
-# load packages
+# Load packages
 library(ggplot2)
 library(readr)
 
-# load a dataset from your computer and wrangle it
+# Load a dataset from your computer and wrangle it
 road_deaths <- read_csv("road_deaths_data.csv")
 
-# make a time-series chart of two continuous variables, coloured by a 
+# Make a time-series chart of two continuous variables, coloured by a 
 # categorical variable, then add a trend line
 road_deaths +
   ggplot(aes(x = month_beginning, y = drivers)) + 
@@ -565,14 +705,13 @@ package, which contains fuel economy data for 38 models of car.
 
 The data in this dataset are on a completely different topic to the data we were 
 trying to use, but this does not matter as long as the data contains variables 
-of the same type (numeric, character, etc) as the original data. We can see what
-variables are in the `mpg` dataset by just typing the dataset name into the R
-console.
+of the same type (numeric, character, etc.) as the original data. We can see what
+variables are in the `mpg` dataset using the `head()` function as usual.
 
 ```{r reprex-example3, exercise=TRUE, exercise.setup="reprex-exercise1-setup"}
 library(ggplot2)
 
-mpg
+head(mpg)
 ```
 
 From this, we can see that there is a `year` variable that we can use as a 
@@ -588,14 +727,14 @@ from the `road_deaths_data.csv` file. You will need to change the variable names
 in the stack of `ggplot()` functions.
 
 ```{r reprex-exercise4, exercise=TRUE, exercise.lines=13, exercise.setup="reprex-exercise1-setup"}
-# load packages
+# Load packages
 library(ggplot2)
 library(readr)
 
-# load a dataset from your computer and wrangle it
+# Load a dataset from your computer and wrangle it
 road_deaths <- read_csv("road_deaths_data.csv")
 
-# make a time-series chart of two continuous variables, coloured by a 
+# Make a time-series chart of two continuous variables, coloured by a 
 # categorical variable
 road_deaths +
   ggplot(aes(x = month_beginning, y = drivers)) + 
@@ -603,18 +742,18 @@ road_deaths +
 ```
 
 ```{r reprex-exercise4-solution}
-# load packages
+# Load packages
 library(ggplot2)
 library(readr)
 
-# make a time-series chart of two continuous variables, coloured by a 
+# Make a time-series chart of two continuous variables, coloured by a 
 # categorical variable
 mpg +
   ggplot(aes(x = year, y = hwy)) + 
   geom_point(aes(colour = trans))
 ```
 
-We have now managed to reduce our original 37 lines of code down to 9 lines, as
+We have now managed to reduce our original 37 lines of code down to 8 lines, as
 well as making the example reproducible by using a widely available toy dataset.
 The shorter code still produces the same error while being much easier to read,
 so we are much more likely to get help quickly than if we had just sent someone
@@ -634,9 +773,7 @@ worth checking that the code is truly reproducible. To do this we will use the
 `reprex` package, which is part of the `tidyverse` suite of packages you already
 have installed.
 
-```{r reprex-package, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/reprex-cartoon.jpg")
-```
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/07_handling_bugs/images/reprex-cartoon.jpg" alt="Cartoon of furry monsters celebrating, with the caption 'reprex: make reproducible examples'"></p>
 
 <a href="https://reprex.tidyverse.org/" title="reprex website"><img src="images/reprex.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
 
@@ -660,7 +797,7 @@ that we started this section with, we would get an error message
 Once your reprex produces the same error as the code you originally had the
 issue with, you're ready to share it to get help.
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
+<p class="credits">
 [Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
 </p>
 
@@ -720,27 +857,51 @@ your question. Questions are more likely to get an answer faster if you:
 
 Submit your question and wait for an answer. As soon as someone answers your
 question, or comments on it to ask for more detail, you will get an email alert.
-Common questions are typically answered within a few hours. Hopefully this will
+Many questions are typically answered within a few hours. Hopefully this will
 final stage of the emotional roller coaster of debugging:
-
-```{r debugging-cartoon2, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/debugging.jpg")
-```
-
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
-
 
 
 
 ## In summary
 
-In  this tutorial we have learned how to handle messages, warnings and errors in
-R. We have learned to take time to understand error messages, to isolate errors
-so that we can better understand them, to use manual pages for functions to
-check that every argument is correct, and how to write reproducible examples so
-that we can get help online.
+
+#### A workflow for handling errors in R
+
+<div class="box notewell">
+
+**When you run some code in R and it produces an error, follow the steps learned 
+in this tutorial to identify and fix the problem.**
+
+  1. Read the error message and fix any obvious problems.
+  2. Make sure your code follows the style guide introduced in the previous
+     tutorials, which will make it easier to see where there might be problems,
+     especially those caused by typos. In particular, make sure that each
+     function is on a separate line so you can comment them out individually.
+  3. Comment out all the lines of your code. Uncomment each line in turn, 
+     re-running the code each time until you see the error you're trying to 
+     understand. Now you know which line is likely to be causing the problem.
+  4. If the error message is one of the [common errors](www/common_errors.pdf) 
+     explained in this tutorial, follow the steps outlined in the previous
+     section to fix it.
+  5. If that does not fix the problem, read the manual page for the function
+     that you think is causing the problem. Check that the values you have 
+     passed to each argument are what the function needs in order to work.
+  6. If that does not fix the problem, create a reproducible example by removing
+     all the parts of your code not needed to create the error. Often, the act
+     of creating a reproducible example will help you fix the problem, but if
+     not then you can use it to get help from others.
+
+You will be able to fix almost all the errors in your code by following the
+early steps in this list. Only quite rarely will you need to post a reprex 
+online to get help.
+
+</div>
+
+
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/07_handling_bugs/images/debugging.jpg" alt="Cartoon showing 10 furry monsters showing different stages of learning to debug code. The monsters are marked '1. I got this', '2. Huh, really though that was it', '3. (...)', '4. Fine. Restarting.', '5. OH WTF', '6. Zombie meltdown', '7. [crying]', '8. A NEW HOPE!', '9. [insert awesome theme song]' and '10. I LOVE CODING!'"></p>
+
+
+#### What caused the error in our reproducible example?
 
 The error in our reproducible example was very simple, but quite difficult to
 spot. On line 7 of the code below, we try to add the `ggplot()` function to the
@@ -748,7 +909,7 @@ spot. On line 7 of the code below, we try to add the `ggplot()` function to the
 object to the `ggplot()` function using the `%>%` operator. R does not know how
 to add a dataset to a function in this way so it produced an error message.
 
-If you replace `+` with `%>%` on line 7 of the code below, the code should now
+If you replace `+` with `%>%` on line 6 of the code below, the code should now
 run normally. Since we have removed almost all of our original code to make a 
 reproducible example, the resulting plot looks nothing like what we wanted. This
 does not matter -- when we are producing a reprex we only care about reliably
@@ -758,7 +919,6 @@ and fix the original code to produce the chart we wanted.
 ```{r summary-exercise1, exercise=TRUE}
 # load packages
 library(ggplot2)
-library(readr)
 
 # make a time-series chart of two continuous variables, coloured by a 
 # categorical variable
@@ -779,4 +939,18 @@ For more information on writing reproducible examples, see:
     Jenny Bryan.
   * Read the [Reprex do’s and don’ts](https://reprex.tidyverse.org/articles/reprex-dos-and-donts.html) 
     on the `reprex` package website.
+
+<div class="box welldone">
+
+In  this tutorial we have learned how to handle messages, warnings and errors in
+R. We have learned to take time to understand error messages, to isolate errors
+so that we can better understand them, to use manual pages for functions to
+check that every argument is correct, and how to write reproducible examples so
+that we can get help online. This will help you become a more independent coder.
+
+</div>
+
+<p class="credits">
+[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
+</p>
 

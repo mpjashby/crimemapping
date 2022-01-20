@@ -4,15 +4,24 @@ description: "Add titles, sources, legends, scale bars and other contextual info
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
+library(ggmap)
 library(ggspatial)
 library(learnr)
 library(sf)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
 
 # prepare maps -----------------------------------------------------------------
 
@@ -25,13 +34,22 @@ precincts <- read_sf("https://opendata.arcgis.com/datasets/c35786feb0ac4d1b964f4
   # filter just those precincts that are in the Bronx (40th to 52nd)
   filter(precinct %in% 40:52)
 
-# create map object
-first_shootings_map <- ggplot() +
+# Load a base map
+base_map <- shootings %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE) %>%
+  st_bbox() %>%
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 13)
+
+# Create map object
+shootings_map <- ggmap(base_map) +
   geom_density_2d_filled(
     aes(x = longitude, y = latitude),
     data = shootings,
+    inherit.aes = FALSE,
     bins = 9,
     adjust = 0.5,
+    alpha = 0.7,
     na.rm = TRUE
   ) +
   geom_sf(data = precincts, colour = "grey33", fill = NA, inherit.aes = FALSE) +
@@ -41,27 +59,13 @@ first_shootings_map <- ggplot() +
     alpha = 0.5, 
     colour = "grey33", 
     lineheight = 0.9, 
-    size = 3, 
+    size = 2.5, 
     label.size = NA, 
     inherit.aes = FALSE
   ) +
   scale_fill_brewer(palette = "PuBu") +
   theme_void() +
   theme(legend.position = "none")
-
-# Find the bounding box of shootings -- we have to convert the shootings data to
-# an SF object to do this
-shootings_bbox <- shootings %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-  st_bbox()
-
-# Use coord_sf() to crop our map to the bounding box of shootings
-shootings_map <- first_shootings_map +
-  coord_sf(
-    xlim = shootings_bbox[c(1, 3)], 
-    ylim = shootings_bbox[c(2, 4)], 
-    expand = FALSE
-  )
 
 shootings_map_titled <- shootings_map +
   labs(
@@ -88,6 +92,8 @@ shootings_map_legend <- shootings_map_titled +
     legend.title = element_text(size = rel(0.8))
   )
 
+shootings_map_final <- shootings_map_legend + 
+    annotation_scale(width_hint = 1/5, style = "ticks", location = "br")
 ```
 
 
@@ -171,7 +177,7 @@ useful.
 
 We will not need to include every supporting element mentioned in the video in
 all the maps we make. The visual hierarchy that you establish in your map by use
-of size, colour, etc should make it clear which elements are most important. The
+of size, colour, etc. should make it clear which elements are most important. The
 data should always come first in the visual hierarchy, usually followed by the
 title and then the legend. Other elements should be lower down the hierarchy. 
 In every map, the supporting elements should be designed so that they do not 
@@ -216,8 +222,9 @@ include a base map, but this is only to slightly speed up how this tutorial runs
 on computers with slower internet connections -- all the code in this tutorial
 is compatible with maps that include a base map.
 
-```{r title-exercise1, exercise=TRUE, exercise.lines=40, warning=FALSE, message=FALSE, out.width="100%"}
+```{r title-exercise1, exercise=TRUE, exercise.lines=49, warning=FALSE, message=FALSE, out.width="100%"}
 # Load packages
+library(ggmap)
 library(sf)
 library(tidyverse)
 
@@ -230,13 +237,22 @@ precincts <- read_sf("https://opendata.arcgis.com/datasets/c35786feb0ac4d1b964f4
   # filter just those precincts that are in the Bronx (40th to 52nd)
   filter(precinct %in% 40:52)
 
+# Load a base map
+base_map <- shootings %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE) %>%
+  st_bbox() %>%
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 13)
+
 # Create map object
-first_shootings_map <- ggplot() +
+shootings_map <- ggmap(base_map) +
   geom_density_2d_filled(
     aes(x = longitude, y = latitude),
     data = shootings,
+    inherit.aes = FALSE,
     bins = 9,
     adjust = 0.5,
+    alpha = 0.7,
     na.rm = TRUE
   ) +
   geom_sf(data = precincts, colour = "grey33", fill = NA, inherit.aes = FALSE) +
@@ -246,7 +262,7 @@ first_shootings_map <- ggplot() +
     alpha = 0.5, 
     colour = "grey33", 
     lineheight = 0.9, 
-    size = 3, 
+    size = 2.5, 
     label.size = NA, 
     inherit.aes = FALSE
   ) +
@@ -255,21 +271,24 @@ first_shootings_map <- ggplot() +
   theme(legend.position = "none")
 
 # Display map
-first_shootings_map
+shootings_map
 ```
 
-<a href="https://scales.r-lib.org" title="scales website"><img src="images/scales.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
+<a href="https://scales.r-lib.org" title="scales website"><img src="images/scales.png" class="right-side-image"></a>
 
 The code used to create this map is very similar to the code we used in one of
 the previous tutorials to make a map of bike theft in Vancouver. The only 
 difference (except the lack of a base map) is that we have used the `ordinal()`
 function from the [`scales` package](https://scales.r-lib.org) to convert
-the precinct numbers to ordinal numbers (1st, 2nd, 3rd, etc) because that is
+the precinct numbers to ordinal numbers (1st, 2nd, 3rd, etc.) because that is
 typically how police precincts are referred to in New York City. There are many
 other functions in the `scales` package that format numbers in different ways,
 including `comma()` to add thousands separators to numbers and `dollar()` to
 format numbers as values in dollars or other currencies. There is a [full list 
 of `scales` functions on the package website](https://scales.r-lib.org/reference/).
+
+
+<!--
 
 You might have noticed on the map above that the density layer does not cover
 the whole surface of the map. This is because there are some parts of the Bronx
@@ -301,19 +320,37 @@ shootings_map <- first_shootings_map +
 shootings_map
 ```
 
+<div class="box extra-detail">
+
+<h5 id="title-box1-title" class="box-title">What does the code 
+`shootings_bbox[c(1, 3)]` do?</h5>
+
+<div id="title-box1" class="box-content">
+
 You might be wondering what the code `shootings_bbox[c(1, 3)]` does. When an R
 object contains a sequence of values (`shootings_bbox` contains four values), we
 can usually extract one value or more values by adding square brackets to the
 end of the object name and then giving the index number of the value we want 
-(the first value has the index 1, the second value has the index 2, etc). This
+(the first value has the index 1, the second value has the index 2, etc.). This
 is called *subsetting*. To subset a single value, just give the index inside
 the square brackets, e.g. `shootings_bbox[1]`. To get subset multiple values,
 give a vector (created with `c()`) of index numbers for the values you want.
 R can subset values in lots of different ways for different types of values,
 but we will discuss it in further detail if we need to later on.
 
-We now have a basic map of shootings in the Bronx to which we can add
-supporting elements.
+</div>
+
+</div>
+
+<script>
+$("#title-box1-title").click(function () { $("#section-title-box1").toggle("slow") })
+</script>
+
+-->
+
+
+We now have a basic map of shootings in the Bronx. This map isn't good enough on
+its own, but we can use it to learn how to add supporting elements to a map.
 
 
 
@@ -336,9 +373,9 @@ shootings_map +
   labs(title = "Shootings are focused in the South Bronx")
 ```
 
-Sometimes our preferred map title might be too long to fit on a map. In this
-case, we can break the title across two or more lines. We can do this manually 
-by adding the characters `\n` (the character code for a new line) at the point 
+Sometimes our preferred title might be too long to fit on a map. In this case,
+we can break the title across two or more lines. We can do this manually by
+adding the characters `\n` (the character code for a new line) at the point
 where we want the text to start a new line. Alternatively, we can use the
 `str_wrap()` function from the `stringr` package to wrap the text automatically
 into lines of a given maximum length (specified using the `wrap` argument).
@@ -413,7 +450,7 @@ We can exercise almost complete control over the supporting elements of maps or
 charts made with `ggplot()` using the `theme()` function. One important thing to
 remember about `theme()` is that it only controls the non-data elements of a
 map -- nothing you do with the `theme()` function will have any effect on the 
-data element of a map (in this case, the layer showing the density of 
+data elements of a map (in this case, the layer showing the density of 
 shootings). To change the appearance of data layers within `ggplot()` maps,
 use the `geom_` and `scale_` families of functions as we have learned in 
 previous tutorials.
@@ -437,7 +474,7 @@ all cases.
 
 To reduce the visual prominence of the map caption, we can change the value of
 the `plot.caption` argument to `theme()`. Since the caption is a text 
-element (rather than a polygon, line, etc), we can use the helper function 
+element (rather than a polygon, line, etc.), we can use the helper function 
 `element_text()` to do this. The following code changes the colour of 
 the caption text to a lighter grey and makes the text smaller relative to the
 default using the helper function `rel()` (for relative sizing) -- `0.7` means
@@ -492,7 +529,7 @@ shootings_map +
     )
   ) +
   theme(
-    plot.subtitle = element_text(margin = margin(3, 0, 6, 0)),
+    plot.subtitle = element_text(margin = margin(3, 0, 6, 0, unit = "pt")),
     plot.caption = element_text(colour = "grey50", size = rel(0.7))
   )
 ```
@@ -553,6 +590,7 @@ shootings_map_titled <- shootings_map +
 ```
 
 
+
 ## Legends
 
 Legends are important for all but the simplest crime maps because they help
@@ -576,7 +614,7 @@ colour of the polygons produced by the `geom_density_2d_filled()` function,
 with darker colours representing more shootings.
 
 To reveal the legend automatically generated, we can add another call to the
-`theme()` function to our existing `ggplot()` object. This overides the previous
+`theme()` function to our existing `ggplot()` object. This overrides the previous
 code that set the legend position to `none`, instead placing the legend on the
 right-hand side of the plot. We only need to do this because we previously
 suppressed the legend -- if we had not suppressed it, the legend would have
@@ -601,7 +639,7 @@ We can change the default legend title by once again using the `labs()`
 function. Since we want to change the title of the legend, you might reasonably
 think that we would do this using something like `labs(legend = "density")` but
 unfortunately that code would do nothing at all. Instead, we have to set the
-legend title using the aesthetic (colour, size, shape, etc) that the legend 
+legend title using the aesthetic (colour, size, shape, etc.) that the legend 
 represents. This makes it possible to specify multiple titles if there are
 separate legends for different layers that use different aesthetics, for example
 if a map used lines of different colours to show streets of different types and 
@@ -740,7 +778,7 @@ default arrow is too obtrusive to fit its position in the visual hierarchy, so
 we will change its appearance using the arguments:
 
   * `location = "tr"` to move the north arrow to the top-right corner, since we
-    have put the scale bar in the bottom-left where the north arrow would be 
+    have put the scale bar in the bottom-right where the north arrow would be 
     placed by default,
   * `height = unit(1.5, "lines")` to make the arrow smaller, and
   * `style = north_arrow_minimal(text_size = 8)` to use a smaller style of 
@@ -764,6 +802,66 @@ Once you have a complete map, it is often useful to save it as an image file so
 that you can share it with others or embed it into a report or presentation. You
 can save plots created with `ggplot()` using the `ggsave()` function.
 
+Before we do that, lets create a final map that includes a base map as well as
+some supporting elements. We won't include a north arrow because north is at the
+top of the map and it's unlikely anyone will be using this map for navigation.
+We will include a scale bar so that people looking at the map can see the 
+approximate size of shooting hotspots. Remember we have already loaded the
+necessary packages, as well as data stored in the `shootings`, `precincts` and
+`base_map` objects.
+
+```{r save-exercise1, exercise=TRUE, exercise.lines=49, warning=FALSE, message=FALSE, out.width="100%"}
+# Create map object
+shootings_map_final <- ggmap(base_map) +
+  geom_density_2d_filled(
+    aes(x = longitude, y = latitude),
+    data = shootings,
+    inherit.aes = FALSE,
+    bins = 9,
+    adjust = 0.5,
+    alpha = 0.7,
+    na.rm = TRUE
+  ) +
+  geom_sf(data = precincts, colour = "grey33", fill = NA, inherit.aes = FALSE) +
+  geom_sf_label(
+    aes(label = scales::ordinal(precinct)), 
+    data = precincts,
+    alpha = 0.5, 
+    colour = "grey33", 
+    lineheight = 0.9, 
+    size = 2.5, 
+    label.size = NA, 
+    inherit.aes = FALSE
+  ) +
+  scale_fill_brewer(
+    palette = "PuBu", 
+    labels = c("lower", rep("", 7), "higher")
+  ) +
+  annotation_scale(width_hint = 1/5, style = "ticks", location = "br") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  labs(
+    title = "Shootings are focused in the South Bronx",
+    subtitle = "Fatal and non-fatal shootings recorded by NYC Police, 2019",
+    caption = str_glue(
+      "Author: Joe Bloggs, Date produced: {lubridate::today()},\n",
+      "Data: https://data.cityofnewyork.us/d/833y-fsy8"
+    ),
+    fill = "kernel density\nof shootings"
+  ) +
+  theme_void() +
+  theme(
+    legend.key.size = unit(0.8, "lines"),
+    legend.position = "right",
+    legend.text = element_text(size = rel(0.7)),
+    legend.title = element_text(size = rel(0.8)),
+    plot.subtitle = element_text(size = rel(0.8), margin = margin(3, 0, 6, 0)),
+    plot.caption = element_text(colour = "grey50", size = rel(0.7), hjust = 0)
+  )
+
+# Display map
+shootings_map_final
+```
+
 `ggsave()` can create image files in many different formats, including PNG, 
 JPEG and PDF. `ggsave()` will determine which type of file to create according
 to the file extension of the file name that you specify. So 
@@ -779,13 +877,9 @@ pixels, you can take advantage of the default setting that there are 300 pixels
 per inch and specify (for example) `width = 800 / 300` to produce an image 800 
 pixels wide.
 
-To share our map with others, lets save it as an A4-size PDF. We will include a 
-scale bar but not a north arrow.
+To share our map with others, lets save it as an A4-size PDF.
 
-```{r save-exercise1, exercise=TRUE, warning=FALSE, message=FALSE}
-shootings_map_final <- shootings_map_legend +
-  annotation_scale(width_hint = 1/5, style = "ticks", location = "br")
-
+```{r save-exercise2, exercise=TRUE, warning=FALSE, message=FALSE}
 ggsave(
   "bronx_shootings_2019.pdf", 
   plot = shootings_map_final, 
@@ -802,11 +896,15 @@ another document.
 
 ## In summary
 
+<div class="box welldone">
+
 In this tutorial we have learned about the importance of understanding the 
 purpose for which people will use a map when making decisions about map design.
 We have also learned about how establishing a visual hierarchy on our map can
 help steer readers towards the most-important elements and how to add titles,
 legends and scale bars to maps in R.
+
+</div>
 
 You can find out more about the topics we have covered in this tutorial:
 
@@ -818,9 +916,8 @@ You can find out more about the topics we have covered in this tutorial:
   * For more examples of how maps can mislead, read [How to lie with maps](https://www.ft.com/content/65b5df0e-49ff-11e8-8ee8-cae73aab7ccb)
     by Alan Smith.
   
-<p style="text-align: center; max-width: 100%;"><a href="https://xkcd.com/1472/"><img src="https://imgs.xkcd.com/comics/geography.png" alt="The place I'd least like to live is the farm in the background of those diagrams showing how tornadoes form."></a></p>
+<p class="full-width-image"><a href="https://xkcd.com/1472/"><img src="https://imgs.xkcd.com/comics/geography.png" alt="The place I'd least like to live is the farm in the background of those diagrams showing how tornadoes form."></a></p>
 
-<p style="margin: 2em 0; padding: 0.5em 1em; font-size: 75%; color: #666666; background-color: #EEEEEE;">
-[XKCD.com comic 'Geography'](https://xkcd.com/1459/) licensed under the [Creative Commons Attribution-NonCommercial license](https://xkcd.com/license.html).</p>
-
-
+<p class="credits">
+[XKCD.com comic 'Geography'](https://xkcd.com/1459/) licensed under the [Creative Commons Attribution-NonCommercial license](https://xkcd.com/license.html).
+</p>
