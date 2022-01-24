@@ -13,3 +13,4 @@ assignees: mpjashby
 - [ ] Reduce image sizes using `harmonise_image_sizes()`
 - [ ] Spell check
 - [ ] Check all code in RStudio Server
+- [ ] Update Moodle
