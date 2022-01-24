@@ -17,6 +17,7 @@ update <- function (...) {
     "'Do you want to install from sources the package which needs \n",
     "compilation?', choose 'no'.\n\n",
     "Another message will appear when the process is complete.\n\n",
+    "IF YOU ARE ASKED TO RESTART R, PLEASE DO SO\n\n",
     "-------------------------\n\n"
   )
 
