@@ -4,6 +4,7 @@ description: "Learn how to make maps that show data for areas, as well as how to
 output: 
   learnr::tutorial:
     progressive: true
+    css: "css/tutorial_style.css"
 runtime: shiny_prerendered
 ---
 
@@ -17,23 +18,33 @@ library(sf)
 library(tmap)
 library(tidyverse)
 
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
+
 # Load data --------------------------------------------------------------------
 
 # NYC data
-shootings <- read_csv("../../extdata/nyc_shootings.csv") %>% 
+shootings <- here::here("inst/extdata/nyc_shootings.csv") %>% 
+  read_csv() %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 precincts <- read_sf("https://opendata.arcgis.com/datasets/c35786feb0ac4d1b964f41f874f151c1_0.geojson") %>% 
   janitor::clean_names()
-shooting_counts <- st_join(
+shootings_in_precincts <- st_join(
   st_transform(shootings, 2263), 
   st_transform(select(precincts, objectid), 2263)
-) %>% st_set_geometry(NULL) %>% 
+)
+shooting_counts <- shootings_in_precincts %>% 
+  st_drop_geometry() %>% 
   count(objectid)
 
 # Uttar Pradesh data
-murders <- read_csv("../../extdata/uttar_pradesh_murders.csv")
-districts <- read_sf("../../extdata/uttar_pradesh_districts.gpkg")
-district_pop <- read_csv("../../extdata/uttar_pradesh_population.csv")
+murders <- read_csv(here::here("inst/extdata/uttar_pradesh_murders.csv"))
+districts <- read_sf(here::here("inst/extdata/uttar_pradesh_districts.gpkg"))
+district_pop <- read_csv(here::here("inst/extdata/uttar_pradesh_population.csv"))
 district_murders <- left_join(districts, murders, by = c("state" = "state", "district_name" = "district"))
 district_murders_pop <- left_join(district_murders, district_pop, by = c("district_name" = "district")) %>% 
   mutate(murder_rate = murder / (population / 100000))
@@ -44,9 +55,8 @@ district_murders_pop <- left_join(district_murders, district_pop, by = c("distri
 
 In previous tutorials we have produced maps based on the locations of individual
 crimes, sometimes known as *point data* because we know the point at which each
-crime occurred. But sometimes we will want to not map individual crimes but 
-instead map counts of crimes for different areas. There are different reasons
-why we might want to do this:
+crime occurred. But sometimes we will want to instead map counts of crimes for 
+different areas. There are different reasons why we might want to do this:
 
   * We might want to compare the number of crimes in different areas, such as
     police districts.
@@ -63,7 +73,7 @@ learn how to produce this thematic map of murder rates in the Indian state of
 Uttar Pradesh, and to think about some of the new issues that producing 
 choropleth maps creates.
 
-```{r intro-exercise1, message=FALSE, out.width="100%"}
+```{r intro-exercise1, message=FALSE, out.width="100%", fig.asp=1.2}
 tmap_mode("view")
 
 tm_shape(district_murders_pop) +
@@ -102,7 +112,7 @@ library(tidyverse)
 shootings <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nyc_shootings.csv") %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 
-shootings
+head(shootings)
 ```
 
 We also need to load the precinct boundaries as an SF object from the URL 
@@ -150,12 +160,34 @@ row has a unique value. To match only this column, we will use the `select()`
 function from `dplyr` to remove all the other columns before we use `st_join()`.
 
 
+<div class="box extra-detail">
+
+<h5 id="count-box1-title" class="box-title">What if the polygon layer doesn't 
+have a column containing unique values?</h5>
+
+<div id="count-box1" class="box-content">
+
+Using `st_join()` to count the number of points in each area will only work if
+there is a unique column in the layer representing the areas. In this case, 
+there is a unique column called `objectid`, but if there was not then you would
+need to first create one. For example, you could add the code 
+`precincts <- mutate(precincts, unique_id = row_number())`.
+
+</div>
+
+</div>
+
+<script>
+$("#count-box1-title").click(function () { $("#section-count-box1").toggle("slow") })
+</script>
+
 
 ```{r count-exercise3, exercise=TRUE}
 shootings_in_precincts <- st_join(shootings, select(precincts, objectid))
 
-shootings_in_precincts
+head(shootings_in_precincts)
 ```
+
 
 As well as producing a joined dataset as expected, this code has produced a
 message noting that `st_join()` assumes that co-ordinates are planar even though
@@ -180,7 +212,7 @@ precincts <- st_transform(precincts, 2263)
 
 shootings_in_precincts <- st_join(shootings, select(precincts, objectid))
 
-shootings_in_precincts
+head(shootings_in_precincts)
 ```
 
 We can see that this time, no messages are produced.
@@ -190,17 +222,16 @@ a column showing the value of `objectid`, i.e. which row in the `precincts`
 dataset the location of the shooting corresponds to. We will use this column to
 count the number of shootings in each precinct using the `count()` function from
 the `dplyr` package. Running `count()` on SF objects can sometimes be slow, so
-before we do this we will remove the geometry column from the `shootings_in_precincts`
-object using the `st_set_geometry()` function to set the geometry to the special
-value `NULL`.
+before we do this we will remove the geometry column from the 
+`shootings_in_precincts` object using the `st_drop_geometry()` function.
 
 ```{r count-exercise5, exercise=TRUE, exercise.setup="count-exercise3"}
 shooting_counts <- shootings_in_precincts %>% 
-  st_set_geometry(NULL) %>% 
-  # call the column that holds the shooting counts `shootings`
+  st_drop_geometry() %>% 
+  # Call the column that holds the shooting counts `shootings`
   count(objectid, name = "shootings")
 
-shooting_counts
+head(shooting_counts)
 ```
 
 The object `shooting_counts` has two rows: one showing the `objectid` 
@@ -213,7 +244,7 @@ relevant shooting count, we will join `shooting_counts` to the existing
 `precincts` object using the `left_join()` function.
 
 `left_join()` is one of a family of joining functions in the `dplyr` package 
-that join to objects together based on the values of particular columns. We are
+that join two objects together based on the values of particular columns. We are
 using the `left_join()` function because we want the result to contain *all* the
 rows from the *left-hand* object that we specify, i.e. the object `precincts` in 
 the code `left_join(precincts, shooting_counts)`. If there are any rows in the 
@@ -222,9 +253,11 @@ object `precincts`, those rows will be missing from the result. If we instead
 wanted to keep all the rows from `shooting_counts` and only the matching rows 
 from `precincts`, we would use the `right_join()` function (or reverse the order
 of the two arguments). If we wanted to keep all rows from both datasets whether 
-they matched each other or not, we could use the `full_join()` function.
+they matched each other or not, we could use the `full_join()` function. In that 
+case, rows from one table that did not match any rows from the other table would
+have `NA` values for all the columns from the other table.
 
-<a href="https://tidyr.tidyverse.org/" title="tidyr website"><img src="images/tidyr.png" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
+<a href="https://tidyr.tidyverse.org/" title="tidyr website"><img src="images/tidyr.png" class="right-side-image"></a>
 
 By default, `left_join()` will match the rows in the `precincts` and 
 `shooting_counts` objects using all the column names that are present in both
@@ -239,12 +272,13 @@ with no shootings will have missing values in the dataset produced by
 `left_join()`, so we will replace these with zeros using the `replace_na()`
 function from the `tidyr` package (another part of the tidyverse).
 
+
 ```{r count-exercise7, exercise=TRUE, exercise.setup="count-exercise5"}
 precinct_counts <- left_join(precincts, shooting_counts, by = "objectid") %>% 
-  # replace missing (NA) values in the `shootings` column with the value 0
+  # Replace missing (NA) values in the `shootings` column with the value 0
   replace_na(list(shootings = 0))
 
-precinct_counts
+head(precinct_counts)
 ```
 
 
@@ -288,15 +322,21 @@ counting. Watch this video to learn more about the MAUP.
 
 ![](https://youtu.be/7NTw1v7DuAA)
 
+
+<div class="box notewell">
+
 Neither the ecological fallacy nor the MAUP are problems that we can solve --
 they are inherent to choropleth maps. For this reason, whenever we plan to show
 some spatial data using a choropleth map, it is worth stopping and thinking 
 about whether another type of map (such as a density map) might show the data
 more effectively and without the problems that choropleth maps have. 
+
 Nevertheless, in some circumstances a choropleth map will be the best choice 
 either because we only have data for pre-defined areas or because we are 
 specifically interested in comparing areas (e.g. in working out if there is more
 crime in one neighbourhood or police district than another).
+
+</div>
 
 
 
@@ -328,8 +368,8 @@ head(districts, n = 3)
 
 Note that we have used the `message()` function here to make it easier to 
 decipher the output of this code, since we are printing both the `murders` and
-`districts` objects. We have also used the `head()` function to print just the
-first three rows of each dataset.
+`districts` objects. We have also used the `n = 3` argument to the `head()` 
+function to print just the first three rows of each dataset.
 
 We will need to join these two objects using `left_join()` to create a
 choropleth map. From the output above we can see that the `murders` object 
@@ -346,13 +386,20 @@ district or not.
 ```{r choro-exercise2, exercise=TRUE}
 district_murders <- left_join(districts, murders, by = c("district_name" = "district"))
 
-district_murders
+head(district_murders)
 ```
 
 Looking at the `district_murders` object, we can see that each row now contains
 the name of a district and the number of murders that occurred there. There are
 no districts in which there were zero murders, so we do not need to replace any
 `NA` values with zeros using `replace_na()` as in the previous example.
+
+
+<div class="box extra-detail">
+
+<h5 id="choro-box1-title" class="box-title">Why does `district_murders` have two columns named `state.x` and `state.y`?</h5>
+
+<div id="choro-box1" class="box-content">
 
 You may have noticed that the `district_murders` object has two columns named
 `state.x` and `state.y`. This is because both the datasets we have joined 
@@ -369,6 +416,14 @@ join the two datasets together. We can avoid these duplicate columns by:
 
 All three of these options produce the same result.
 
+</div>
+
+</div>
+
+<script>
+$("#choro-box1-title").click(function () { $("#section-choro-box1").toggle("slow") })
+</script>
+
 
 ### Making a choropleth map
 
@@ -380,18 +435,18 @@ of a base map.
 library(ggmap)
 
 district_murders %>% 
-  # find the bounding box of the data
+  # Find the bounding box of the data
   st_bbox() %>% 
-  # change the names of the values to those expected by `get_stamenmap()`
+  # Change the names of the values to those expected by `get_stamenmap()`
   set_names(c("left", "bottom", "right", "top")) %>% 
-  # download the base map data
+  # Download the base map data
   get_stamenmap(zoom = 8, maptype = "toner") %>% 
-  # plot the base map, remembering that `ggmap()` produces a `ggplot()` stack
+  # Plot the base map, remembering that `ggmap()` produces a `ggplot()` stack
   ggmap() +
-  # add the districts layer, remembering `inherit.aes = FALSE` to prevent an
+  # Add the districts layer, remembering `inherit.aes = FALSE` to prevent an
   # `object 'lon' not found` error
   geom_sf(data = district_murders, inherit.aes = FALSE) +
-  # remove unnecessary contextual element from the map
+  # Remove unnecessary contextual element from the map
   theme_void() +
   theme(panel.border = element_rect(colour = "black", fill = NA))
 ```
@@ -413,15 +468,15 @@ is accessible to the widest range of users.
 
 ```{r choro-exercise4, exercise=TRUE, exercise.lines=25, message=FALSE, out.width="90%", fig.asp=1}
 district_murders %>% 
-  # find the bounding box of the data
+  # Find the bounding box of the data
   st_bbox() %>% 
-  # change the names of the values to those expected by `get_stamenmap()`
+  # Change the names of the values to those expected by `get_stamenmap()`
   set_names(c("left", "bottom", "right", "top")) %>% 
-  # download the base map data
+  # Download the base map data
   get_stamenmap(zoom = 8, maptype = "toner") %>% 
-  # plot the base map, remembering that `ggmap()` produces a `ggplot()` stack
+  # Plot the base map, remembering that `ggmap()` produces a `ggplot()` stack
   ggmap() +
-  # add the districts layer, remembering `inherit.aes = FALSE` to prevent an
+  # Add the districts layer, remembering `inherit.aes = FALSE` to prevent an
   # `object 'lon' not found` error
   geom_sf(
     aes(fill = murder), 
@@ -429,45 +484,65 @@ district_murders %>%
     inherit.aes = FALSE, 
     alpha = 0.75
   ) +
-  # use a better colour scheme
+  # Use a better colour scheme
   scale_fill_distiller(palette = "Oranges", direction = 1) +
-  # add some labels
+  # Add some labels
   labs(fill = "number of\nmurders") +
-  # remove unnecessary contextual element from the map
+  # Remove unnecessary contextual element from the map
   theme_void() +
   theme(panel.border = element_rect(colour = "black", fill = NA))
 ```
 
 This map is better, but we haven't yet solved the mis-alignment problem. This
 only happens when we try to plot very large areas using `ggmap()` -- for crime
-maps of local areas such as individual cities, this problem does not occur. But
-for mapping larger areas such as large states or entire countries, we must make
-sure that our map layers align with one another. To do this, we will use a 
-different package called `tmap`.
+maps of local areas such as individual cities, this problem does not occur.
+
+If you need to make a choropleth map of a large area such as a country or a 
+large state, you will need to choose how to deal with this problem. You might,
+for example, want to construct your own base map rather than use tiles from
+Stamen Maps (since the misalignment problem only occurs with base maps made of
+tiles). We will learn how to do this in a future tutorial.
 
 
 
-## Mapping with `tmap`
+## Making an interactive map
 
-The functions in the `tmap` package work in a similar way to `ggplot()` and
-`ggmap()`, but with a few differences. Fortunately, `tmap` can do a few things
-that the mapping packages we have looked at already cannot.
+So far in this course, all the maps we have made using `ggplot()` or `ggmap()`
+have been static images. These are useful for lots of different circumstances,
+and are usually the only choice if we want to produce a written report. But in
+some circumstances it may be useful to produce a map that you can interact with
+by zooming in or panning around different areas.
 
-Before using the `tmap` package, remember to install it on your computer using
-the `install.packages()` function. We can create a very basic map using 
-functions from the `tmap` package by using `tm_shape()` to define the SF object
-that will be used to draw shapes on our map and then `tm_polygons()` to 
-specify the column in that object that the colour of the shapes should be based
-on.
+To make an interactive choropleth map we can use functions from the `tmap` 
+package. The functions in the `tmap` package work in a similar way to `ggplot()` 
+and `ggmap()`, but with a few differences.
 
-```r
-library(tmap)
 
-tm_shape(district_murders) +
-  tm_polygons("murder", alpha = 0.75, title = "number of murders")
-```
+<div class="box notewell">
 
-```{r tmap-exercise1, message=FALSE, out.width="80%"}
+`tmap` can produce both static and interactive maps using the same code, 
+depending on whether you first run the function `tmap_mode("plot")` for static
+maps or `tmap_mode("view")` for interactive maps. The default is to produce
+static maps, so if you find your `tmap` code producing static maps when you
+expect interactive ones, you may have forgotten to call `tmap_mode("view")`.
+
+`tmap_mode()` works in a different way to almost all R functions, in that once
+you have called `tmap_mode()` it changes all the `tmap` code that you run 
+afterwards -- both in your R scripts and in the console -- until you run
+`tmap_mode()` again to change the setting back. So if you run 
+`tmap_mode("view")`, all `tmap` code will produce interactive maps until you run
+`tmap_mode("plot")` or restart R.
+
+</div>
+
+
+We can create a very basic static `tmap` map using functions using `tm_shape()` 
+to define the SF object that will be used to draw shapes on our map and then 
+`tm_polygons()` to specify the column in that object that the colour of the 
+shapes should be based on. Just like a `ggplot` stack, you add layers to a 
+`tmap` map using the `+` operator.
+
+```{r tmap-exercise1, exercise=TRUE, message=FALSE, out.width="80%"}
 library(tmap)
 
 tmap_mode("plot")
@@ -476,21 +551,18 @@ tm_shape(district_murders) +
   tm_polygons("murder", alpha = 0.75, title = "number of murders")
 ```
 
-One of the big advantages of using `tmap` is that it can produce interactive
-maps. This is useful for maps of large areas such as Uttar Pradesh because it
-allows us to zoom in on smaller areas of interest. If you found the labels on
-the map in the previous section hard to read, this is the way to make them
-easier to see.
+Interactive maps are useful for maps of large areas such as Uttar Pradesh 
+because they allow us to zoom in on smaller areas of interest. If you found the 
+labels on the map in the previous section hard to read, this is the way to make 
+them easier to see.
 
-To specify that we want to produce an interactive map, we call the function
-`tmap_mode("view")` before starting (and separately from) our stack of `tmap`
-functions. We can then use `tm_basemap()` to add a base map layer underneath the
-districts. In this example we continue to use the 'toner' style of base map from 
-Stamen that we have used before, but `tmap` has a very large number of options 
-for base maps that you can [view in this online gallery](https://leaflet-extras.github.io/leaflet-providers/preview/).
+After calling `tmap_mode("view")`, we can use `tm_basemap()` to add a base map 
+layer underneath the districts. In this example we continue to use the 'toner' 
+style of base map from  Stamen that we have used before, but `tmap` has a very 
+large number of options for base maps that you can [view in this online gallery](https://leaflet-extras.github.io/leaflet-providers/preview/).
 We can also use the `tmap_tiles()` function to add a another base map layer
-*above* our data (if it is added to the stack after the `tm_polygons()` layer),
-which is useful for showing labels such as the names of cities above the data.
+*above* our data, which is useful for showing labels such as the names of cities 
+above the data.
 
 ```r
 tmap_mode("view")
@@ -501,7 +573,7 @@ tm_shape(district_murders) +
   tm_tiles("Stamen.TonerLabels")
 ```
 
-```{r tmap-exercise2, message=FALSE, out.width="100%"}
+```{r tmap-exercise2, message=FALSE, out.width="100%", fig.asp=1.2}
 tmap_mode("view")
 
 tm_shape(district_murders) +
@@ -515,9 +587,10 @@ useful for maps where people may need to see both overall patterns for a large
 area and details for a smaller area within it. Obviously, interactive maps only
 work on screens, not for printed maps.
 
-Once we have specified that we want `tmap` to produce interactive maps, all maps
-produced using `tmap` functions will be interactive. To change back to static
-maps that are suitable for printing, we can use `tmap_mode("plot")`.
+Remember that once we have specified that we want `tmap` to produce interactive
+maps, all maps produced using `tmap` functions will be interactive. To change
+back to static maps that are suitable for printing, we can use
+`tmap_mode("plot")`.
 
 
 
@@ -529,13 +602,14 @@ frequency of crime that in some way controls for the population that is exposed
 to crime.
 
 Before we learn about different types of crime rate, lets create a *targeting
-table* for murder in districts in Uttar Pradesh.
+table* for murder in districts in Uttar Pradesh: a table that shows the 
+districts with the highest number of murders.
 
 ```{r rates-exercise1, exercise=TRUE}
 district_murders %>% 
-  # remove the `geometry` column to make the table clearer
-  st_set_geometry(NULL) %>% 
-  # also remove the `state` column, since it is the same for every row
+  # Remove the `geometry` column to make the table clearer
+  st_drop_geometry() %>% 
+  # Also remove the `state` column, since it is the same for every row
   select(-state) %>% 
   arrange(desc(murder))
 ```
@@ -580,7 +654,7 @@ about how likely an individual is to be a victim of crime because crime is
 heavily concentrated against a few victims (think back to the law of crime
 concentration we discussed in a previous tutorial). To understand the average
 risk of a person being a victim of crime once or more, we calculate the 
-*prevalence rate*. This is the number of people, households, etc who were 
+*prevalence rate*. This is the number of people, households, etc. who were 
 victims at least once, divided by the total number of people, households, etc. 
 Prevalence rates are usually expressed as a percentage, so we might say that 1% 
 of the population has been a victim of a particular crime at least once during a 
@@ -603,10 +677,15 @@ $$
 \textrm{concentration} = \frac{\textrm{crimes}}{\textrm{victims}}
 $$
 
+
+<div class="box notewell">
+
 All three types of crime rate are average values for an area as a whole, so we 
 are always at risk of committing the ecological fallacy. Remember that while
 rates are useful for describing areas, that does not imply everyone in an area
 faces the same risk from crime.
+
+</div>
 
 
 ### Choosing a population measure
@@ -622,11 +701,13 @@ for crime there. For example:
     area but instead travel from elsewhere to go shopping. This can lead to 
     vastly inflated crime rates for commercial and entertainment districts that
     have very small residential populations but very large numbers of people
-    coming into the area to work, shop or visit.
+    coming into the area to work, shop or visit. Crime rates based on 
+    residential population almost always give misleading rates for city centres
+    or business districts.
   * Assaults on public transport where victims happen to be passing through a
     given area at the time they are victimised but are doing so as part of a
     longer journey through several areas, with the crime potentially occurring
-    in any one of them.
+    in any one of them. These crimes are known as [aoristic offences](https://doi.org/10.1186/2193-7680-2-1).
   * Residential burglaries where the targets of crime are homes, not people, so
     the crime rate may be influenced by the number of people in each household.
 
@@ -658,7 +739,7 @@ the code needed to download population data from
 and join it to the `district_murders` object, saving the result as 
 `district_murders_pop`.
 
-```{r rates-exercise2, exercise=TRUE}
+```{r rates-exercise2, exercise=TRUE, exercise.lines=9}
 
 ```
 
@@ -671,7 +752,7 @@ district_murders_pop <- left_join(
   by = c("district_name" = "district")
 )
 
-district_murders_pop
+head(district_murders_pop)
 ```
 
 Now that we have a single dataset containing all the variables we need, we can
@@ -680,10 +761,10 @@ calculate the incidence of murders per 100,000 people.
 ```{r rates-exercise3, exercise=TRUE}
 district_murders_pop <- district_murders_pop %>% 
   mutate(murder_rate = murder / (population / 100000)) %>% 
-  # at the same time we will remove unnecessary variables to clean up the data
+  # At the same time we will remove unnecessary variables to clean up the data
   select(district_name, murder, population, murder_rate)
 
-district_murders_pop
+head(district_murders_pop)
 ```
 
 To create a choropleth map of the murder rate using `tmap`, we simply use the
@@ -700,7 +781,7 @@ tm_shape(district_murders_pop) +
   tm_tiles("Stamen.TonerLabels")
 ```
 
-```{r rates-exercise4, message=FALSE, out.width="100%"}
+```{r rates-exercise4, message=FALSE, out.width="100%", fig.asp=1}
 tmap_mode("view")
 
 tm_shape(district_murders_pop) +
@@ -740,23 +821,75 @@ along the border with the Indian capital New Delhi (zoom into the map to see
 this in more detail).
 
 
+#### Check your understanding
+
+Answer the following questions to check your understanding of what we've learned
+so far in this tutorial. If you get a question wrong, you can keep trying until
+you get the right answer.
+
+```{r read-quiz}
+quiz(
+  caption = "",
+  
+  question(
+    "What type of rate describes the chances of a person being a victim of a crime at least once in a given period?",
+    answer("prevalence rate", correct = TRUE),
+    answer("incidence rate"),
+    answer("concentration rate"),
+    correct = random_praise(),
+    incorrect = random_encouragement(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question(
+    "What type of rate describes the frequency of crime after controlling for some measure of the population at risk?",
+    answer("incidence rate", correct = TRUE),
+    answer("prevalence rate"),
+    answer("concentration rate"),
+    correct = random_praise(),
+    incorrect = random_encouragement(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question(
+    "What type of rate describes the average number of times each victim of a particular crime is victimised?",
+    answer("concentration rate", correct = TRUE),
+    answer("incidence rate"),
+    answer("prevalence rate"),
+    correct = random_praise(),
+    incorrect = random_encouragement(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+  
+)
+```
+
+
+
 
 ## In summary
 
-In this tutorial we have learned how to:
+<div class="box welldone">
 
-  * calculate the number of points in different areas,
-  * join different sources of data together, and
-  * map crime counts and crime rates on both static and interactive maps.
+In this tutorial we have learned how to calculate the number of points in
+different areas, join different sources of data together, and map crime counts
+and crime rates on both static and interactive maps.
 
 We have also learned about two disadvantages of choropleth maps: the ecological
 fallacy and the modifiable areal unit problem.
+
+</div>
+
 
 To find out more about the topics covered in this tutorial:
 
   * Read the article [Crime seen through a cone of resolution](https://journals.sagepub.com/doi/pdf/10.1177/000276427602000207) by
     Paul Brantingham, Delmar Dyreson and Patricia Brantingham for more detail
     about the ecological fallacy in studying crime.
-  * Read the article [Smallest is Better? The Spatial Distribution of Arson and the Modifiable Areal Unit Problem](https://doi.org/10.1007/s10940-016-9297-6) for an example of the modifiable areal unit problem in studying crime.
+  * Read the article [Smallest is Better? The Spatial Distribution of Arson and the Modifiable Areal Unit Problem](https://doi.org/10.1007/s10940-016-9297-6) 
+    for an example of the modifiable areal unit problem in studying crime.
 
 
