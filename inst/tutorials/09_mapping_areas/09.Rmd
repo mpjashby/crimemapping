@@ -28,8 +28,7 @@ walk(
 # Load data --------------------------------------------------------------------
 
 # NYC data
-shootings <- here::here("inst/extdata/nyc_shootings.csv") %>% 
-  read_csv() %>% 
+shootings <- read_csv("../../extdata/nyc_shootings.csv") %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 precincts <- read_sf("https://opendata.arcgis.com/datasets/c35786feb0ac4d1b964f41f874f151c1_0.geojson") %>% 
   janitor::clean_names()
@@ -42,9 +41,9 @@ shooting_counts <- shootings_in_precincts %>%
   count(objectid)
 
 # Uttar Pradesh data
-murders <- read_csv(here::here("inst/extdata/uttar_pradesh_murders.csv"))
-districts <- read_sf(here::here("inst/extdata/uttar_pradesh_districts.gpkg"))
-district_pop <- read_csv(here::here("inst/extdata/uttar_pradesh_population.csv"))
+murders <- read_csv("../../extdata/uttar_pradesh_murders.csv")
+districts <- read_sf("../../extdata/uttar_pradesh_districts.gpkg")
+district_pop <- read_csv("../../extdata/uttar_pradesh_population.csv")
 district_murders <- left_join(districts, murders, by = c("state" = "state", "district_name" = "district"))
 district_murders_pop <- left_join(district_murders, district_pop, by = c("district_name" = "district")) %>% 
   mutate(murder_rate = murder / (population / 100000))

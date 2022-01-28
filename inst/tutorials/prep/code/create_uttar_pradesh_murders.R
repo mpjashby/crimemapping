@@ -37,6 +37,9 @@ up_crime <- read_csv("~/Downloads/archive/crime/01_District_wise_crimes_committe
 
 # data from https://github.com/HindustanTimesLabs/shapefiles/tree/master/state_ut/uttarpradesh/district
 up_districts <- read_sf("https://github.com/HindustanTimesLabs/shapefiles/raw/master/state_ut/uttarpradesh/district/uttarpradesh_district.json") %>%
+  # Two of the districts have invalid geometries in the data, so make these
+  # valid first
+  st_make_valid() %>%
   select(state = state, district_name = district) %>%
   mutate(across(c(state, district_name), str_to_title)) %>%
   mutate(district_name = recode(
