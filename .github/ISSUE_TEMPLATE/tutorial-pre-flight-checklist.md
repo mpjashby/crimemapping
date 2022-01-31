@@ -12,5 +12,6 @@ assignees: mpjashby
 - [ ] Add concluding message with thumbs up emoji
 - [ ] Reduce image sizes using `harmonise_image_sizes()`
 - [ ] Spell check
+- [ ] Increment package version number
 - [ ] Check all code in RStudio Server
 - [ ] Update Moodle
