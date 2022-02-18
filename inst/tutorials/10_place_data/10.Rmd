@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Using data about places"
-description: ""
+description: "Learn how to find and use extra data about places to improve your maps, including open data and data from OpenStreetMap"
 output: 
   learnr::tutorial:
     progressive: true
@@ -246,17 +246,17 @@ if (
   ggsave(
     "images/la_metro_assaults_map1.jpg",
     la_metro_assaults_map1,
-    width = 1200 / 150,
-    height = 900 / 150,
-    dpi = 300
+    units = "px",
+    width = 1600,
+    height = 1200
   )
   
   ggsave(
     "images/la_metro_assaults_map2.jpg",
     la_metro_assaults_map2,
-    width = 1200 / 150,
-    height = 900 / 150,
-    dpi = 300
+    units = "px",
+    width = 1600,
+    height = 1200
   )
   
 }
@@ -296,21 +296,21 @@ included.
 ```
 
 ```{r intro-exercise1-solution}
-# load packages
+# Load packages
 library(sf)
 library(tidyverse)
 
-# download the data
+# Download the data
 robberies <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/toronto_robberies.gpkg")
 
-# peak at a few rows of data
+# Peek at a few rows of data
 head(robberies, n = 5)
 
-# now we know whether a robbery occurred outside is stored in the `premisetype`
+# Now we know whether a robbery occurred outside is stored in the `premisetype`
 # column, we can filter the data
 robberies <- filter(robberies, premisetype == "outside")
 
-# peak at a few rows of data again to check the result is what we expect
+# Peek at a few rows of data again to check the result is what we expect
 head(robberies, n = 5)
 ```
 
@@ -354,7 +354,7 @@ value of open data.
 
 Open data is published in a wide variety of formats and distributed in different
 ways. Some data might only be distributed by an organisation sending you a DVD
-or memory stick, Most of the time, however, data will be released online.
+or memory stick. Most of the time, however, data will be released online.
 
 Many cities (especially in developed countries) now maintain open-data websites
 that act as a repository for all their open data. For example, the City of 
@@ -440,14 +440,17 @@ neighbourhood) are stored in a separate file with a `.dbf` extension and details
 of the co-ordinate reference system are stored in a `.prj` file -- a single 
 dataset might be held in up to 16 separate files on a computer. All the files 
 that make up a shapefile have the same file name, differing only in the file 
-extension (e.g. `.shp`, `.dbf`, etc.). All these separate files make it 
-more-complicated to manage shapefiles than other spatial file formats such as 
-the geopackage.
+extension (e.g. `.shp`, `.dbf`, etc.). For example, if a `.shp` file is called
+`robberies.shp` then it will be accompanied by a file called `robberies.dbf` and
+one called `robberies.prj`, as well as a `robberies.shx` index file and possibly
+several others. All these separate files make it more-complicated to manage 
+shapefiles than other spatial file formats such as the geopackage.
 
 Because storing spatial data in a shapefile requires multiple different files,
-shapefile data is usually distributed in a `.zip` file. This means that to
-access a shapefile will have to add a step to our usual routine for downloading
-and opening a data file. In general, we will:
+shapefile data is usually distributed in a `.zip` file that contains all the
+component files. This means that to access a shapefile will have to add a step 
+to our usual routine for downloading and opening a data file. To minimise the
+hassle associated with using shapefiles, in general we will:
 
   1. download the `.zip` file if we don't have a local copy already,
   2. create a temporary directory where we can store the unzipped shapefile, so
@@ -472,18 +475,42 @@ download.file(
 )
 
 # Step 2: create a temporary directory
+# The `tempdir()` function returns a location on your computer that is used for
+# storing temporary files. *Any files stored in this temporary directory will be
+# deleted when you restart your computer*, so it's a useful place to put files
+# that you will only need for a short time so they won't clutter up your
+# computer. Since we want to store the shapefile in a sub-directory of the
+# temporary directory, we will use `str_glue()` to add a relevant sub-directory
+# name to the end of the temporary directory name -- `unzip()` will then
+# create this directory in the background at Step 3.
 divisions_dir <- str_glue("{tempdir()}/tps_divisions")
 
 # Step 3: unzip file
 unzip(divisions_file, exdir = divisions_dir)
 
-# Step 4: load the data
+# Step 5: load the data
 divisions <- read_sf(str_glue("{divisions_dir}/Police Boundaries Data.shp"))
 ```
+
+
+<div class="box notewell">
 
 Note that although a shapefile consists of several different files, we only need
 to load the file with the extension `.shp` -- the `read_sf()` function will find
 all the data it needs from the other files.
+
+Once we have loaded a shapefile into R using `read_sf()`, we can treat it in the
+same way as any other spatial dataset -- it is only loading shapefiles that is
+different from other spatial data formats.
+
+</div>
+
+
+<div class="box extra-detail">
+
+<h5 id="shapefile-box1-title" class="box-title">How did you know the name of the `Police Boundaries Data.shp` file?</h5>
+
+<div id="shapefile-box1" class="box-content">
 
 If you need to find out the name of the shapefile within the zip file, you can
 use the `list = TRUE` argument to the `unzip()` function to produce a list of
@@ -495,9 +522,13 @@ names:
 divisions_file %>% unzip(list = TRUE) %>% knitr::kable()
 ```
 
-Once we have loaded a shapefile into R using `read_sf()`, we can treat it in the
-same way as any other spatial dataset -- it is only loading shapefiles that is
-different from other spatial data formats.
+</div>
+
+</div>
+
+<script>
+$("#shapefile-box1-title").click(function () { $("#section-shapefile-box1").toggle("slow") })
+</script>
 
 
 
@@ -507,8 +538,7 @@ different from other spatial data formats.
 
 Often we can get map data from the organisation we are working for, or from 
 open-data portals run by governments or international organisations. But 
-sometimes no organisation holds the data you need, or you cannot get access to
-data even if it exists.
+sometimes they won't hold the information we need.
 
 Fortunately, there is another source of data: OpenStreetMap (OSM). This is a
 global resource of map data created by volunteers (and started at UCL), using a
@@ -530,7 +560,7 @@ worldwide that are included in the OSM database. To choose features, we must:
   4. extract the type of spatial object (points, lines or polygons) that we are
      interested in.
 
-Say that in your analysis of robberies in downtown Toronto, you have been asked
+Imagine that in your analysis of robberies in downtown Toronto, you have been asked
 to consider the question of whether robberies are clustered around nightclubs.
 To answer this question, we need to know the locations of nightclubs in the area
 we are interested in. If we search the 
@@ -576,9 +606,10 @@ OpenStreetMap has hundreds of feature categories, all in the format
 `key=value`. Sometimes we will only need to search for a particular 
 key (category of feature), such as the 
 [`highway` key](https://wiki.openstreetmap.org/wiki/Key:highway) that 
-contains all the features that show roads (from motorways down to minor lanes),
-tracks and paths. In other cases, we will want to search for a particular value 
-(type of feature within a category), such as searching for the value
+contains all the features that show roads (from motorways to winding lanes
+leading to farms in the countryside), tracks and paths. In other cases, we will 
+want to search for a particular value (type of feature within a category), such 
+as searching for the value 
 [`natural=water`](https://wiki.openstreetmap.org/wiki/Tag:natural%3Dwater) to
 search for lakes, rivers, etc. 
 
@@ -598,7 +629,7 @@ nightclubs <- opq(divisions_bbox) %>%
   # Download those features for that area
   osmdata_sf()
 
-# print the result
+# Print the result
 nightclubs
 ```
 
@@ -649,6 +680,32 @@ bind_rows(
 )
 ```
 
+
+<div class="box extra-detail">
+
+<h5 id="osm-box1-title" class="box-title">What does the warning `st_centroid assumes attributes are constant over geometries of x` mean?</h5>
+
+<div id="osm-box1" class="box-content">
+
+You might have seen a warning saying 
+`st_centroid assumes attributes are constant over geometries of x`. You will see
+this warning when you use the `st_centroid()` function. It is there to remind
+you that columns in the original data (which the SF package refers to as
+_attributes_ associated with each spatial feature) refer to the polygon as a 
+whole, but in the object produced by `st_centroid()` it will appear that the
+columns relate to the centroid point. In many cases this will not be a problem,
+but it could expose you to the ecological fallacy so it is sometimes useful to 
+be reminded.
+
+</div>
+
+</div>
+
+<script>
+$("#osm-box1-title").click(function () { $("#section-osm-box1").toggle("slow") })
+</script>
+
+
 This code references the `nightclubs` object twice, which means we cannot use
 this code within a pipeline in the usual way. Fortunately, there is a special
 feature of the pipe that haven't looked at yet: the dot (`.`) operator. We can
@@ -693,7 +750,7 @@ and the boundary of the division.
 divisions <- filter(divisions, division == 52)
 ```
 
-```{r osm-exercise7, exercise=TRUE, exercise.lines=25, fig.asp=1, out.width="100%"}
+```{r osm-exercise7, exercise=TRUE, exercise.lines=27, fig.asp=1, out.width="100%"}
 
 ```
 
@@ -732,12 +789,18 @@ since there is a relatively high density of robberies around the main cluster of
 nightclubs. But it also seems like this relationship does not tell the whole 
 story, since the highest density of robberies is in an area with no nightclubs.
 
+
+<div class="box notewell">
+
 Just as with other sources of map data, you are legally required to 
 [cite data from OpenStreetMap](https://wiki.openstreetmap.org/wiki/Draft_Attribution_Guideline)
-if you use it. The example code in the exercise above, for example, cites 
-OpenStreetMap and uses the wording required in the licence that accompanies open
-data from the City of Toronto: 
+if you use it. The code in the exercise above, for example, cites OpenStreetMap 
+and uses the wording required in the licence that accompanies open data from the 
+City of Toronto: 
 "[Contains information licensed under the Open Government Licence – Toronto](https://open.toronto.ca/open-data-license/)".
+
+</div>
+
 
 <p class="credits">The OpenStreetMap logo is a trademark of the OpenStreetMap Foundation, and is used with their permission. This tutorial not endorsed by or affiliated with the OpenStreetMap Foundation.</p>
 
@@ -745,9 +808,15 @@ data from the City of Toronto:
 
 ## In summary
 
+
+<div class="box welldone">
+
 In this tutorial we have learned how to find open data, including data from
 OpenStreetMap, and add it to our maps to help readers better understand crime 
 patterns.
+
+</div>
+
 
 To find out more about the skills we have worked on in this tutorial, you may
 want to read:
