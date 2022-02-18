@@ -9,7 +9,7 @@
 update <- function (...) {
 
   message(
-    "\n\n-------------------------\n\n",
+    "\n\n--------------------------------------------------------------------------------\n\n",
     "UPDATING CRIME MAPPING COURSE\n\n",
     "R will now update the Crime Mapping course tutorials. This may take\n",
     "a few minutes. If you are asked whether you want to update any other\n",
@@ -18,15 +18,15 @@ update <- function (...) {
     "compilation?', choose 'no'.\n\n",
     "Another message will appear when the process is complete.\n\n",
     "IF YOU ARE ASKED TO RESTART R, PLEASE DO SO\n\n",
-    "-------------------------\n\n"
+    "--------------------------------------------------------------------------------\n\n"
   )
 
   remotes::install_github("mpjashby/crimemapping", upgrade = "always", ...)
 
   message(
-    "\n\n-------------------------\n\n",
+    "\n\n--------------------------------------------------------------------------------\n\n",
     "CRIME MAPPING COURSE UPDATE COMPLETED\n\n",
-    "-------------------------\n\n"
+    "--------------------------------------------------------------------------------\n\n"
   )
 
 }

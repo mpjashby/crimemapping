@@ -1,3 +1,8 @@
+# crimemapping 0.11.0
+
+* Update content for Week 6 (tutorials 10 and 11).
+
+
 # crimemapping 0.8.0
 
 * Added content for Week 9, including a tutorial on Mapping 'Mapping crime over 

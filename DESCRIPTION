@@ -1,8 +1,8 @@
 Package: crimemapping
 Type: Package
 Title: Crime Mapping with R
-Version: 0.10.0
-Date: 2022-01-21
+Version: 0.11.0
+Date: 2022-02-18
 Author: Matt Ashby
 Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
 Description: Learn how to effectively map crimes in R using a series of 
