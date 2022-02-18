@@ -128,16 +128,14 @@ systems we can use to do this.
 
 ## Spatial data in R
 
-```{r sf-image, fig.align="center", out.width="80%"}
-knitr::include_graphics("images/sf.jpg")
-```
+<p class="full-width-image"><img src="images/sf.jpg" alt="Abstract images of furry monsters moving pieces of maps around"></p>
 
 There are several packages that handle raster map data from different sources – 
 one of them is the [`ggmap` package](https://github.com/dkahle/ggmap) that we 
 have already used to load the base map of Atlanta for the homicide map we made 
 in one of the earlier tutorials.
 
-<a href="https://r-spatial.github.io/sf/" title="sf website"><img src="images/sf-package.gif" style="width: 33%; max-width: 150px; float: right; margin: 0 0 2em 2em;"></a>
+<a href="https://r-spatial.github.io/sf/" title="sf website"><img src="images/sf-package.gif" class="right-side-image"></a>
 
 Vector data can be handled in R using functions from the [`sf` package](https://r-spatial.github.io/sf/). SF stands for 'simple features', which is a standard for storing spatial data. SF objects are data
 frames that have a special column to hold the geometry (point, line or 
