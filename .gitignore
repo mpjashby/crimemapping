@@ -46,3 +46,12 @@ inst/tutorials/*-old/
 
 # Marking
 marking/
+
+# Raw data files that are too large for GitHub
+inst/tutorials/prep/code/NYPD_Shooting_Incident_Data__Historic_.csv
+inst/tutorials/prep/code/london_crime_data_raw.zip
+inst/tutorials/prep/code/northamptonshire_crimes_2020.zip
+inst/tutorials/prep/code/northumbria_asb_2020.zip
+inst/tutorials/prep/code/nottinghamshire_crimes_2020.zip
+inst/tutorials/prep/code/qld_police_district_pop_raw.tab
+inst/tutorials/prep/code/sa_municipality_vehicles.tsv
