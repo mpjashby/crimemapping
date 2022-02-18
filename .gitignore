@@ -44,3 +44,5 @@ inst/tutorials/*.html
 # Old versions of tutorials no longer needed
 inst/tutorials/*-old/
 
+# Marking
+marking/
