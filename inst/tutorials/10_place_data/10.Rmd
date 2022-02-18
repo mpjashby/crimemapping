@@ -683,7 +683,7 @@ bind_rows(
 
 <div class="box extra-detail">
 
-<h5 id="osm-box1-title" class="box-title">What does the warning `st_centroid assumes attributes are constant over geometries of x` mean?</h5>
+<h5 id="osm-box1-title" class="box-title">What does the warning `st_centroid assumes …` mean?</h5>
 
 <div id="osm-box1" class="box-content">
 
@@ -750,7 +750,7 @@ and the boundary of the division.
 divisions <- filter(divisions, division == 52)
 ```
 
-```{r osm-exercise7, exercise=TRUE, exercise.lines=27, fig.asp=1, out.width="100%"}
+```{r osm-exercise7, exercise=TRUE, message=FALSE, exercise.lines=27, fig.asp=1, out.width="100%"}
 
 ```
 

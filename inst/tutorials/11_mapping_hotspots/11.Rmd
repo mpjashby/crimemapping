@@ -567,7 +567,7 @@ ggplot(weapons_kde) +
 
 ## Clipping a KDE layer
 
-The KDE layer we have created using the functions in the `SpatialKDE` package is
+The KDE layer we have created using the functions in the `sfhotspot` package is
 based on the bounding box of the crime data. As we saw earlier, this means there
 will be many cells in our KDE layer that represent areas not covered by our 
 dataset. We can see this by plotting the boundary of the City of Nottingham over 
@@ -1236,7 +1236,7 @@ We could use this information in various ways. For example, if we wanted to give
 local police officers a printed map of which areas to patrol, we could simply
 show the significant hotspot cells over a base map.
 
-```{r hotspot-exercise4, exercise=TRUE, message=FALSE, fig.asp=1, out.width="100%"}
+```{r hotspot-exercise4, exercise=TRUE, exercise.lines=18, message=FALSE, fig.asp=1, out.width="100%"}
 # Get base map tiles
 base_map_tiles <- robbery %>%
   st_transform(4326) %>%
