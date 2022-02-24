@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Handling messy data"
-description: ""
+description: "Learn how to tidy messy data so that it is easier to use for data analysis."
 output: 
   learnr::tutorial:
     progressive: true
@@ -68,7 +68,14 @@ monthly_counts <- tribble(
   "Southam", 15, 13, 16, 15, 14
 )
 
-burglary_values <- c(1320, 653, 2068, -1, 580)
+burglary_values <-  tibble(
+  date = lubridate::as_datetime(runif(
+    n = 5, 
+    min = as.numeric(lubridate::ymd_hm("2020-01-01 00:00")), 
+    max = as.numeric(lubridate::ymd_hm("2020-01-31 23:59"))
+  )),
+  value = c(1320, 653, 2068, -1, 580)
+)
 
 uk_data <- tribble(
   ~month, ~longitude, ~latitude, ~location, ~lsoa_name,
@@ -86,7 +93,7 @@ uk_data <- tribble(
 
 Data is the foundation of everything we do in crime mapping. To make a crime map 
 needs data on the locations and types of crimes; data on roads, buildings and
-natural features to make up a base map, and buildings on other features (such as
+natural features to make up a base map, and data on other features (such as
 particular types of facility) that might be relevant to why crime happens in
 particular place.
 
@@ -144,9 +151,9 @@ Wide-format data are often useful for presentation -- you might often see a
 table like this in a report or article. But wide data are less useful for 
 analysis because one of the variables -- 'type of crime' -- is being stored not
 as a variable but in the various column names. One sign that your data has this
-problem is if several of the columns form a group, separate from the others. In
-this case, there is a group of columns that show crime counts that is different
-from the other column that shows the area name.
+problem is if several of the columns form a group of columns, separate from the 
+others. In this case, there is a group of columns that show crime counts that is 
+different from the other column that shows the area name.
 
 Fortunately, we can easily convert this data (which is stored in the object
 `crime_counts`) into long format using the `pivot_longer()` function from the
@@ -222,7 +229,7 @@ pivot_longer(
 
 There is still a problem with this data, which is that the `month` variable
 contains not date values but instead the month and year stored as text. We will
-learn how to deal with this issue later in a future tutorial.
+learn how to deal with this issue in a future tutorial.
 
 
 ### Skipping unwanted rows in imported data
@@ -291,8 +298,8 @@ the number of people involved in the survey, not a number of incidents). But:
     `read_excel()`, and
   * row four of the original spreadsheet has become our column names,
   
-so row 34 on the spreadsheet is actually row 30 in our data. Knowing this, we 
-can remove all the rows below row 30 using `slice()`:
+so row 34 on the spreadsheet is actually row 30 in our loaded dataset. Knowing 
+this, we can remove all the rows below row 30 using `slice()`:
 
 ```{r structure-exercise6, exercise=TRUE, exercise.setup="structure-exercise4"}
 str_glue("{tempdir()}/cybercrime.xlsx") %>% 
@@ -354,7 +361,7 @@ the `tidyr` package. We specify the existing column we want to split using the
 argument and the character(s) that represent the boundary between the two pieces
 of data in each column (in this case, `/`).
 
-```{r structure-exercise8, exercise=TRUE, exercise.setup="victims-table"}
+```{r structure-exercise8, exercise=TRUE}
 separate(victims, col = age_sex, into = c("age", "sex"), sep = "/")
 ```
 
@@ -372,7 +379,7 @@ a character column, both `age` and `sex` are character columns, too. Since `age`
 is actually numeric, we can get `separate()` to convert this new column to the
 correct type automatically by specifying `convert = TRUE`.
 
-```{r structure-exercise9, exercise=TRUE, exercise.setup="victims-table"}
+```{r structure-exercise9, exercise=TRUE}
 separate(
   victims, 
   col = age_sex, 
@@ -398,7 +405,8 @@ tidy the content of individual cells.
 As well as data with a messy structure, you might be provided with data with 
 messy content inside some of the cells. In this section we will clean messy 
 content, mostly using functions from the `stringr` package that is loaded 
-automatically when we load `tidyverse`.
+automatically when we load `tidyverse`. All the functions in the `stringr`
+package start with `str_` so that they are easy to remember.
 
 We can change the case of text using one of four `str_to_` functions:
 
@@ -440,8 +448,7 @@ reason we might want to remove this constant value using the `str_remove()`
 function.
 
 ```{r content-exercise1, exercise=TRUE}
-uk_data %>% 
-  mutate(location = str_remove(location, "On or near "))
+mutate(uk_data, location = str_remove(location, "On or near "))
 ```
 
 The `lsoa_name` code of this dataset includes the name of the small statistical
@@ -471,8 +478,7 @@ as the second argument to the `str_remove()` function to remove the characters
 matched by the pattern.
 
 ```{r content-exercise2, exercise=TRUE}
-uk_data %>% 
-  mutate(district = str_remove(lsoa_name, "\\s\\w{4}$"))
+mutate(uk_data, district = str_remove(lsoa_name, "\\s\\w{4}$"))
 ```
 
 We could also use regular expressions together with `str_extract()` to keep only 
@@ -480,7 +486,8 @@ the characters matched by the pattern, `str_replace()` to replace the first
 group of characters matched by the pattern and `str_replace_all()` to replace
 all the groups of characters matched by the pattern. For more tips on using 
 regular expressions together with functions from the `stringr` package, see the 
-[`stringr` package cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/strings.pdf).
+[`stringr` package cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/strings.pdf)
+or visit [regexr.com](https://regexr.com/).
 
 
 ### Converting between types of variable
@@ -505,20 +512,20 @@ mean(numbers_as_text)
 mean(as.numeric(numbers_as_text))
 ```
 
+<img src="images/parse_number.jpg" alt="Cartoon showing that the parse_number() function extracts numeric values from text, stripping out all non-numeric characters." class="right-side-image" style="width: 400px; max-width: 50%;">
+
 We can use equivalent functions to convert columns to different types, e.g.
 `as.character()` to convert a variable to characters and `as.logical()` to
 convert a variable to only `TRUE` and `FALSE` values. Be careful, though: if you
 try to convert a variable to a data type that makes no sense, you are likely to
 find all of your values replaced with `NA`.
 
-<img src="images/parse_number.jpg" alt="Cartoon showing that the parse_number() function extracts numeric values from text, stripping out all non-numeric characters." class="right-side-image">
-
 Sometimes numbers will be stored alongside other values, such as when currency
 values are stored together with a currency symbol. We can deal with values like
 these by using the `parse_number()` function from the `readr` package, which 
 strips all the non-numeric characters from a value and then converts the numeric
 characters to a number. For example, `parse_number("Room 14A")` produces the
-numeric value ``r parse_number("Room 14A")```.
+numeric value ` `r parse_number("Room 14A")` `.
 
 
 ### Recoding categorical variables
@@ -535,12 +542,14 @@ more values at the same time. For example, if we wanted to change the value
 `Supermarket` to `Shop` in the UK police data.
 
 ```{r recoding-exercise1, exercise=TRUE}
-uk_data %>% 
-  mutate(location = recode(
-    # Once again we will remove the unnecessary 'On or near '
+# Once again we will remove the unnecessary 'On or near ' using `str_remove()`
+mutate(
+  uk_data, 
+  location = recode(
     str_remove(location, "On or near "),
     "Supermarket" = "Shop"
-  ))
+  )
+)
 ```
 
 Run the code needed to change the value `Nottingham` to `City of Nottingham` in
@@ -556,7 +565,9 @@ uk_data %>%
   mutate(
     district = str_remove(lsoa_name, "\\s\\w{4}$"),
     district = recode(district, "Nottingham" = "City of Nottingham")
-  )
+  ) %>% 
+  # Select only some columns to make the result easier to see below
+  select(lsoa_name, district)
 
 ```
 
@@ -568,10 +579,6 @@ that is missing from a dataset. While R uses `NA` to represent missing values,
 some data providers use other codes. Fortunately, we can convert any value to
 `NA` so that we know that it represents a missing value.
 
-```{r burglary-values}
-burglary_values <- c(1320, 653, 2068, -1, 580)
-```
-
 Imagine that you have been provided with a dataset of burglaries that includes 
 an estimate of the value of the goods that were stolen in British pounds. You 
 have been told that when the value of the stolen goods wasn't known, this is 
@@ -581,15 +588,21 @@ result. If we instead convert that value to `NA` first, `mean()` will know to
 ignore that value as long as we specify the argument `na.rm = TRUE`.
 
 ```{r missing-exercise1, exercise=TRUE}
-# Print some burglary values, stored as a vector
-burglary_values
+# Print some rows of burglary values
+head(burglary_values)
 
 # Try to calculate the mean value -- no error, but the answer is wrong
-mean(burglary_values)
+# `pull()` is used to extract the `value` column from `burglary_values`
+mean(pull(burglary_values, "value"))
 
 # Convert `-1` to `NA` first, now you get the correct mean value
-burglary_values <- ifelse(burglary_values == -1, NA, burglary_values)
-mean(burglary_values, na.rm = TRUE)
+burglary_values <- mutate(
+  burglary_values,
+  value = ifelse(value == -1, NA, value)
+)
+
+# Calculate the mean value again, now excluding the missing value
+mean(pull(burglary_values, "value"), na.rm = TRUE)
 ```
 
 Excluding the value `-1` makes a substantial difference to the mean, increasing
@@ -652,7 +665,9 @@ tribble(
   ~service, ~coverage, ~registration, ~`free limits`,
   "[Nominatim](https://nominatim.org/)", "Worldwide", "not required", "1 address per second",
   "[Location IQ](https://locationiq.com/)", "Worldwide", "[register for Location IQ](https://locationiq.com/register)", "5,000 addresses per day",
+  "[Geoapify](https://www.geoapify.com/)", "Worldwide", "[register for Geoapify](https://myprojects.geoapify.com/login)", "3,000 addresses per day",
   "[OpenCage](https://opencagedata.com/)", "Worldwide", "[register for OpenCage](https://opencagedata.com/users/sign_up)", "2,500 addresses per day",
+  "[TomTom](https://developer.tomtom.com/)", "Worldwide", "[register for TomTom](https://developer.tomtom.com/user/register)", "2,500 addresses per day",
   "[Google](https://developers.google.com/maps/documentation/geocoding/overview)", "Worldwide", "[register for Google](https://cloud.google.com/maps-platform/)", "40,000 addresses per month",
   "[Geocodio](https://www.geocod.io/)", "United States and Canada", "[register for Geocodio](https://dash.geocod.io/register)", "2,500 addresses per day",
   "[US Census](https://geocoding.geo.census.gov/)", "United States", "not required", "none"
@@ -661,9 +676,15 @@ tribble(
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
+The `tidygeocoder` package also supports some other services that do not offer
+any free option -- you can find out more about these options on the 
+[package website](https://jessecambon.github.io/tidygeocoder/articles/geocoder_services.html).
+
+<!--
 Nominatim is the only service that provides world-wide coverage and does not 
 require registration, but it also has the lowest limit on the number of 
 addresses (`r scales::comma(60 * 60)`) you can geocode each day.
+-->
 
 To illustrate the geocoding process, we will find co-ordinates for the addresses
 in the object `addresses`, which holds data for 10 sexual assaults in Chicago.
@@ -674,9 +695,13 @@ addresses %>% knitr::kable() %>% kableExtra::kable_styling(full_width = FALSE)
 
 Since most geocoding services limit the number of addresses you can look up at
 a time, the first step in geocoding is removing duplicate addresses and rows 
-with missing address values. At the same time we will add the city and state to
-the end of each address, since at the moment (as with much data produced by 
-local organisations) it includes only the building number and street.
+with missing address values. This avoids us geocoding identical addresses 
+several times, which would otherwise unnecessarily increase our chance of 
+hitting the limit on geocoding queries each day.
+
+We will also add the city and state to the end of each address, since at the 
+moment (as with much data produced by local organisations) it includes only the 
+building number and street.
 
 ```{r geocoding-exercise1, exercise=TRUE}
 addresses_for_geocoding <- addresses %>% 
@@ -692,16 +717,17 @@ addresses_for_geocoding <- addresses %>%
   # Find all the unique rows in the data
   distinct(address)
 
-addresses_for_geocoding
+head(addresses_for_geocoding)
 ```
 
-Since two addresses in the data were duplicates, we now have eight unique
-addresses, stored in a tibble with a single column. We can use this as the input
-to the `geocode()` function from the `tidygeocoder` package. The `address`
-argument specifies which column in the data contains the addresses and the 
-`method` column specifies which geocoding service to use -- in this case we use
-the Nominatim service, which is based on OpenStreetMap data and so can be
-chosen by specifying `method = "osm"`.
+Since two addresses in the data were duplicates and one address was missing, we
+now have eight unique addresses, stored in a tibble with a single column. We can
+use this as the input to the `geocode()` function from the `tidygeocoder`
+package. The `address` argument specifies which column in the data contains the
+addresses and the `method` column specifies which geocoding service to use. In
+this case we use the Nominatim service (because it does not require registration 
+and works worldwide). Nominatim is based on OpenStreetMap data, so can be chosen 
+by specifying `method = "osm"`.
 
 ```{r geocoding-exercise2, exercise=TRUE}
 library(tidygeocoder)
@@ -718,7 +744,7 @@ addresses_geocoded
 Now that we have the latitude and longitude for each address, we can join that
 back to the original data using the address column to match the two datasets 
 together. To do this we will create a temporary column in the original 
-`addresses` object that matches the formating changes we made to the original
+`addresses` object that matches the formatting changes we made to the original
 address.
 
 ```{r geocoding-exercise3, exercise=TRUE}
@@ -740,19 +766,196 @@ and longitude using the WGS84 co-ordinate reference system, so you should use
 the EPSG code 4326.
 
 
+## Conflicts between function names
+
+R packages are written by experts in different types of data analysis. This 
+means we can use R to conduct all sorts of analysis, including cutting-edge
+techniques. But because R packages are not all written by people working for a
+single organisation, it means there can sometimes be functions from different
+packages that have the same name -- often because they do similar (but not
+necessarily identical) things. 
+
+This can be a problem because R might be running a function from one package
+when you think you have written code that uses a function from another package.
+If the two functions have different arguments or produce different types of 
+result, your code is unlikely to run properly. For example, if two functions 
+have the same name but one produces an SF object while the other produces a
+tibble, that might cause problems later in your code if you are using other 
+functions that expect to receive a particular type of input.
+
+One example of functions from two different packages with the same name is the
+`geocode()` function. We have already learned that the `tidygeocoder` package
+contains a function called `geocode()`, but the `ggmap` package (which we use to
+download base maps) also has a function called `geocode()`.
+
+If both the `tidygeocoder` and `ggmap` packages are loaded, R will use the
+`geocode()` function from the package that has been loaded most recently. So if
+your script includes the code:
+
+```r
+library(ggmap)
+library(tidygeocoder)
+
+# [Code to load data, etc.]
+
+# Geocode some data
+geocoded_data <- geocode(ungeocoded_data)
+```
+
+Then R will use the `geocode()` function from `tidygeocoder`, since that was
+loaded *after* `ggmap`. But if you reverse the order in which these packages
+are loaded:
+
+```r
+library(tidygeocoder)
+library(ggmap)
+
+# [Code to load data, etc.]
+
+# Geocode some data
+geocoded_data <- geocode(ungeocoded_data)
+```
+
+Then R will use the `geocode()` function from `ggmap` because that package was
+loaded after `tidygeocoder`.
+
+Knowing which of the two functions R uses when you type `geocode()` is important
+because they accept different inputs. The `geocode()` function from `ggmap`
+expects the first argument to contain a vector of addresses, while the 
+`geocode()` function from `tidygeocoder` expects a data frame or tibble. If
+you provide the wrong type of input, either function will produce an error.
+
+When you load a package that includes a function with the same name as a 
+function in a package that is already loaded, R will print a message in the
+console. For example, if you run `library(ggmap)` and then
+`library(tidygeocoder)`, you will see a message saying the function from the
+already loaded package has been *masked* and so will be replaced by the function
+from the newly loaded package:
+
+```
+Attaching package: ‘tidygeocoder’
+
+The following object is masked from ‘package:ggmap’:
+
+    geocode
+```
+
+When you see a message like this, it means you need to check which version of 
+that function you want to use. If you want to use the function from the
+most-recently loaded package then you don't need to do anything. If you want to
+use the function that has been masked, you need to take one of the steps 
+explained below.
+
+Our R scripts very often load the `tidyverse` package, which loads eight
+packages (`dplyr`, `forcats`, `ggplot2`, `purrr`, `readr`, `tibble`, `tidyr` and
+`stringr`) that we often need to use. Because `tidyverse` itself loads several
+packages, it produces a separate message to let you know which existing 
+functions have been masked when you load `tidyverse`. If `library(tidyverse)` is
+the first code you run after starting R, that message will look something like 
+this:
+
+```
+── Conflicts ──────────────────────────────────────── tidyverse_conflicts() ──
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()
+```
+
+Since we more commonly want the tidyverse functions than the functions they mask
+(for example, we frequently use the `filter()` function from `dplyr` but rarely
+use the function with the same name in the `stats` package), it is common to
+load `tidyverse` after loading all the other packages needed for our code.
+
+There are several ways you can resolve conflicts between functions from
+different packages:
+
+  * Make sure you load packages in the order that gives you access to the
+    functions you need. This can be simple if there are few conflicts, but can
+    fall apart if you later change your code to load different packages. This is
+    the option that almost everyone uses most of the time (and most people use
+    all of the time).
+  * Specify which function you want to use using the `::` notation that we have
+    already used in previous tutorials, e.g. by using the code
+    `ggmap::geocode()` or `tidygeocoder::geocode()`.
+  * Load the `conflicted` package, which produces an error whenever you try to
+    use a function that is included in more than one loaded package. This makes
+    it easy to know when there is a potential conflict, which you can then 
+    resolve using the `conflict_prefer()` function.
+    
+In this final option, the authors of the `conflicted` package recommend that you
+specify which conflict-prone functions to use by calling `conflict_prefer()`
+just after you've loaded all the packages you need for your script. For example:
+
+```r
+# This code produces several conflicts:
+# *  the `stats` package, which is loaded automatically in the background when 
+#    you start R, contains a function called `filter()`
+# *  `MASS` contains a function called `select()`
+# *  `dplyr` contains functions called `filter()` and `select()`
+library(dplyr)
+library(MASS)
+library(conflicted)
+
+# This code specifies that in the case of both conflicts, we want to use the
+# functions from `dplyr`
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
+
+# In the rest of this script, any reference to `filter()` or `select()` will
+# use the functions with those names in the `dplyr` package, not those from
+# `stats` or `MASS`
+```
+
+Understanding function-name conflicts is important because they can be the cause
+of errors that are (for reasons we needn't explain in detail) extremely hard to 
+track down the cause of. So make sure that when you load packages, you take note
+of any messages in the console that warn you that functions have been masked. As
+with other messages in R, they will not always need you to take any action, but
+you always need to read the message and make a decision about whether to take 
+any action.
+
+
+
+#### Check your understanding
+
+```{r conflict-quiz}
+question(
+  "If you load two packages in R that both contain a function with the same name, which function will R use by default?",
+  answer("The function from the package that was loaded *last*", correct = TRUE),
+  answer("The function from the package that was loaded *first*"),
+  answer("Neither function will run because R will produce an error."),
+  answer("The function that is from the `tidyverse` suite of packages."),
+  correct = random_praise(),
+  incorrect = random_encouragement(),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+
+
+
 ## In summary
 
-<p class="full-width-image"><img src="images/tidydata_7.jpg" alt="Cartoon saying make friends with tidy data!"></p>
+<div class="box welldone">
 
 In this tutorial we have learned to tidy messy data to make it easier to work
-with. You can find out more about data cleaning and tidying with these 
+with. In real-world data analysis (not just crime mapping), you will often have
+to deal with data that is messy in different ways. Fortunately, you can use R to
+fix all of these problems in a way that minimises the risk that you might 
+introduce mistakes when you clean the data.
+
+</div>
+
+You can find out more about data cleaning and tidying with these 
 resources:
 
   * A [tutorial on using the `pivot_longer()` and `pivot_wider()` functions to 
     convert data between long and wide format](https://tidyr.tidyverse.org/articles/pivot.html).
   * A more-detailed [Introduction to `tidygeocoder`](https://jessecambon.github.io/tidygeocoder/articles/tidygeocoder.html).
   * An [introduction to some other packages than can help you clean and tidy data](https://rfortherestofus.com/2019/12/how-to-clean-messy-data-in-r/).
+  * A more-detailed [description of how to use the `conflicted` package](https://conflicted.r-lib.org/).
     
+<p class="full-width-image"><img src="images/tidydata_7.jpg" alt="Cartoon saying make friends with tidy data!"></p>
 
 <p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
 
