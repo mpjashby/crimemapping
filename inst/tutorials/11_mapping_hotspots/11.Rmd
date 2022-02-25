@@ -167,7 +167,7 @@ reduce crime.
 
 We have already learned to use density maps to highlight areas with relatively
 high levels of crime. So far, we've relied on the `geom_density_2d_filled()`
-function from the `ggplot2()` package to estimate the density of crime in 
+function from the `ggplot2` package to estimate the density of crime in 
 different regions of our maps. This approach is quick, but it has some 
 drawbacks.
 
@@ -365,7 +365,7 @@ Behind the scenes, the process of kernel density estimation (KDE) carried out by
 `geom_density_2d_filled()` involves:
 
   1. If the data uses a geographic co-ordinate system (i.e. one where locations
-     a expressed using latitude and longitude), transforming the data to use a
+     are expressed using latitude and longitude), transforming the data to use a
      projected co-ordinate system so that we can specify distances in units such
      as metres or feet rather than decimal degrees.
   2. Creating a grid of cells covering the area we are interested in.
@@ -1288,7 +1288,7 @@ variation.
 
 In this tutorial we have learned several techniques for improving our hotspot
 maps, including how to clip a kernel density estimation layer to the boundary of
-the area we have data for, how to create dual KDE maps and how to find 
+the area we have data for <!-- , how to create dual KDE maps --> and how to find 
 significant hotspots using the Gi* statistic. In this final section we will
 combine some of these techniques to produce a map showing the density of 
 violent crime at statistically significant violence hotspots in Nottingham in
