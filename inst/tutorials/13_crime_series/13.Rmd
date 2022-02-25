@@ -18,7 +18,6 @@ library(ggmap)
 library(ggrepel)
 library(ggspatial)
 library(patchwork)
-library(rgeoprofile)
 library(sf)
 library(tidyverse)
 
@@ -263,8 +262,7 @@ that the victim was killed):
 hungerford_shootings %>% 
   mutate(victims = str_replace_all(victims, "\\n", ", ")) %>% 
   head(5) %>% 
-  knitr::kable() %>% 
-  kableExtra::kable_styling(full_width = FALSE)
+  knitr::kable()
 ```
 
 <p class="credits"><a href="https://www.getreading.co.uk/news/berkshire-history/gallery/30-years-hungerford-massacre-13495555">Photograph of PC Roger Brereton's funeral from Berkshire Live</a></p>
@@ -285,8 +283,7 @@ and after it.
 hungerford_shootings %>% 
   mutate(victims = str_replace_all(victims, "\\n", ", ")) %>% 
   head(5) %>% 
-  knitr::kable() %>% 
-  kableExtra::kable_styling(full_width = FALSE)
+  knitr::kable()
 ```
 
 One way to do this is to draw lines on the map connecting each incident in turn. 
@@ -531,7 +528,7 @@ We will use the `plot.margin` argument to the `theme()` function to add a small
 amount of space at the top of this map, which will help separate it from the 
 first map when we put them together.
 
-```{r multiple-exercise1, exercise=TRUE, exercise.lines=52, fig.asp=1}
+```{r multiple-exercise1, exercise=TRUE, exercise.lines=54, fig.asp=1}
 hungerford_town_bbox <- hungerford_sf %>% 
   slice(3:n()) %>% 
   st_transform(27700) %>% 
@@ -706,3 +703,172 @@ a sequence of events on a map. We have also learned how to combine maps using
 the `patchwork` package.
 
 </div>
+
+You can put the code from this tutorial together to see everything that is 
+needed to make a composite map of the Hungerford massacre from the original data 
+file called `hungerford_shootings`.
+
+```{r summary-exercise1, exercise=TRUE, exercise.lines=160, fig.asp=1}
+library(ggmap)
+library(sf)
+library(tidyverse)
+
+
+
+# Prepare data -----------------------------------------------------------------
+
+# Convert data to SF
+hungerford_sf <- hungerford_shootings %>%
+  arrange(order) %>% 
+  st_as_sf(coords = c("easting", "northing"), crs = 27700)
+
+# Transform data and extract co-ordinates
+hungerford_wgs84 <- hungerford_sf %>% 
+  st_transform(4326) %>% 
+  st_coordinates() %>% 
+  as_tibble() %>% 
+  janitor::clean_names() %>% 
+  mutate(order = row_number())
+
+# Derive lines between points from point co-ordinates
+hungerford_lines <- hungerford_wgs84 %>% 
+  rename(x_end = x, y_end = y) %>% 
+  mutate(x_start = lag(x_end), y_start = lag(y_end)) %>% 
+  slice(2:n())
+
+# Calculate bounded box for town centre and buffer it
+hungerford_town_bbox <- hungerford_sf %>% 
+  slice(3:n()) %>% 
+  st_transform(27700) %>% 
+  st_buffer(100) %>% 
+  st_transform(4326) %>% 
+  st_bbox()
+
+# Download overall basemap
+hungerford_basemap <- hungerford_sf %>% 
+  st_buffer(1000) %>% 
+  st_transform(4326) %>% 
+  st_bbox() %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 13, maptype = "toner-lite")
+
+# Download town basemap
+hungerford_town_basemap <- hungerford_town_bbox %>% 
+  set_names(c("left", "bottom", "right", "top")) %>%
+  get_stamenmap(zoom = 16, maptype = "toner-lite")
+
+
+
+# Make component maps ----------------------------------------------------------
+
+hungerford_map_overall <- ggmap(hungerford_basemap) +
+  geom_curve(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    curvature = -0.2,
+    colour = "orange3"
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  geom_label_repel(
+    aes(x = x, y = y, label = order),
+    data = filter(hungerford_wgs84, order %in% 1:2), 
+    inherit.aes = FALSE,
+    colour = "white",
+    fill = "orange3",
+    fontface = "bold",
+    label.size = NA,
+  ) +
+  geom_sf(
+    data = st_as_sfc(hungerford_town_bbox), 
+    inherit.aes = FALSE, 
+    fill = NA
+  ) +
+  annotate(
+    geom = "label", 
+    x = pluck(hungerford_town_bbox, "xmin"), 
+    y = pluck(hungerford_town_bbox, "ymin"),
+    label = "area covered\nby map below",
+    hjust = 1,
+    label.size = NA,
+    lineheight = 0.9,
+    size = 2.5,
+    vjust = 1
+  ) +
+  annotation_scale(style = "ticks", line_col = "grey40", text_col = "grey40") +
+  labs(
+    title = " Shootings in Wiltshire"
+  ) +
+  coord_sf(crs = 4326) +
+  theme_void() +
+  theme(
+    panel.border = element_rect(colour = "grey20", fill = NA),
+    plot.title = element_text(margin = margin(b = -18))
+  )
+
+hungerford_map_town <- ggmap(hungerford_town_basemap) +
+  geom_curve(
+    aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+    data = hungerford_lines, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    arrow = arrow(length = unit(3, "mm"), type = "closed"),
+    curvature = -0.2,
+    colour = "orange3",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = x, y = y), 
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    shape = 21,
+    colour = "white",
+    fill = "orange3",
+    size = 3
+  ) +
+  geom_label_repel(
+    aes(x = x, y = y, label = order),
+    data = hungerford_wgs84, 
+    inherit.aes = FALSE,
+    na.rm = TRUE,
+    colour = "white",
+    fill = "orange3",
+    fontface = "bold",
+    label.size = NA,
+  ) +
+  annotation_scale(style = "ticks", line_col = "grey40", text_col = "grey40") +
+  coord_sf(crs = 4326) +
+  labs(
+    title = "Shootings in Hungerford town"
+  ) +
+  theme_void() +
+  theme(
+    panel.border = element_rect(colour = "grey20", fill = NA),
+    plot.margin = margin(t = 12)
+  )
+
+
+
+# Combine maps and add titles --------------------------------------------------
+
+(hungerford_map_overall / hungerford_map_town) + plot_annotation(
+  title = "Shootings during the Hungerford massacre",
+  caption = "data from the official report into the shootings",
+  theme = theme(
+    plot.caption = element_text(colour = "grey40"),
+    plot.title = element_text(colour = "grey50", face = "bold", size = 16)
+  )
+)
+
+```
+

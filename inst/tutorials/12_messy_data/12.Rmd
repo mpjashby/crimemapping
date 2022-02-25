@@ -256,9 +256,13 @@ from the `readxl` package, we will find various problems.
 ```{r structure-exercise4, exercise=TRUE}
 library(readxl)
 
+# Since `.xlsx` files are binary files, we need to add `mode = "wb"` on Windows.
+# On other platforms it makes no difference, but adding `mode = "wb" does not
+# cause any problems.
 download.file(
   url = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/crimeandjustice/datasets/crimeinenglandandwalesexperimentaltables/yearendingdecember2018/additionalfraudandcybercrimetablesyearendingdecember2018correction.xlsx",
-  destfile = str_glue("{tempdir()}/cybercrime.xlsx")
+  destfile = str_glue("{tempdir()}/cybercrime.xlsx"),
+  mode = "wb"
 )
 
 read_excel(str_glue("{tempdir()}/cybercrime.xlsx"), sheet = "Table E1")

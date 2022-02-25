@@ -1,3 +1,8 @@
+# crimemapping 0.12.0
+
+* Update content for Week 7 (tutorials 11 and 12).
+
+
 # crimemapping 0.11.0
 
 * Update content for Week 6 (tutorials 10 and 11).
