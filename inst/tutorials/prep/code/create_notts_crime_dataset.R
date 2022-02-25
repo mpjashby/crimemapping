@@ -34,6 +34,11 @@ notts_crime %>%
   write_sf("inst/extdata/nottingham_damage.gpkg")
 
 notts_crime %>%
+  filter(crime_type == "Possession of weapons") %>%
+  select(-crime_type, -district) %>%
+  write_sf("inst/extdata/nottinghamshire_weapons.gpkg")
+
+notts_crime %>%
   filter(
     district == "Nottingham",
     crime_type == "Possession of weapons"
