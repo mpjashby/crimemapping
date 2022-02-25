@@ -748,7 +748,7 @@ tibble(
 By looking at the maps in the top two rows, you can see that reducing the
 number of grid cells below the default of 100 leads to a map that looks blocky,
 but that increasing the number of grid cells above 100 doesn't make much 
-different (it might do if we needed to make a very large map).
+difference (it might do if we needed to make a very large map).
 
 Looking at the middle column of maps, you can see that increasing the bandwidth
 relative to the default makes the density surface smoother. The smoother the 
