@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Load packages
 library(ggrepel)
+library(ggridges)
 library(gt)
 library(scales)
 library(sf)
@@ -380,7 +381,7 @@ we need to specify `fns = list("total = "sum")` rather than just
 By default, `summary_rows()` formats the calculated summary values as numbers 
 using `fmt_numeric()`, we also need to specify `decimals = 0` as before.
 
-```{r tables-exercise8, exercise=TRUE, exercise.lines=31}
+```{r tables-exercise8, exercise=TRUE, exercise.lines=20}
 violence %>% 
   pivot_wider(names_from = crime_type, values_from = count) %>% 
   select(

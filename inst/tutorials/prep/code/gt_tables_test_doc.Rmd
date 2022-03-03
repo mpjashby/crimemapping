@@ -1,0 +1,98 @@
+---
+title: '`gt` package test document'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(gt)
+library(sf)
+library(tidyverse)
+
+violence <- read_rds(here::here("inst/extdata/malaysia_violence_counts.Rds"))
+```
+
+
+
+## Basic `gt` table
+
+```{r basic}
+violence %>% 
+  pivot_wider(names_from = crime_type, values_from = count) %>% 
+  select(
+    region, state, murder, rape, `aggravated assault`, `armed robbery`, 
+    `unarmed robbery`
+  ) %>% 
+  gt()
+```
+
+
+
+## Table with formatted numbers
+
+```{r formatted-numbers}
+violence %>% 
+  pivot_wider(names_from = crime_type, values_from = count) %>% 
+  select(
+    region, state, murder, rape, `aggravated assault`, `armed robbery`, 
+    `unarmed robbery`
+  ) %>% 
+  gt() %>% 
+  fmt_number(
+    columns = c(
+      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
+    ),
+    decimals = 0
+  )
+```
+
+
+
+## Table with grouped rows
+
+```{r grouped-rows}
+violence %>% 
+  pivot_wider(names_from = crime_type, values_from = count) %>% 
+  select(
+    region, state, murder, rape, `aggravated assault`, `armed robbery`, 
+    `unarmed robbery`
+  ) %>% 
+  group_by(region) %>% 
+  # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
+  gt() %>% 
+  fmt_number(
+    columns = c(
+      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
+    ),
+    decimals = 0
+  )
+```
+
+
+## Table with coloured cells
+
+```{r coloured-cells}
+violence %>% 
+  pivot_wider(names_from = crime_type, values_from = count) %>% 
+  select(
+    region, state, murder, rape, `aggravated assault`, `armed robbery`, 
+    `unarmed robbery`
+  ) %>% 
+  group_by(region) %>% 
+  # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
+  gt() %>% 
+  fmt_number(
+    columns = c(
+      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
+    ),
+    decimals = 0
+  ) %>% 
+  data_color(
+    columns = `unarmed robbery`,
+    colors = scales::col_numeric("Oranges", domain = NULL)
+  ) %>% 
+  data_color(
+    columns = rape,
+    colors = scales::col_numeric("Blues", domain = NULL)
+  )
+```
