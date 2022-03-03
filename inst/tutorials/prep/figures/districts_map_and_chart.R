@@ -35,18 +35,22 @@ violence_counts <- violence %>%
   st_as_sf() %>%
   mutate(hjust = ifelse(n == max(n), 1, 0))
 
-# Create map
-violence_map <- violence_counts %>%
+# Download base map
+base_map <- violence_counts %>%
   st_bbox() %>%
   set_names(c("left", "bottom", "right", "top")) %>%
-  get_stamenmap(maptype = "toner-lite") %>%
-  ggmap() +
+  get_stamenmap(maptype = "toner-lines")
+
+# Create map
+violence_map <- ggmap(base_map) +
   geom_sf(aes(fill = n), data = violence_counts, inherit.aes = FALSE, alpha = 0.8) +
-  geom_sf_text(
+  geom_sf_label(
     aes(label = str_replace_all(lad19nm, "\\s", "\n")),
     data = violence_counts,
     inherit.aes = FALSE,
+    alpha = 0.7,
     colour = "grey20",
+    label.size = NA,
     lineheight = 0.9,
     size = 2.5
   ) +
@@ -60,16 +64,42 @@ violence_map <- violence_counts %>%
   labs(
     fill = "number of violent and sexual offences"
   ) +
-  theme_minimal() +
+  theme_void() +
+  theme(legend.position = "bottom")
+
+# Create small reference map
+reference_map <- ggmap(base_map) +
+  # Add a 50% white mask to reduce the visibility of the base map
+  annotate(
+    "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = -Inf,
+    ymax = Inf,
+    alpha = 0.5,
+    fill = "white"
+  ) +
+  geom_sf(
+    data = districts,
+    inherit.aes = FALSE,
+    alpha = 0.8,
+    colour = "grey50",
+    fill = NA
+  ) +
+  geom_sf_label(
+    aes(label = str_replace_all(str_to_upper(lad19nm), "\\s", "\n")),
+    data = violence_counts,
+    inherit.aes = FALSE,
+    alpha = 0.7,
+    fontface = "bold",
+    label.size = NA,
+    lineheight = 0.9,
+    size = 2
+  ) +
+  theme_void() +
   theme(
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank(),
-    legend.position = "bottom"
-    # legend.background = element_rect(colour = NA, fill = rgb(1, 1, 1, 0.9)),
-    # legend.direction = "horizontal",
-    # legend.justification = c(1, 0),
-    # legend.position = c(1, 0)
+    legend.position = "none",
+    panel.border = element_rect(colour = "grey50", fill = NA)
   )
 
 # Create bar chart
@@ -95,11 +125,13 @@ violence_chart <- violence_counts %>%
     panel.grid.minor.y = element_blank()
   )
 
+# Create violence map and chart combo
 violence_combined <- violence_map + violence_chart + plot_annotation(
   title = "Violent and sexual offences in Northamptonshire, 2020",
   caption = "Contains public sector information licensed under the Open Government Licence v3.0."
 )
 
+# Save violence map and chart combo
 ggsave(
   filename = here::here("inst/tutorials/15_no_maps/images/map_vs_bar_chart.png"),
   plot = violence_combined,
@@ -107,3 +139,30 @@ ggsave(
   height = 800 / 150,
   dpi = 300
 )
+
+# Create chart with reference map
+chart_reference <-
+  # reference_map +
+  violence_chart +
+  inset_element(
+    reference_map,
+    top = 0.7,
+    right = unit(1, "npc"),
+    bottom = 0,
+    left = 0.5
+  ) +
+  # plot_layout(widths = c(1, 2)) +
+  plot_annotation(
+    title = "Violent and sexual offences in Northamptonshire, 2020",
+    caption = "Contains public sector information licensed under the Open Government Licence v3.0."
+  )
+
+# Save chart with reference map
+ggsave(
+  filename = here::here("inst/tutorials/15_no_maps/images/bar_chart_ref_map.png"),
+  plot = chart_reference,
+  width = 1200 / 150,
+  height = 800 / 150,
+  dpi = 300
+)
+

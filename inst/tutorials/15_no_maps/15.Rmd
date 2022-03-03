@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = FALSE)
 # Load packages
 library(ggrepel)
 library(gt)
+library(scales)
 library(sf)
 library(tidyverse)
 
@@ -72,18 +73,23 @@ direct. If you only need to communicate a small amount of information, there is
 less justification for forcing your audience to mentally translate the aesthetic
 into whatever it represents. 
 
-<p class="full-width-image"><img src="images/map_vs_bar_chart.png" alt="Choropleth map and bar chart both showing the frequency of violence in each district in Northamptonshire in 2020"></p>
-
 For example, if you wanted to show the number of violent and sexual offences in
 each of the seven districts in Northamptonshire in England, a choropleth map is
 less clear than a bar chart (for example, in being able to decipher if there 
 were more offences in Kettering or in Wellingborough). 
 
-A map might be a useful addition to the bar chart in this case if you are trying 
-to communicate information to people who are not familiar with the locations of 
-the districts. But in most circumstances in which you would be conveying this 
-type of information the audience will probably already have at least some 
-knowledge of the area.
+<p class="full-width-image"><img src="images/map_vs_bar_chart.png" alt="Choropleth map and bar chart both showing the frequency of violence in each district in Northamptonshire in 2020"></p>
+
+A map might be a useful addition to the bar chart in this case *if* you are
+trying to communicate information to people who are not familiar with the
+locations of the districts. In that case, we might want to add a small reference
+map to help people understand which area is which:
+
+<p class="full-width-image"><img src="images/bar_chart_ref_map.png" alt="Bar chart showing the frequency of violence in each district in Northamptonshire in 2020, with a reference map showing the area covered by each district"></p>
+
+But in most circumstances in which you create crime maps, you will be creating
+them for an audience (such as local police officers) that already has sufficient 
+knowledge of the area and so an inset map such as this would not be needed.
 
 
 #### When you need to convey several different things about one place
@@ -154,7 +160,7 @@ One issue with printing the `violence` object as a table is that it has
 page or screen. We can make the data more compact by converting it from long
 format to wide format. In the previous tutorial on tidying messy data we learned
 that data are often easier to analyse in long format. But it is often better to
-present data in a table in wide format.
+_present_ data in a table in wide format.
 
 To convert the table to a wider format we can use the `pivot_wider()` function
 from the `tidyr` package, just was we used the corresponding `pivot_longer()` 
@@ -174,6 +180,16 @@ also see that the `year` column is *constant* (all the values are the same), so
 we can remove this using the `select()` function from `dplyr`. We can also 
 use `select()` to change the order of the columns from left to right so that the
 two types of robbery appear next to each other.
+
+
+```{r tables-exercise2a, exercise=TRUE}
+violence %>% 
+  pivot_wider(names_from = crime_type, values_from = count) %>% 
+  select(
+    region, state, murder, rape, `aggravated assault`, `armed robbery`, 
+    `unarmed robbery`
+  )
+```
 
 
 ### Using the `gt` package to make better tables
@@ -220,10 +236,15 @@ units), scaling numbers (useful for very large numbers) or automatically
 formatting numbers according to the conventions of the language your computer is
 set to use (referred to in R help pages as the *locale* of your computer).
 
-In this case we don't want any decimal places (since the crime counts are all
-whole numbers), so we set `decimals = 0`. We can use the default values of all 
-the other arguments to `fmt_number()` -- use `?gt::fmt_number` to find out more
-about the different options available.
+We choose which columns `fmt_number()` should format using the `columns`
+argument. In this case, we want to format all the numeric columns in the data,
+so we will set `columns = where(is.numeric)`.
+
+We don't want the numbers in the table to have any decimal places (since the
+crime counts are all whole numbers), so we also set `decimals = 0`. We can use
+the default values of all the other arguments to `fmt_number()` -- type
+`?gt::fmt_number` in the R console to find out more about the different options
+available on the help page for the `fmt_number()` function.
 
 ```{r tables-exercise4, exercise=TRUE}
 violence %>% 
@@ -233,16 +254,13 @@ violence %>%
     `unarmed robbery`
   ) %>% 
   gt() %>% 
-  fmt_number(
-    columns = vars(
-      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
-    ),
-    decimals = 0
-  )
+  fmt_number(columns = where(is.numeric), decimals = 0)
 ```
 
-Depending on the types of data in our table, we could also have used functions
-such as `fmt_currency()`, `fmt_date()` or `fmt_percent()` to format columns.
+`fmt_number()` is one of several formatting functions available in `gt`. For
+example, we could use `fmt_currency()` to format columns according to the 
+conventions for currency values, `fmt_date()` for dates or `fmt_percent()` for
+percentages.
 
 The `region` column only has two values: `West Malaysia` for states and 
 territories in Peninsular Malaysia and `East Malaysia` for states on the island
@@ -253,7 +271,9 @@ the region names once at the top of each group.
 
 `gt()` will automatically create group headings in a table if the data frame or
 tibble passed to `gt()` contains groups created by the `group_by()` function 
-from the `dplyr` package.
+from the `dplyr` package. All we have to do is use `group_by()` to specify 
+which column (in this case, `region`) contains the values that we should use to
+determine which group each row is in.
 
 ```{r tables-exercise5, exercise=TRUE}
 violence %>% 
@@ -265,12 +285,7 @@ violence %>%
   group_by(region) %>% 
   # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
   gt() %>% 
-  fmt_number(
-    columns = vars(
-      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
-    ),
-    decimals = 0
-  )
+  fmt_number(columns = where(is.numeric), decimals = 0)
 ```
 
 In tables containing lots of numbers it can be difficult to see patterns. One 
@@ -282,17 +297,22 @@ can colour the cells in a column according to the value of each cell using the
 argument and the colours we want to use using the `colors` argument (note the 
 spelling again). 
 
-The `columns` argument needs the name of a column wrapped in the `vars()` helper 
-function (we don't need to understand why) and the `colors` argument needs the 
-result produced by a function that converts numeric values to shades of colour. 
-We will use the `col_numeric()` function from the `scales` package, which 
-converts numbers to colour shades on a linear scale. To calculate the colour 
-shades, `col_numeric()` needs to know the range of possible values that we want
-the colour scale to cover. In this case we just want the colour scale to cover
-the values in the data, so we specify `domain = NULL` to say that we do not want
-to provide a range of values manually.
+In this example, we will only colour the values in two columns, so we will pass
+the column names (enclosed in `` ` ``back ticks`` ` `` if they contain a space) 
+to the `columns` argument.
 
-```{r tables-exercise7, exercise=TRUE, exercise.lines=24}
+The `colors` argument to `data_color()` needs to be the result produced by a 
+function that converts numeric values to shades of colour. We will use the 
+`col_numeric()` function from the `scales` package, which converts numbers to 
+colour shades on a linear scale. To calculate the colour shades, `col_numeric()` 
+needs to know the range of possible values that we want the colour scale to 
+cover. In this case we just want the colour scale to cover the values in the 
+data, so we specify `domain = NULL` to say that we want `col_numeric()` to work
+out the range of possible values automatically.
+
+```{r tables-exercise7, exercise=TRUE, exercise.lines=17}
+library(scales)
+
 violence %>% 
   pivot_wider(names_from = crime_type, values_from = count) %>% 
   select(
@@ -302,35 +322,33 @@ violence %>%
   group_by(region) %>% 
   # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
   gt() %>% 
-  fmt_number(
-    columns = vars(
-      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
-    ),
-    decimals = 0
-  ) %>% 
+  fmt_number(columns = where(is.numeric), decimals = 0) %>% 
   data_color(
-    columns = vars(`unarmed robbery`),
-    colors = scales::col_numeric("Oranges", domain = NULL)
+    columns = `unarmed robbery`,
+    colors = col_numeric("Oranges", domain = NULL)
   ) %>% 
-  data_color(
-    columns = vars(rape),
-    colors = scales::col_numeric("Blues", domain = NULL)
-  )
+  data_color(columns = rape, colors = col_numeric("Blues", domain = NULL))
 ```
 
-It's worth noting that in this table we use two different colours to show the
-patterns in the frequency of murder and unarmed robbery. This is because we want 
-readers to remember that different types of crime are *different* and so 
-comparisons that treat crimes as being equivalent to one another are likely to
-be flawed. If we used the same colour across columns, readers might end up 
-seeing that the shade used for unarmed robberies in Kuala Lumpur was darker than
-the shade showing the number of murders and conclude that unarmed robberies were 
-a bigger problem than murders. This would be a potentially false conclusion 
-because a single murder and a single unarmed robbery are not the same in terms 
-of their seriousness. For the same reason the table does not include a column 
-showing the total number of crimes in each state -- when we total all types of 
-crime together, we are implicitly assuming that all types of crime are the same 
-when that is obviously untrue.
+
+<div class="box notewell">
+
+In this table we use two different colours to show the patterns in the frequency
+of murder and unarmed robbery. This is because we want readers to remember that
+different types of crime are *different* and so comparisons that treat crimes as
+being equivalent to one another are likely to be flawed. If we used the same
+colour across columns, readers might end up seeing that the shade used for
+unarmed robberies in Kuala Lumpur was darker than the shade showing the number
+of murders and conclude that unarmed robberies were a bigger problem than
+murders. This would be a potentially false conclusion because a single murder
+and a single unarmed robbery are not the same in terms of their seriousness.
+
+For the same reason the table does not include a column showing the total number
+of crimes in each state -- when we total all types of crime together, we are
+implicitly assuming that all types of crime are the same when that is obviously
+untrue.
+
+</div>
 
 
 ### Adding summary rows
@@ -338,13 +356,29 @@ when that is obviously untrue.
 The final thing we will add to this table is a summary row containing the total 
 number of each type of crime across all the states and territories. We do this
 using the `summary_rows()` function from `gt`. We specify the columns we want to
-summarise using the `columns` argument as we did for `fmt_number()`. To specify
-what function we want to use to summarise the rows, we set the `fns` argument to
-`fns = list(sum)`, since the `sum()` function returns the total of a series of
-numbers. If wanted to produce a summary row showing, for example, the mean 
-number of crimes in a state, we could instead specify `fns = list(mean)`. By
-default, `summary_rows()` formats the calculated summary values as numbers using
-`fmt_numeric()`, we also need to specify `decimals = 0` as before.
+summarise using the `columns` argument as we did for `fmt_number()`. 
+
+Summary rows can be produced using lots of different R functions. For example,
+we could use the `mean()` function to produce a summary row showing the mean
+(average) number of crimes of each time across the states. In this case, we want
+to know the total number of each type of crime across all states, so we will use
+the `sum()` function. To specify this, we pass the `fns` argument to 
+`summary_rows()`. For reasons we don't need to go into, the `funs` argument must
+be a _list_ of function names, even if only one function name is needed. So to
+tell `summary_rows()` to produce summaries based on totals, we need to specify
+`fns = list("sum")`. 
+
+By default, this will produce a row at the bottom of the table containing the 
+totals, but that row will have a label on the left that is based on the name of 
+the function -- `sum()` used to produce the summary values. Since more people 
+will know the word 'total' than the word 'sum', we will instead specify that
+this summary row should be labelled as 'total'. To do this, we have to _name_
+the entry in the list passed to `fns` that specifies the function to use, i.e.
+we need to specify `fns = list("total = "sum")` rather than just 
+`fns = list("sum")`.
+
+By default, `summary_rows()` formats the calculated summary values as numbers 
+using `fmt_numeric()`, we also need to specify `decimals = 0` as before.
 
 ```{r tables-exercise8, exercise=TRUE, exercise.lines=31}
 violence %>% 
@@ -356,24 +390,14 @@ violence %>%
   group_by(region) %>% 
   # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
   gt() %>% 
-  fmt_number(
-    columns = vars(
-      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
-    ),
-    decimals = 0
-  ) %>% 
+  fmt_number(columns = where(is.numeric), decimals = 0) %>% 
   data_color(
-    columns = vars(`unarmed robbery`),
-    colors = scales::col_numeric("Oranges", domain = NULL)
+    columns = `unarmed robbery`,
+    colors = col_numeric("Oranges", domain = NULL)
   ) %>% 
-  data_color(
-    columns = vars(rape),
-    colors = scales::col_numeric("Blues", domain = NULL)
-  ) %>% 
+  data_color(columns = rape, colors = col_numeric("Blues", domain = NULL)) %>% 
   summary_rows(
-    columns = vars(
-      murder, rape, `aggravated assault`, `armed robbery`, `unarmed robbery`
-    ),
+    columns = where(is.numeric),
     fns = list("total" = "sum"),
     decimals = 0
   )
@@ -385,9 +409,47 @@ to spot patterns in tables even with coloured cells. In the next section, we
 will learn to create bar chart in R to show patterns more effectively.
 
 
+<div class="box extra-detail">
+
+<h5 id="gtword-box1-title" class="box-title">Using the `gt` package with Word documents</h5>
+
+<div id="gtword-box1" class="box-content">
+
+The `gt` package is primarily designed to produce tables in HTML or PDF 
+documents. If you want to use `gt` to create tables in Word documents, you will
+need to adjust the YAML header section of your Rmarkdown document. Specifically,
+you must add a line to your YAML header specifying:
+
+```
+output: rtf_document
+```
+
+`rtf` here means rich-text format, which is a file format created by Microsoft
+for documents that can be shared between Word and other word-processing 
+software.
+
+If there is already a line in the YAML header that starts `output: `, you should
+replace this with `output: rtf_document`. Note that `gt` will _not_ work if you
+use `output: word_document`, which is the usual output format for producing Word
+documents.
+
+A few features of the `gt` package – including colouring table cells based on
+their value – are not available for RTF documents. This is one reason why you
+may want to prefer producing output as HTML where possible.
+
+</div>
+
+</div>
+
+<script>
+$("#gtword-box1-title").click(function () { $("#section-gtword-box1").toggle("slow") })
+</script>
+
+
+
 ## Bar charts
 
-*Bar charts* are useful for showing values on a continuous variable (e.g. a
+Bar charts are useful for showing values of a continuous variable (e.g. a
 count of crimes) for each value of a categorical variable (e.g. states of a
 country). Bar charts are very common, but there are several things we can do to
 make them more useful. In this section we will learn how to construct a good bar
@@ -429,9 +491,9 @@ violence %>%
   geom_col(aes(x = count, y = state)) +
   labs(
     title = "Murders in Malaysian states, 2017",
+    caption = "Data from the Royal Malaysian Police",
     x = "number of murders",
-    y = NULL,
-    caption = "Data from the Royal Malaysian Police"
+    y = NULL
   ) +
   theme_minimal()
 ```
@@ -470,9 +532,9 @@ violence %>%
   scale_x_continuous(expand = c(0, 0)) +
   labs(
     title = "Murders in Malaysian states, 2017",
+    caption = "Data from the Royal Malaysian Police",
     x = "number of murders",
-    y = NULL,
-    caption = "Data from the Royal Malaysian Police"
+    y = NULL
   ) +
   theme_minimal() +
   theme(
@@ -517,8 +579,9 @@ use the `fct_reorder()` function. This takes a factor or character variable
 (such as the names of the Malaysian states and territories) and sets the order 
 of the categories according to the values of a numeric variable (such as the 
 number of murders in a state). So to re-order the `state` variable according to 
-the count of murders, we can use `fct_reorder(state, count)` inside the 
-`mutate()` function (since we're changing an existing variable).
+the count of murders, we can use `fct_reorder(state, count)`. Since we're 
+changing an existing variable, we will do this inside a call to the `mutate()` 
+function.
 
 ```{r bars-exercise4, exercise=TRUE, exercise.lines=18}
 violence %>% 
@@ -529,9 +592,9 @@ violence %>%
   scale_x_continuous(expand = c(0, 0)) +
   labs(
     title = "Murders in Malaysian states, 2017",
+    caption = "Data from the Royal Malaysian Police",
     x = "number of murders",
-    y = NULL,
-    caption = "Data from the Royal Malaysian Police"
+    y = NULL
   ) +
   theme_minimal() +
   theme(
@@ -540,15 +603,141 @@ violence %>%
   )
 ```
 
+Finally, we can use colour to indicate which states are in which of the two
+regions of Malaysia. To do this, we will:
+
+  * specify in the call to `aes()` that the fill colour of the bars should be
+    controlled by the `region` column in the data,
+  * specify in the call to `labs()` that we don't want the legend to have a 
+    title, since the meaning is obvious from the values 'East Malaysia' and
+    'West Malaysia', and
+  * specify in the call to `theme()` that we would like the legend use up some 
+    of the empty space in the bottom-right corner of the chart, rather than 
+    making the chart smaller to give space for the legend on the right-hand 
+    side.
+    
+To move the legend, we need to specify three different arguments in the 
+`theme()` function. `legend.position` determines where in the plot the legend
+should be placed, based on how far along each axis (as a proportion of the axis
+length, on a scale from zero to one) the legend should be placed. 
+
+```{r legend-position, fig.align='center', fig.asp=1}
+tibble(
+  x = c(0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1), 
+  y = c(0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1)
+) %>% 
+  mutate(
+    label = str_glue("{number(x, accuracy = 0.1)}, {number(y, accuracy = 0.1)}")
+  ) %>% 
+  ggplot(aes(x = x, y = y, label = label)) +
+  geom_point() +
+  geom_label() +
+  scale_x_continuous(
+    expand = expansion(0.1), 
+    position = "top", 
+    sec.axis = dup_axis(name = NULL)
+  ) +
+  scale_y_continuous(
+    expand = expansion(0.1), 
+    sec.axis = dup_axis(name = NULL)
+  ) +
+  coord_fixed() +
+  labs(
+    x = "the first number gives the value on horizontal (x) axis",
+    y = "the second number gives the value on vertical (y) axis"
+  ) +
+  theme_minimal()
+```
+
+Using this specification, we can place the legend in the right-most point on the 
+horizontal axis and the bottom-most point on the vertical axis by specifying
+`legend.position = c(1, 0)`.
+
+`legend.position` sets the _anchor_ point from which the legend is created, with
+the actual size of the legend depending on how much space is required by its
+contents. By default, a legend will spread out in all directions from the anchor
+point, i.e. the legend will be horizontally and vertically centred on the
+anchor point. If we have positioned the legend in a corner of the plot, this is
+probably not what we want since some of the legend will be hidden outside the
+plot area. Instead, we can set the `legend.justifcation` argument of `theme()`
+using a similar specification to that for `legend.position` based on which way
+we want the legend to grow.
+
+```{r legend-justification, fig.align='center', fig.asp=0.5}
+tibble(
+  x = c(1.1, 1.1, 0.9, 0.9, 1.1, 0.9, 1, 1),
+  xend = c(1.25, 1.25, 0.75, 0.75, 1.25, 0.75, 1, 1),
+  y = c(1.1, 0.9, 1.1, 0.9, 1, 1, 0.9, 1.1),
+  yend = c(1.25, 0.75, 1.25, 0.75, 1, 1, 0.75, 1.25),
+  h = c(0, 0, 1, 1, 0, 1, 0.5, 0.5),
+  v = c(0, 1, 0, 1, 0.5, 0.5, 1, 0)
+) %>% 
+  mutate(
+    label = str_glue("{number(h, accuracy = 0.1)}, {number(v, accuracy = 0.1)}")
+  ) %>% 
+  ggplot() +
+  geom_segment(
+    aes(x = x, y = y, xend = xend, yend = yend), 
+    size = 1, 
+    arrow = arrow(length = unit(3, "mm"), type = "closed")
+  ) +
+  geom_label(aes(x = xend, y = yend, hjust = h, vjust = v, label = label)) +
+  geom_point(aes(x = x, y = y), size = 4) +
+  scale_x_continuous(expand = expansion(3)) +
+  scale_y_continuous(expand = expansion(0.5)) +
+  coord_fixed() +
+  theme_void()
+```
+
+If you want the legend to grow 'inwards' from a corner, just set 
+`legend.justification` to the same value as you used for `legend.position`; if
+you want the legend to grow 'outwards', just set `legend.justification` to the 
+opposite (e.g. 
+`theme(legend.justification = c(0, 1), legend.position = c(1, 0))`). In this
+case, we want the legend to be anchored in the bottom-right corner and to grow 
+inwards from it, so we will set both arguments to `c(1, 0)`.
+
+
+```{r bars-exercise5, exercise=TRUE, exercise.lines=21}
+violence %>% 
+  filter(crime_type == "murder") %>% 
+  mutate(state = fct_reorder(state, count)) %>% 
+  ggplot() +
+  geom_col(aes(x = count, y = state, fill = region)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(
+    title = "Murders in Malaysian states, 2017",
+    caption = "Data from the Royal Malaysian Police",
+    x = "number of murders",
+    y = NULL,
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    legend.background = element_rect(colour = NA, fill = "white"),
+    legend.justification = c(1, 0),
+    legend.position = c(1, 0),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank()
+  )
+```
+
 Bar charts are a very common way of presenting a numeric variable for each value
 of a categorical variable. Bar charts are easy to interpret, even for people who
 are not used to interpreting charts or who only have time to look at the chart
-for a few seconds. One of the reasons why bar charts are easy to interpret is
+for a few seconds. 
+
+
+<div class="box notewell">
+
+One of the reasons why bar charts are easy to interpret is
 that the *length* of each bar directly corresponds to the relative size of that
 particular value. But this direct relationship between bar length and value only
 applies if the bars start at zero. If you create a bar chart in which the bars 
 don't start at zero, readers are likely to be mislead, so remember *bar charts 
 should always start at zero*.
+
+</div>
 
 
 
@@ -583,15 +772,37 @@ burglary %>%
   filter(district == "Kettering") %>% 
   ggplot() +
   geom_dotplot(aes(x = count), binwidth = 1) +
-  scale_y_continuous(limits = c(0, 0.25)) +
   labs(
     title = "Number of burglaries in Ketting neighbourhoods",
     subtitle = "each dot represents one LSOA",
     x = "count of burglaries, 2020",
-    y = "proportion of LSOAs"
+    y = "number of LSOAs"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
 ```
+
+
+<div class="box extra-detail">
+
+<h5 id="dist-box1-title" class="box-title">Why did we set `axis.text.y = element_blank()`?</h5>
+
+<div id="dist-box1" class="box-content">
+
+By default, `geom_dotplot()` produces a vertical (y) axis labels that suggest
+the y axis shows the proportion of points in each stack. However, these
+proportions are only true in certain circumstances, so they can be misleading.
+Since it's obvious what the vertical axis represents, it's better to remove the
+potentially misleading axis text in this case.
+
+</div>
+
+</div>
+
+<script>
+$("#dist-box1-title").click(function () { $("#section-dist-box1").toggle("slow") })
+</script>
+
 
 We can see on this chart that most LSOAs had only a few burglaries in 2020 (i.e.
 most dots are to the left of the chart), while a few LSOAs had a larger number
@@ -611,7 +822,7 @@ on the horizontal axis by adding a *density curve* with `geom_density()`.
 burglary %>% 
   filter(district == "Kettering") %>% 
   ggplot() +
-  geom_dotplot(aes(x = count), binwidth = 1) +
+  geom_dotplot(aes(x = count), binwidth = 1, colour = NA, fill = "grey50") +
   geom_density(aes(x = count), colour = "red", size = 2) +
   scale_y_continuous(limits = c(0, 0.25)) +
   labs(
@@ -620,14 +831,15 @@ burglary %>%
     x = "count of burglaries, 2020",
     y = "proportion of LSOAs"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
 ```
 
 In the code above, the `aes()` function that specifies which columns in the data
 should be used to control the appearance of different parts of the chart is 
 duplicated, once inside `geom_dotplot()` and once inside `geom_density()`. If 
 all the layers in a plot use the same aesthetic specification, we can move the
-call to the `aes()` function from the invidiual `geom_` functions to the 
+call to the `aes()` function from the individual `geom_` functions to the 
 `ggplot()` function that begins the stack. This helps us avoid duplication and
 produces an identical chart.
 
@@ -635,7 +847,7 @@ produces an identical chart.
 burglary %>%
   filter(district == "Kettering") %>%
   ggplot(aes(x = count)) +
-  geom_dotplot(binwidth = 1) +
+  geom_dotplot(binwidth = 1, colour = NA, fill = "grey50") +
   geom_density(colour = "red", size = 2) +
   scale_y_continuous(limits = c(0, 0.25)) +
   labs(
@@ -644,7 +856,8 @@ burglary %>%
     x = "count of burglaries, 2020",
     y = "proportion of LSOAs"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
 ```
 
 We can use density curves to show the distribution of a variable across multiple
@@ -704,8 +917,9 @@ multiple columns), we can use the `facet_grid()` function. In this case we want
 the small multiples to appear on top of each other, so we will use 
 `facet_grid()` and say that the small multiples (which `ggplot2` calls *facets*)
 should be based on the `district` column in the data by specifying 
-`rows = vars(district)` (as with the `gt` example earlier, don't worry about why
-the `vars()` function is necessary).
+`rows = vars(district)` (it is necessary to wrap the name of the column that you
+want to use as the basis of the small multiples in the `vars()` function, but we
+do not need to go into why).
 
 ```{r dist-exercise5, exercise=TRUE, exercise.lines=20, fig.asp=1}
 burglary %>%
@@ -732,7 +946,7 @@ burglary %>%
 You might have noticed we made some other changes to our code for this chart to 
 make it clearer:
 
-  * Set the dot `colour` and `fill` to be based on the `district` colum in the
+  * Set the dot `colour` and `fill` to be based on the `district` column in the
     data, so the dots in each small multiple will be a different colour. We then 
     remove the legend that is automatically generated by adding the `colour` and 
     `fill` aesthetics using the `legend.position = "none"` attribute to 
@@ -745,7 +959,7 @@ make it clearer:
     rest of the chart that the vertical axis shows the count of dots in each
     stack.
   * Removed the grid lines for the *y* axis by setting the `theme()` attributes
-    `panel.grid.major.y` and `panel.grid.minor.y` to be `element_blank()`.
+    `panel.grid.major.y` and `panel.grid.minor.y` to `element_blank()`.
   * Added a horizontal line at zero on the *y* axis using `geom_hline()` to make 
     it easier to compare the height of each stack of dots to zero.
   * Wrapped the facet labels using the `label_wrap_gen()` helper function so 
@@ -810,8 +1024,8 @@ we need to have all the data for a municipality in a single row of data, so we
 will need to transform the data with `pivot_wider()` (as we did for some of the 
 tables at the start of this tutorial). Since this will turn the crime categories 
 into column names, we will first change the column names to clean names (i.e. 
-containing only lower-case letters, numbers and underscores) to make them easier
-to work with. 
+containing only lower-case letters, numbers and underscores) using `recode()` to 
+make the column names easier to work with. 
 
 ```{r scatter-exercise1, exercise=TRUE}
 vehicle_theft_wider <- vehicle_theft %>% 
@@ -904,9 +1118,9 @@ ggplot(vehicle_theft_wider, aes(x = theft_of, y = theft_from)) +
   theme_minimal()
 ```
 
-From this plot we can now see that half of municipalities have theft very low
-rates of both types of theft (shown by the dots below and to the left of the
-median lines).
+From this plot we can now see that half of municipalities have very low rates of 
+both types of theft (shown by the dots below and to the left of the median 
+lines).
 
 We can make some further changes to this chart. For example, instead of 
 labelling areas on the plot we could instead label the municipalities with high
@@ -994,14 +1208,18 @@ vehicles in Mthonjaneni.
 
 ## In summary
 
-In this tutorial we have learned how to present spatial data about crime without
-using maps. These techniques give us more flexibility about how to best present
-data to communicate the main points that we want to get across.
+<div class="box welldone">
+
+In this tutorial we have learned how to present data about crime at places 
+without using maps. These techniques give us more flexibility about how to best 
+present data to communicate the main points that we want to get across.
 
 Whether to use a map or a chart, and which type of map or chart to use, are
 design decisions for you to make. When you make these decisions, always remember
 that what is most important is that your audience understands your message. This
 makes it very important that you understand your audience.
+
+</div>
 
 Visualising data with charts is a very large topic and there are lots of 
 resources available to help you learn more. To get started, you might want to

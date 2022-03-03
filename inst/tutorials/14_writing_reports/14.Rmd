@@ -95,25 +95,36 @@ directly in RStudio.
 
 produces the output:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
-<h1 style="margin-top: 0.5em;">Introduction</h1>
+<h1>Introduction</h1>
 
 <p>In this tutorial we will learn to use a tool called <em>Rmarkdown</em> to 
 write reports directly in RStudio.</p>
 
 </div>
 
-In this example, the character `#` at the start of a line mean that line 
-should be shown as a first-level heading and the asterisks (`*` -- we could also
-have used the underscore character `_`) around the word `Rmarkdown` indicate 
-that it should be emphasised (typically with *italic* text).
+In this example, the character `#` followed by a space at the start of a line 
+mean that line should be shown as a first-level heading and the asterisks (`*` 
+-- we could also have used the underscore character `_`) around the word 
+`Rmarkdown` indicate that it should be emphasised (typically with *italic* 
+text).
+
+<div class="box notewell">
+
+In markdown we use the hash character `#` followed by a space to indicate that a 
+line should be formatted as a top-level heading. The space after the `#` is
+important – if you write `#Introduction` instead of `# Introduction` then R will
+not recognise that line as representing a heading and it will not be formatted
+properly.
+
+</div>
 
 Markdown is designed to be easy to read and easy to write. It is perfectly 
 possible, for example, to read the unformatted Markdown text in the example 
 above. Since Markdown files (which have the file extension `.md`) are plain 
 text, it's also possible to open them on virtually any computer. Markdown is
-also very widely used on the web -- using underscores to mark out italic text 
+very widely used on the web -- using underscores to mark out italic text 
 and asterisks to mark out bold text even works in messaging apps such as 
 Telegram and WhatsApp.
 
@@ -146,7 +157,7 @@ into different file formats.
 
 produces the output:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports
 directly in RStudio.
@@ -168,7 +179,7 @@ into different file formats.
 
 which produces the output:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports
 directly in RStudio.
@@ -195,7 +206,7 @@ or more `#` characters to the start of the line, followed by a space:
 
 produces:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 <h1>First-level heading</h1>
 
@@ -205,12 +216,16 @@ produces:
 
 </div>
 
+<div class="box notewell">
+
 Remember that Markdown describes the *structure* of a document, not its 
 appearance, so you should not choose a heading level based on what size of text
 it produces in a particular output format. It is often best to save the 
 first-level heading for your document title, so break the document up into 
 sections by specifying second-level headings and then break those sections up
 into sub-sections with third-level headings etc.
+
+</div>
 
 
 #### Lists
@@ -232,7 +247,7 @@ the same way, but starting each line with an asterisk:
 
 produces:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 1. A list of items
 2. for which the ordering
@@ -258,7 +273,7 @@ line of the quote:
 
 produces 
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 <blockquote>
 In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports 
@@ -287,7 +302,7 @@ the text:
 
 produces the link:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 [learn about the tidyverse](https://www.tidyverse.org/)
 
@@ -302,9 +317,10 @@ about what's possible with Markdown in the
 ### Processing Markdown in RStudio
 
 Once you've written a Markdown document, you can convert it into a web page, a
-Word document or a PDF file. First, save your document with a `.md` file 
-extension -- this tells RStudio that the file is a Markdown document. You should
-now see a new button at the top of the RStudio script panel marked `Preview`. 
+Word document or a PDF file from within RStudio. First, save your document with 
+a `.md` file extension -- this tells RStudio that the file is a Markdown 
+document. You should now see a new button at the top of the RStudio script panel 
+marked `Preview`. 
 
 <p class="centered-image"><img src="images/rstudio-markdown-preview.png" alt="Screen shot of the Preview button in RStudio that allows converting Markdown documents to web pages, PDFs or Word documents."></p>
 
@@ -373,23 +389,25 @@ know, though:
     more-complicated headers for Rmarkdown documents, read 
     [this tutorial](https://bookdown.org/yihui/bookdown/r-markdown.html) first.
 
-Since Rmarkdown can produce many types of document, RStudio has a dialog box in
+Since Rmarkdown can produce many types of document, RStudio has a dialogue box in
 which you can select from all the installed Rmarkdown templates. Click on the 
 'new file' button in the top-left corner of the RStudio window and then on
-`Rmarkdown`
+`R Markdown…`
 
-<p class="centered-image"><img src="images/rstudio-markdown-menu.png" alt="Screen shot of RStudio's dialog box for creating a new Rmarkdown document."></p>
+<p class="centered-image"><img src="images/rstudio-markdown-menu.png" alt="Screen shot of RStudio's dialogue box for creating a new Rmarkdown document."></p>
 
 This will open a box containing all the Rmarkdown templates that are installed
 on your computer. Some of these are installed by default and some may have been
-added by packages that you have installed. For example, you can create a resumé
-in Rmarkdown with the [`vitae` package](https://pkg.mitchelloharawild.com/vitae/).
+added by packages that you have installed. For example, you can create a resume
+in Rmarkdown with the [`vitae` package](https://pkg.mitchelloharawild.com/vitae/),
+so if that packages is installed on your computer then you will see a resume
+template as one of the options available in this dialogue box..
 Rmarkdown can produce a wide range of document types -- this tutorial is written
 in Rmarkdown using a template provided by a package called 
 [`learnr`](https://rstudio.github.io/learnr/), which is designed to produce
 interactive tutorials for learning R.
 
-<p class="centered-image"><img src="images/rstudio-new-markdown.png" alt="Screen shot of RStudio's dialog box for creating a new Rmarkdown document."></p>
+<p class="centered-image"><img src="images/rstudio-new-markdown.png" alt="Screen shot of RStudio's dialogue box for creating a new Rmarkdown document."></p>
 
 
 ### R code in Rmarkdown
@@ -406,7 +424,7 @@ example, you could add the current date in your document:
 
 Which would produce the output:
 
-<div style="margin: 1em; padding: 1em; border: 1px solid #CCCCCC; border-radius: 0.2em;">
+<div class="faux-markdown">
 
 This report was prepared on `r str_squish(format(Sys.Date(), "%e %B %Y"))`
 
@@ -417,7 +435,9 @@ code included inline would become difficult to read (and therefore difficult to
 debug). Fortunately, we can put as much code as we like in a *code block*. To
 add a block of R code to an Rmarkdown document, we add a new line and start it
 with the characters ```` ```{r} ```` without spaces. To end a code chunk, 
-include the characters ```` ``` ```` on a line on their own.
+include the characters ```` ``` ```` on a line on their own. There must not be
+any spaces or other characters on the line before ```` ```{r} ```` or 
+```` ``` ````.
 
 We can use code chunks to run longer pieces of code that would be difficult to
 read if the code were inline. For example, if you wanted to load a data file of
@@ -482,9 +502,10 @@ good practice), separate the options from the name with a comma and a space.
 
 To specify that the code in our R code chunks should not be printed in the final
 document, we can set the chunk option `echo=FALSE`. To specify that the R 
-output produced by the code in each code chunk, we can set the chunk option
-`include=FALSE`. So if we wanted our code chunk to produce no output at all, we
-could change the first line of the code chunk to read
+_output_ produced by the code in each code chunk (e.g. and messages or warnings) 
+should not be shown, we can set the chunk option `include=FALSE`. So if we 
+wanted our code chunk to produce no output at all, we could change the first 
+line of the code chunk to read
 ```` ```{r count-all-crimes, echo=FALSE, include=FALSE} ````.
 
 If we change the code in our previous example to include this line, the output
@@ -506,7 +527,7 @@ chunk calling the code `knitr::opts_chunk$set(echo = FALSE)`. The function name
 `opts_chunk$set` might look a little strange, but fortunately this line of code
 is included in the default Rmarkdown template, so we rarely need to remember it.
 All we need to do in most cases is change the default `echo = TRUE` to 
-`echo = FALSE`. We can also use the `setup` chunk to load and packages we need 
+`echo = FALSE`. We can also use the `setup` chunk to load any packages we need 
 for our code, since it is easy to look at this first chunk in any document to 
 see which packages are needed.
 
@@ -518,9 +539,9 @@ the message/warning text by setting the options `message=FALSE` and/or
 or warnings you weren't expecting then you will not see them. This can lead to
 you spending a long time trying to find out why your code isn't producing the
 results you expect when there is a warning that explains the problem but which
-you can't see because of `warning=TRUE`. So if you set either of these options,
-make sure you take them out again if you run into any problems. Even better,
-only set these options when you've already run your complete document 
+you can't see because you've set `warning=FALSE`. So if you set either of these 
+options, make sure you take them out again if you run into any problems. Even 
+better, only set these options when you've already run your complete document 
 successfully so that you know there are no problems.
 
 Charts and maps based on `ggplot()` or `ggmap()` stacks can include built-in
@@ -530,7 +551,8 @@ size of graphics produced by code chunks using the `fig.width` and `fig.height`
 options, e.g. `fig.width=10` to get a graphic that is 10 inches wide. There is
 a complete list of available chunk options in the 
 [Rmarkdown Reference Guide](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf).
-
+**I recommend you print out or keep a copy of this guide so that you can refer
+to it while you are writing Rmarkdown documents**.
 
 
 ## Knitting Rmarkdown
@@ -542,7 +564,7 @@ it knits together text, code and output to produce the final product.
 
 In RStudio you can knit an Rmarkdown document by clicking the `Knit` button (if
 you can't see the `Knit` button at the top of your Rmarkdown document, that is a
-sign you haven't saved the file as a `.Rmd` file. By default, RStudio will 
+sign you haven't saved the file as a `.Rmd` file). By default, RStudio will 
 produce an HTML file (a web page) and open it in the HTML viewer built into 
 RStudio. You can produce other formats instead of a web page by clicking on the 
 downward-pointing arrow next to the `Knit` button and then choosing the format
@@ -559,6 +581,20 @@ time you click the `Knit` button a PDF will be produced. If you want to produce
 a different format, just click the triangle next to the `Knit` button again and
 choose the format you want.
 
+
+<div class="box notewell">
+
+If you have a choice of which format to produce a report in, I would suggest you
+choose HTML because it can do things (like include interactive maps made with
+`tmap`) that Word and PDF format cannot, and can easily be read on mobile 
+devices. If, for whatever reason, you cannot choose HTML, I recommend choosing 
+PDF format since it is readable on almost all computers, even those that do not
+have Word installed on them. Only produce reports in Word format if you are 
+specifically required to submit something in that format.
+
+</div>
+
+
 Whatever format you choose, the output file will be saved in the same folder on
 your computer that you saved your `.Rmd` file in, and will have the same file
 name but with a different file extension (`.html`, `.pdf`, `.docx`, etc.). If 
@@ -570,16 +606,23 @@ you knit the document again, RStudio will overwrite the previous output file.
 
 <p class="full-width-image"><img src="images/rmarkdown_wizards.jpg" alt="Cartoon showing two wizards using Rmarkdown to combine text and code into a complete document"></p>
 
+<div class="box welldone">
+
 In this tutorial we have learned how to use Markdown to create structured 
 text using simple formatting codes and how to integrate that text with our code
 to produce integrated reports that include the results of our analysis. This 
 means we can make our work *reproducible* so that we can avoid all the mistakes
 that can happen if we have to copy and paste statistics and graphics into 
-reports written in software like Word. It also means we can produce periodic
+reports written in software like Word. 
+
+It also means we can produce periodic
 reports with updated data very easily, since we can just choose the data we want
 the report to be based on using `filter()` at the start of our file and knit the
 document. This can save a huge amount of time in producing reports such as 
 performance bulletins or monthly summaries of crime in an area.
+
+</div>
+
 
 To get used to working with Rmarkdown files, download 
 [this example report](https://github.com/mpjashby/crimemapping/raw/main/inst/example_rmarkdown_report.Rmd)

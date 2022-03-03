@@ -185,3 +185,16 @@ p.centered-image > img {
   font-weight: bold;
 }
 
+
+
+/* Faux markdown output */
+.faux-markdown {
+  margin: 1em;
+  padding: 1em;
+  border: 1px solid #CCCCCC;
+  border-radius: 0.2em;
+}
+
+.faux-markdown h1 {
+  margin-top: 0.5em;
+}
