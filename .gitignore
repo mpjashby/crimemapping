@@ -46,6 +46,7 @@ inst/tutorials/*-old/
 
 # Marking
 marking/
+assessment_specimen_answers/
 
 # Raw data files that are too large for GitHub
 inst/tutorials/prep/code/NYPD_Shooting_Incident_Data__Historic_.csv

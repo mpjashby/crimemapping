@@ -71,17 +71,45 @@ nested_assaults <- assaults_by_shift %>%
   nest(data = geometry)
 
 # Map data
-# ****** REPLACE THIS WITH SOMETHING BASED ON `group_modify()` ******
 kde_layers <- assaults_by_shift %>% 
   group_by(shift) %>% 
   group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
   ungroup() %>% 
-  st_as_sf()
+  st_as_sf() %>% 
+  st_transform(4326)
 base_map <- kde_layers %>% 
   st_bbox() %>% 
   set_names(c("left", "bottom", "right", "top")) %>%
   get_stamenmap(zoom = 13, maptype = "toner-lite")
-hour_layers <- read_rds("../../extdata/chicago_hourly_kde.rds")
+
+if (file.exists("www/chicago_hourly_kde.rds")) {
+  
+  hour_layers <- read_rds("www/chicago_hourly_kde.rds")
+  
+} else {
+  
+  assaults_by_hour <- assaults %>% 
+    filter(district %in% c(1, 18)) %>% 
+    mutate(
+      # Create nicely formatted labels for each hour
+      hour_name = str_pad(hour(date), width = 2, pad = "0"),
+      hour_name = str_glue("{hour_name}:00 to {hour_name}:59")
+    ) %>% 
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+    # Convert the data to a suitable co-ordinate system for Chicago
+    st_transform(26916)
+  
+  hour_layers <- assaults_by_hour %>% 
+    group_by(hour_name) %>% 
+    group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
+    ungroup() %>% 
+    st_as_sf() %>% 
+    st_transform(4326)
+  
+  write_rds(hour_layers, "www/chicago_hourly_kde.rds")
+  
+}
+
 hour_highest <- hour_layers %>% 
   group_by(hour_name) %>%
   slice_max(order_by = kde, n = 10)
@@ -588,7 +616,7 @@ We have already seen that there is seasonal variation in the number of
 aggravated assaults in Chicago. As is very common for assaults, there are more
 offences in the summer and fewer in the winter. We can see this in the 
 time-series chart we have already produced, but it's hard to see the detail. For
-example, we might want to know how consisent this seasonal variation is across
+example, we might want to know how consistent this seasonal variation is across
 different years. Is it, for example, consistent enough that the local police
 might want to restrict the number of officers who can take holidays in certain
 weeks of the year to maximise the number of officers available when crime is
@@ -799,7 +827,7 @@ Sometimes, it will be easy to choose periods because they will be dictated by
 the purpose for which you're creating the map. In this section we will create
 separate maps showing the density of aggravated assaults in a part of Chicago 
 for each of the standard Chicago Police shifts of 06:00 to 13:59, 14:00 to 21:59 
-and 22:00 to 05:59 (bearing in mind that the actual hours officers work may 
+and 22:00 to 05:59 (bearing in mind that the actual hours some officers work may 
 differ slightly).
 
 To do this, we will estimate the density of assaults separately for each shift
@@ -872,146 +900,129 @@ $("#map-box1-title").click(function () { $("#section-map-box1").toggle("slow") }
 The next step is to produce a kernel density (KDE) layer for assaults occurring
 in each shift. In a previous tutorial we learned how to do this using the 
 `sfhotspot` package. We could run the `hotspot_kde()` function from that package 
-three times to create the KDE layers for each shift, but this is a good 
-situation in which to use the `map()` function from the `purrr` 
-package to run a piece of code repeatedly for several separate pieces of data.
+three times to create the KDE layers for each shift, but there is a simpler way
+to apply the same function to different parts of a dataset using the 
+`group_modify()` function from `dplyr`.
 
-To prepare the data to be used by `map()`, we first have to *nest* the data.
-Nesting data means that we collect up bunches of rows from our dataset and store
-each bunch as a tibble stored _inside_ a column in a dataset. In a nested 
-dataset, each row will contain one or more columns that themselves contain a
-whole sub-dataset. 
+Normally, when we use a function to modify a dataset, that function is applied
+to the dataset as a whole. With `group_modify()`, we can apply a function to
+different parts of a dataset separately but still get the result as a single
+tibble with a column showing which group each row relates to (which is what we 
+need to produce a map).
 
-We create a nested dataset using the `nest()` function from the `tidyr` package 
-(loaded automatically by `tidyverse`). `nest()` is easier to work with if our
-dataset contains only the columns we need, so before we use `nest()` we'll use
-`select()` to remove all the columns that we don't need. We can then specify
-which columns in the dataset we want to be nested and what we want the new nest
-column to be called. We do this in the form:
+`group_modify()` needs two inputs. The first is a _grouped_ dataset. We already
+know how to specify which column in a dataset represents which group each row is
+in using the `group_by()` function. The second input to `group_modify()` is the
+name of the function we want to use to modify each group in the data. The only
+complication is that we have to provide the details of the function that 
+`group_modify()` should use in a slightly unusual format called an _anonymous
+function_. You can see this in the block of code below. You do not need to 
+understand the details of how an anonymous function works, but you should note
+two things:
+
+  1. Anonymous functions start with the `~` character.
+  2. In an anonymous function used within `group_modify()`, you can use the
+     special value `.x` (note the dot) to represent the data in each group.
+     
+So this code:
 
 ```r
-nest(column_name = c(vector_of_columns, that_we_want, to_nest))
+some_data %>% 
+  group_by(some_variable) %>% 
+  group_modify(~ hotspot_kde(.x))
 ```
 
-In this case, we only want to nest the `geometry` column in the data and we want
-the nest column to be called `data`, so we use `nest(data = geometry)`. Let's
-look at the first few rows of the nested data:
+Means 'take the dataset `some_data`, group it according to the values in the
+`some_variable` column and apply the `hotspot_kde()` function separately to each
+group'. The only thing left for us to do then is to use `ungroup()` to remove 
+the grouping from the result produced by `group_modify()` and convert that
+result back to an SF object using `st_as_sf()`. Don't worry about specifying any
+arguments to `st_as_sf()` – R will extract information such as the co-ordinate
+reference system from the `geometry` column of the data automatically.
 
-```{r map-exercise1a, exercise=TRUE}
-nested_assaults <- assaults_by_shift %>% 
-  # Remove all the columns except the ones we want
-  select(shift, geometry) %>% 
-  # Nest the `geometry` column
-  nest(data = geometry)
-
-# View the first few rows
-head(nested_assaults)
-```
-
-You can see that the nested dataset has two columns: `shift` and `data`. The
-`data` column contains all the rows of `geometry` corresponding to each value of
-`shift`. The `shift` column exists because we did not specify that it should be
-nested inside the `data` column – `nest()` will use any columns we don't specify
-should be nested to differentiate between the different groups of nested data. 
-In this case, this means we can use the `shift` column at a later step.
-
-We can look inside the nested column using the `pluck()` function from the 
-`purrr` package, which we have used in previous tutorials. For example, by using
-`pluck(nested_assaults, "data", 1)` we can extract and view the first row in the
-`data` column in the `nested_assaults` object.
-
-```{r map-exercise1b, exercise=TRUE}
-pluck(nested_assaults, "data", 1)
-```
-
-From this, we can see that the first row in the `data` column of the
-`nested_assaults` object contains an SF object with one column (`geometry`) and
-`r scales::comma(nrow(pluck(nested_assaults, "data", 1)))` rows. 
-
-Now that we've nested the data, we can use `map()` to apply the `hotspot_kde()`
-function to the data stored in each row of the the nested column in our dataset.
-
-```{r map-exercise2, exercise=TRUE, exercise.lines=21}
+```{r map-exercise2, exercise=TRUE}
 library(sfhotspot)
 
 kde_layers <- assaults_by_shift %>% 
-  # Remove all the columns except `shift` and `geometry`
-  select(shift, geometry) %>% 
-  # Bunch the `geometry` column of the data into three datasets, one for each 
-  # shift
-  nest(data = geometry) %>% 
-  # Convert the data from a tibble to a list with names, since we can convert 
-  # those names to a column in our final KDE dataset using the `.id` argument to
-  # `bind_rows()`. Remember that the first argument to `map()` is the function
-  # we want to apply to each group of data, while any remaining arguments are
-  # passed to the function we're using. This means we can pass arguments like
-  # `cell_size` to `hotspot_kde()` by providing them as arguments to `map()`.
-  deframe() %>% 
-  map(hotspot_kde, cell_size = 250, bandwidth = 1000) %>% 
-  bind_rows(.id = "shift") %>% 
+  group_by(shift) %>% 
+  group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
+  ungroup() %>% 
+  st_as_sf() %>% 
   st_transform(4326)
-  
+
 head(kde_layers)
 ```
 
 
 <div class="box extra-detail">
 
-<h5 id="map-box2-title" class="box-title">What do `deframe()` and `bind_rows()` do?</h5>
+<h5 id="map-box2-title" class="box-title">How to anonymous functions work?</h5>
 
 <div id="map-box2" class="box-content">
 
-`map()` works on a _list_ of objects (in this case, the nested SF objects).
-`deframe()` (from the `tibble` package, which is loaded by `tidyverse`) converts 
-our dataset of nested SF objects into a list of SF objects so that `map()` 
-can use it. More exactly, `deframe()` converts any dataset with two columns into 
-a list of objects, converting the first column of the dataset to the names of 
-the list elements and the second column to the values of the list elements. So 
-if we had a nested dataset that looked like this (note that each row in 
-`second_column` contains a nested tibble):
+Anonymous functions in R (and in many other programming languages) are a compact
+way of creating a new function that we can then immediately use to modify a
+dataset.
 
-```{r}
-tribble(
-  ~first_column, ~second_column,
-  "a_name", tibble(a = 1, b = 2, c = 3),
-  "another_name", tibble(a = 4, b = 5, c = 6),
-  "yet_another_name", tibble(a = 7, b = 8, c = 9)
-)
+We can create our own functions in R by using the `function()` function. For
+example, if we wanted to create our own version of the `head()` function that
+printed the first 10 rows of a dataset – rather than the default six rows 
+printed by `head()` – we could create a function called `head10()`:
+
+```r
+head10 <- function(x) {
+  head(x, n = 10)
+}
 ```
 
-We could use `deframe()` to convert it into a list that looked like this:
+When we call the new `head10()` function on a dataset, R will take whatever data
+we provide to that function and run all the code inside the braces `{}` above
+using that data. We can use this new function anywhere in our code _after_ we've 
+created it. For example, if we had a dataset called `some_data` we could view 
+the first 10 rows of it by creating an then using our new function:
 
-```{r}
-tribble(
-  ~first_column, ~second_column,
-  "a_name", tibble(a = 1, b = 2, c = 3),
-  "another_name", tibble(a = 4, b = 5, c = 6),
-  "yet_another_name", tibble(a = 7, b = 8, c = 9)
-) %>% deframe()
+```r
+head10 <- function(x) {
+  head(x, n = 10)
+}
+
+head10(some_data)
 ```
 
-`map()` produces a list, with each element in the list containing the results of
-applying the function – in our case, `hotspot_kde()` – to each dataset. Since
-we want a single SF object rather than a list of them, we can use the 
-`bind_rows()` function from `dplyr` to bind the results into a single SF object.
+Note that _inside_ our new function, the dataset is referred to by the name that
+we gave it in the parentheses `()` after the word `function`, _not_ by the name
+of the dataset itself. This is important because it means our custom function 
+will work regardless of what a particular dataset is called.
 
-It's important that `deframe()` produces a _named_ list because it means we can
-use the `.id` argument to `bind_rows()` to specify that the names of the list 
-items should be included in a new column in the result returned by `map()`. This
-converts the list above so that it's a single dataset again:
+We could include lots of lines of code inside our new function, but in this case 
+there is just one – `head(x, n = 10)`. When we want to create a function that
+consists of a single line of code, we can dispense with the braces and put the 
+whole function on one line:
 
-```{r}
-tribble(
-  ~first_column, ~second_column,
-  "a_name", tibble(a = 1, b = 2, c = 3),
-  "another_name", tibble(a = 4, b = 5, c = 6),
-  "yet_another_name", tibble(a = 7, b = 8, c = 9)
-) %>% deframe() %>% map(identity) %>% bind_rows(.id = "name")
+```r
+head10 <- function(x) head(x, n = 10)
+
+head10(some_data)
 ```
 
-This approach to applying a function separately to different parts of a dataset
-is called _split, apply, combine_ and it is a very common way of wrangling data
-across different programming languages.
+Creating a new function and giving it a name is useful if we want to use the
+function several times in our code. But in the case of the function we need to
+provide to `group_modify()` in our code, we only need to use the new function
+once. In this case, we can dispense with the need to give our new function a 
+name, and instead create an anonymous function. To do this, we replace 
+`function(x)` with the `~` character.
+
+This makes the definition of our custom function even faster, but means we can
+only use it inside a function such as `group_modify()` or `map()` that needs a
+function definition to work. Using an anonymous function also means we need some 
+way of referring to our dataset inside the new function, since we don't have the
+opportunity to define it inside parentheses after the word `function`. 
+Fortunately, `group_modify()` understands that if we refer to `.x` (note the 
+dot) inside our anonymous function, that should be interpreted as referring to
+our dataset.
+
+There is a lot more you could learn about creating your own functions in R. If
+you are interested, you might want to [work through this lesson on Creating Functions](https://swcarpentry.github.io/r-novice-inflammation/02-func-R/).
 
 </div>
 
@@ -1021,12 +1032,11 @@ across different programming languages.
 $("#map-box2-title").click(function () { $("#section-map-box2").toggle("slow") })
 </script>
 
-
 Now we have a KDE layer for each shift, we can download a base map as in 
 previous tutorials and then create three maps for the three shifts by adding 
 `facet_wrap()` to a `ggplot()` stack.
 
-```{r map-exercise3, exercise=TRUE, exercise.lines=30, fig.asp=1, message=FALSE}
+```{r map-exercise3, exercise=TRUE, exercise.lines=30, message=FALSE}
 library(ggmap)
 
 base_map <- kde_layers %>% 
@@ -1065,9 +1075,10 @@ with the highest estimated density of assaults during each shift. We can do this
 using the `slice_max()` function from `dplyr`, which allows us to extract the
 rows in a dataset with the highest values of a particular variable. In this case
 we will use `slice_max()` together with `group_by()` to get the rows with the
-highest values within each shift.
+highest values _separately for each shift_ rather than those with the highest 
+values across all three shifts combined.
 
-```{r map-exercise4, exercise=TRUE, fig.asp=1}
+```{r map-exercise4, exercise=TRUE}
 kde_highest <- kde_layers %>% 
   group_by(shift) %>% 
   slice_max(order_by = kde, n = 10)
@@ -1119,8 +1130,8 @@ hour of the day. The code for this is the same as for the code we have already
 used to produce the KDE layers for each shift, except that we create a variable
 for hour of the day rather than police shift. Because an animated map of hours 
 of the day needs 24 KDE layers, in this case it is particularly useful to use
-`map()` to avoid having to create 24 different objects and then binding them
-together.
+`group_modify()` to avoid having to create 24 different objects and then binding 
+them together.
 
 ```{r animated-exercise1, exercise=TRUE, exercise.lines=27}
 library(gganimate)
@@ -1137,15 +1148,10 @@ assaults_by_hour <- assaults %>%
   st_transform(26916)
 
 hour_layers <- assaults_by_hour %>% 
-  # Remove all but the column we need
-  select(hour_name, geometry) %>% 
-  # Split the dataset by hour
-  nest(data = geometry) %>% 
-  # Convert the dataset to a named list
-  deframe() %>% 
-  # Run the function `kde()` for each hour
-  map(hotspot_kde, cell_size = 250, bandwidth = 1000) %>% 
-  bind_rows(.id = "hour_name") %>% 
+  group_by(hour_name) %>% 
+  group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
+  ungroup() %>% 
+  st_as_sf() %>% 
   st_transform(4326)
 
 # Extract only the 10 cells with the highest density in each hour
@@ -1164,7 +1170,7 @@ that happens then just continue with the rest of the tutorial as normal.
 </div>
 
 
-We can now use the `hour_layers` object as the basis for a new base map that
+We can now use the `hour_highest` object as the basis for a new base map that
 only includes the areas of the highest density (so they appear larger on the
 animated map).
 
@@ -1183,7 +1189,7 @@ in the data (in this case, the hour of the day). The only difference is that
 while `facet_wrap()` arranges those separate maps next to one another,
 `transition_states()` arranges them into an animation.
 
-```{r animated-exercise3, exercise=TRUE, exercise.lines=16, fig.asp=1}
+```{r animated-exercise3, exercise=TRUE, exercise.lines=16}
 ggmap(clipped_base_map) +
   geom_sf(
     aes(fill = kde),
@@ -1205,7 +1211,7 @@ ggmap(clipped_base_map) +
 
 <div class="box extra-detail">
 
-<h5 id="animated-box1-title" class="box-title">What does `deframe()` do?</h5>
+<h5 id="animated-box1-title" class="box-title">I got an error saying `Your code ran longer than the permitted timelimit for this exercise`</h5>
 
 <div id="animated-box1" class="box-content">
 
@@ -1229,12 +1235,12 @@ $("#animated-box1-title").click(function () { $("#section-animated-box1").toggle
 
 
 There is one other function of `gganimate` we have used in the code used to make
-this map. Yoy might have noticed that in the map `subtitle` is the code 
+this map. You might have noticed that in the map `subtitle` is the code 
 `{closest_state}`. This is a special code that `gganimate` will replace with the
 current value of the variable in the data that is used to control which facet 
 appears in each frame of the animation. So for this map, `{closest_state}` will
-be replaced in the animation with the value of the `hour` variable in the data
-for each frame in the animation.
+be replaced in the animation with the value of the `hour_name` variable in the 
+data for each frame in the animation.
 
 This animated map is very sensitive to the number of grid cells we choose to 
 extract (in the map above, 10 cells for each hour) -- it might look quite 
