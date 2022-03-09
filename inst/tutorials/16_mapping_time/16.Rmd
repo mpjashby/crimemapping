@@ -18,8 +18,8 @@ library(gganimate)
 library(ggmap)
 library(lubridate)
 library(sf)
+library(sfhotspot)
 library(slider)
-library(SpatialKDE)
 library(tidyverse)
 
 # Copy files
@@ -29,17 +29,22 @@ walk(
   ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
 )
 
-# Load data
+# Load data --------------------------------------------------------------------
+
+# Crime data for demonstrating date manipulation
 crimes <- read_csv("../../extdata/bronx_shootings.csv") %>% 
   mutate(occur_date = as_date(runif(
     n(), 
     min = as.numeric(today() - days(28 + 7)), 
     max = as.numeric(today())
   )))
+
 thefts <- read_csv("../../extdata/vancouver_thefts.csv.gz") %>% 
   janitor::clean_names() %>% 
   select(year, month_of_year = month, day_of_month = day, hour, minute, x, y) %>% 
   filter(month_of_year == 9)
+
+# Assaults data for animated map
 assaults <- read_csv("../../extdata/chicago_aggravated_assaults.csv.gz")
 assault_weekly_counts <- assaults %>% 
   mutate(week_date = floor_date(as_date(date), unit = "week")) %>%
@@ -59,13 +64,19 @@ assaults_by_shift <- assaults %>%
   )) %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
   st_transform(26916)
-kde_grid <- create_grid_rectangular(assaults_by_shift, cell_size = 250)
+nested_assaults <- assaults_by_shift %>% 
+  # Remove all the columns except the ones we want
+  select(shift, geometry) %>% 
+  # Nest the `geometry` column
+  nest(data = geometry)
+
+# Map data
+# ****** REPLACE THIS WITH SOMETHING BASED ON `group_modify()` ******
 kde_layers <- assaults_by_shift %>% 
-  select(shift) %>% 
-  nest(data = geometry) %>% 
-  deframe() %>% 
-  map_dfr(kde, band_width = 1000, grid = kde_grid, .id = "shift") %>% 
-  st_transform(4326)
+  group_by(shift) %>% 
+  group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
+  ungroup() %>% 
+  st_as_sf()
 base_map <- kde_layers %>% 
   st_bbox() %>% 
   set_names(c("left", "bottom", "right", "top")) %>%
@@ -73,7 +84,7 @@ base_map <- kde_layers %>%
 hour_layers <- read_rds("../../extdata/chicago_hourly_kde.rds")
 hour_highest <- hour_layers %>% 
   group_by(hour_name) %>%
-  slice_max(order_by = kde_value, n = 10)
+  slice_max(order_by = kde, n = 10)
 clipped_base_map <- hour_highest %>% 
   st_bbox() %>% 
   set_names(c("left", "bottom", "right", "top")) %>%
@@ -97,7 +108,7 @@ while the number of
 [homicides in New York City dropped almost 90% from 2,245 in 1990 to 289 in 2018](https://www.brennancenter.org/our-work/analysis-opinion/takeaways-2019-crime-data-major-american-cities).
 
 There are also short-term variations in crime. Many types of crime are more
-common at some types of year than others (known as *seasonal variation*). In,
+common at some types of year than others (known as *seasonal variation*). In
 Chicago, for example, assaults, residential burglaries and personal robberies 
 all vary throughout the year, with assaults in particular being consistently 
 higher in summer than winter.
@@ -107,17 +118,17 @@ higher in summer than winter.
 It is also important to understand short-term variation in crime. For example,
 both property damage and sexual violence in Chicago peaks at weekends, while 
 there are fewer shoplifting offences on Sundays when some shops are closed or
-open for shorter hours.
+have shorter opening hours.
 
 <p class="full-width-image"><img src="images/chicago_weekly_variation.png" alt="Chart showing that property damage, sexual violence and shoplifting in Chicago all vary by day of the week."></p>
 
 Understanding variation in crime over time is important because we can use the
 temporal concentration of crime to focus efforts to respond to crime most
-effectively. For example, if we wanted to deploy police patrols to a hotspot to
-respond to a particular crime problem, those patrols could be very effective if
-they were targeted at the times when crimes were most likely to happen or 
-completely useless if the officers were deployed at the wrong day or the wrong
-time.
+effectively. For example, imagine we wanted to deploy police patrols to a 
+hotspot to respond to a particular crime problem. Such patrols could be very 
+effective if they were targeted at the times when crimes were most likely to 
+happen or completely useless if the officers were deployed at the wrong day or 
+the wrong time.
 
 In this tutorial we will learn how to incorporate variation over time into our
 analysis of where crime happens.
@@ -128,60 +139,72 @@ analysis of where crime happens.
 
 <p class="full-width-image"><img src="images/lubridate_cartoon.jpg" alt="Cartoon showing little monsters feeding lubridate functions into a Back-to-the-Future-style car with the licence plate LUBRDAT."></p>
 
-At a basic level, computers can store numbers and they can store text. This 
-makes storing dates slightly complicated, because dates aren't completely like 
-numbers and they aren't completely like text either. Dates aren't like numbers 
-because you can't do normal maths with dates (e.g. what date is the 29th of 
+At a very basic level, computers can store data in two days: they can store 
+numbers and they can store text. This makes storing dates slightly complicated, 
+because dates aren't completely like numbers and they aren't completely like 
+text either. Dates aren't like numbers because you can't do normal maths with dates (e.g. what date is the 29th of 
 January plus one month?) and aren't like text because you can do some maths with 
 them (e.g. it is easy to calculate three days from today). Dates are especially 
 complicated because they can be written as text in so many different ways. For 
-example, 17/01/`r format(Sys.Date(), "%Y")`, 17.01.`r format(Sys.Date(), "%Y")`,
-01/17/`r format(Sys.Date(), "%Y")`, `r format(Sys.Date(), "%Y")`-01-17,
-17 Jan `r format(Sys.Date(), "%Y")` and Jan 17th `r format(Sys.Date(), "%Y")`
-all represent the same date written in different ways.
+example 17 January can be represented in all of these ways, all of them equally
+valid (although some are specific to particular countries):
+
+  * 17/01/`r format(Sys.Date(), "%Y")`
+  * 17.01.`r format(Sys.Date(), "%y")`
+  * 1/17/`r format(Sys.Date(), "%Y")`
+  * `r format(Sys.Date(), "%Y")`-01-17
+  * 17 Jan `r format(Sys.Date(), "%y")`
+  * 17 January `r format(Sys.Date(), "%Y")`
+  * January 17th `r format(Sys.Date(), "%Y")`
+
 
 <a href="https://lubridate.tidyverse.org/" title="lubridate website"><img src="images/lubridate.png" class="right-side-image"></a>
 
-R deals with this problem by storing dates internally as numbers and printing
-them (e.g. in the console or in an Rmarkdown document) as text, by default in
-the format ``r Sys.Date()``. Fortunately, we don't have to worry about how dates
-and times are stored internally in R because we can use the 
-[`lubridate` package](https://lubridate.tidyverse.org/) to work with them. 
-`lubridate` contains functions for working with dates, including extracting 
-parts of a date with functions such as `month()` and converting text to date 
-values with functions like `ymd()`.
+R deals with this problem by _storing_ dates internally as if they were numbers 
+and _displaying_ them (e.g. in the console or in an Rmarkdown document) as if
+they were text, by default in the format ``r Sys.Date()``. Fortunately, we don't 
+have to worry about how dates and times are stored internally in R because we 
+can use the [`lubridate` package](https://lubridate.tidyverse.org/) to work with 
+them. `lubridate` contains functions for working with dates, including 
+extracting parts of a date with functions such as `month()` and converting text 
+to date values with functions like `ymd()`.
 
 Because of the special nature of dates, if we want to work with a date variable
 (for example to create a chart of crime over time) it is important that it is
 stored as a date, not as text or as a number. Many R functions for reading data, 
 including `read_csv()`, `read_tsv()` and `read_excel()`, will try to recognise 
-dates and times stored in common formats. These will automatically be created as
-date variables when the data is loaded. 
+columns of data that contain dates and times stored in common formats. These 
+will automatically be stored as date variables when the data is loaded. 
 
-If a date variable in a dataset is not recognised as being a date, we can
-convert the variable to a date by using the date-parsing functions from
-`lubridate`. Which function to use depends on the order in which the components
-of the date (day, month and year) appear in the variable. For example, to
-convert the text "Saturday 17 January 1981" to a date format we can use the 
-`dmy()` function because the **d**ay comes first, the **m**onth next and then 
-the **y**ear. Similarly, converting the text "01/17/81" needs the function 
-`mdy()`. Note that the `lubridate` date-parsing functions are able convert both 
-numeric and text-based months, and to ignore elements that aren't needed, such 
-as weekday names.
+If R does not recognise automatically that a value contains a date, we can
+convert it to a date by using the date-parsing functions from `lubridate`. Which 
+function to use depends on the order in which the components of the date (e.g. 
+day, month and year) appear in the variable. For example, to convert the text 
+"Saturday 17 January 1981" to a date format we can use the `dmy()` function 
+because the **d**ay of the month comes first, the **m**onth next and then the 
+**y**ear. Similarly, converting the text "01/17/81" needs the function `mdy()`. 
+Note that the `lubridate` date-parsing functions are able convert both numeric 
+and text-based months, and to ignore elements that aren't needed, such as 
+weekday names.
 
-If a date is stored in multiple columns, e.g. a column for the year, a column 
-for the month and a column for the day, we can create a single date column using 
-the `make_date()` function to combine them. Similarly, we can create a date-time
-column using the `make_datetime()` function.
+If a date is stored in multiple columns in a dataset, e.g. one column for the 
+year, one column for the month and one column for the day, we can create a 
+single date column using the `make_date()` function to combine them. Similarly, 
+we can create a date-time column using the `make_datetime()` function. For 
+example, if we have a dataset of crimes called `thefts`:
 
 ```{r dates-exercise1, exercise=TRUE}
 library(lubridate)
 
-mutate(
-  thefts, 
-  date = make_date(year = year, month = month_of_year, day = day_of_month)
-)
+thefts %>% 
+  mutate(
+    date = make_date(year = year, month = month_of_year, day = day_of_month)
+  ) %>% 
+  select(day_of_month, month_of_year, year, date)
 ```
+
+Note that in this dataset, the `date` variable we have just created has the type
+`<date>`.
 
 Once we have converted dates stored as text to dates stored as dates, R 
 understands that they are dates and we can do things like compare them. So while
@@ -215,7 +238,7 @@ can retrieve with the `now()` function from `lubridate`.
 message("Current year: ", year(now()))
 message("Current month (as a number): ", month(now()))
 message("Current month (as text): ", month(now(), label = TRUE))
-message("Current day of the year: ", yday(now()))
+message("Current day of the year (days since 1 Jan): ", yday(now()))
 message("Current day of the month: ", mday(now()))
 message("Current day of the week (as a number): ", wday(now()))
 message("Current day of the week (as text): ", wday(now(), label = TRUE))
@@ -230,11 +253,23 @@ were included, you would need to work out the date 28 days ago. We can do this
 with a group of functions from `lubridate` that store a period of time that we
 can then add to or subtract from an existing date. These functions are 
 `years()`, `months()`, `weeks()`, `days()`, `hours()`, `minutes()`, and 
-`seconds()`. Note that these function names are all plural -- use `month()`
-(singular) to extract the month from a date and `months()` (plural) to create a
-period of a certain number of months. So to subtract 28 days from today's date
-(which we can retrieve with the `today()` function), we would use
-`today() - days(28)`.
+`seconds()`. 
+
+
+<div class="box notewell">
+
+In the `lubridate` package, functions that are used to _extract_ parts of a date
+are _singular_, e.g. `day()`, `month()`, `year()`. Functions that are used to
+_manipulate_ dates by adding or subtracting from them are _plural_, e.g. 
+`days()`, `months()`, `years()`. So, for example, you would use the code
+`month(now())` to extract the month (as a number between 1 and 12) from the 
+current date but the code `now() + months(1)` to find out what the date and time
+will be one month from now.
+
+</div>
+
+To subtract 28 days from today's date (which we can retrieve with the `today()` 
+function), we would use `today() - days(28)`.
 
 ```{r dates-exercise4, exercise=TRUE}
 message(str_glue("Today is {today()} and 28 days ago was {today() - days(28)}"))
@@ -243,10 +278,10 @@ message(str_glue("Today is {today()} and 28 days ago was {today() - days(28)}"))
 Adding or subtracting periods from dates can be very useful when combined with
 the `filter()` function from the `dplyr()` package. For example, if we had a
 dataset of crimes stored in an object called `crimes` and wanted to extract only 
-those that occurred in the seven days before a specific date, we could do this:
+those that occurred in the most-recent seven days, we could do this:
 
 ```{r dates-exercise5, exercise=TRUE}
-filter(crimes, occur_date < today() - days(7))
+filter(crimes, occur_date >= today() - days(7))
 ```
 
 ```{r period-setup, include=FALSE}
@@ -282,7 +317,7 @@ filter(crimes, between(occur_date, ymd(""), ymd("")))
 
 When filtering based on dates or times, it is important to understand that R can
 store dates in two ways: as a *date* variable or as a *date-time* object (shown 
-as `dttm` when we print a tibble). Date variables store only a date with no 
+as `<dttm>` when we print a tibble). Date variables store only a date with no 
 time, while date-time variables always include a time component, even if the 
 data doesn't contain any information about time. If we store a variable that 
 only has information about the date of an event as a date-time variable, R will 
@@ -316,6 +351,12 @@ range. For example, specifying:
 between(offence_date, ymd_hm("2021-01-01 00:00"), ymd_hm("2021-01-31 23:59"))
 ```
 
+or
+
+```r
+between(as_date(offence_date), ymd("2021-01-01"), ymd("2021-01-31"))
+```
+
 would allow us to select all the crimes occurring in January 2021.
 
 
@@ -346,22 +387,40 @@ of analysis*. For example, the chart above counts the number of crimes each
 *week*. Weeks are often a good choice as units for counting crimes, since all
 weeks are the same length and because many human activities have a weekly cycle
 (e.g. people do different things at weekends than on weekdays, even though
-which days count as weekdays differ across cultures). Months are much less 
-useful because they differ in length, so it looks like there are monthly 
-variations in the frequency of crime even if the same number of crimes happen
-each day. Months are also less useful because they contain different numbers of
-each day of the week (e.g. one month might have four Fridays while the next has
-five) and crimes are typically concentrated on particular days of the week (more
-on that later). Avoid using monthly counts of crime in almost all circumstances.
+which days count as weekdays differs across cultures). 
+
+
+<div class="box notewell">
+
+Months are much less useful than weeks as a temporal unit of analysis because 
+months differ in length, so monthly counts of crime will look like they show
+some variation even if the amount of crime occurring each day remains constant.
+For example, if exactly 10 crimes occur every day throughout February and March,
+there will be `r scales::comma(10 * 28, accuracy = 1)` or 
+`r scales::comma(10 * 29, accuracy = 1)` crimes in February (depending on 
+whether it is a leap year) but `r scales::comma(10 * 31, accuracy = 1)` in 
+March. In these circumstances, it will look like the volume of crime increased 
+by `r scales::percent(((10 * 31) - (10 * 28)) / (10 * 28))` between February
+and March, not because the rate at which crimes occurred increased but because
+March is `r scales::percent(((10 * 31) - (10 * 28)) / (10 * 28))` longer than
+February.
+
+Months are also less useful because they contain different numbers of each day 
+of the week (e.g. one month might have four Fridays while the next has five) and 
+crimes are typically concentrated on particular days of the week (more on that 
+later). **Avoid using monthly counts of crime in almost all circumstances**.
+
+</div>
+
 
 To count the number of crimes occurring each week we can use the `count()`
 function from the `dplyr` package. But before doing that, we have to allocate
-each crime to a week so that we can then count those weeks. To do this we use
-the `floor_date()` function from the `lubridate` package. This function rounds
-dates down to the start of a specified unit of time, in this case a week. By
-default, `floor_date()` treats Sunday as the start of the week and so if the
-specified unit of time is a week, all dates will be rounded down to the date of
-the previous Sunday.
+each crime to a week so that we can then count those weeks rather than counting
+days. To do this we use the `floor_date()` function from the `lubridate` 
+package. This function rounds dates down to the start of a specified unit of 
+time, in this case a week. By default, `floor_date()` treats Sunday as the start 
+of the week and so if the specified unit of time is a week, all dates will be 
+rounded down to the date of the previous Sunday.
 
 `floor_date()` works on date variables, so if we want to use it on a date-time
 variable we should first convert it to a date variable using the `as_date()`
@@ -371,19 +430,21 @@ One complication of counting incidents by week is that our data might not fit
 neatly into calendar weeks. For example, if we have data for a particular year
 and that year started on a Tuesday, the first weekly count will only have data
 for five days and it will look like there were fewer crimes that week in 
-comparison to other weeks. The same problem can happen with the last week of
-data, too. To deal with this, after counting the crimes by week we will remove
-the first and last row of the data using `slice()` (remembering the code 
-`(n() - 1)` gives us row number of the second-to-last row in the data because
-`n()` returns the number of rows in the data).
+comparison to other weeks. This could be misleading, since this week only looks
+like it has less crime because we don't have data for the whole week. The same 
+problem can happen with the last week of data, too. To deal with this, after 
+counting the crimes by week we will remove the first and last row of the data 
+using the `slice()` function from the `dplyr` package.
 
 ```{r change-exercise1, exercise=TRUE}
 assault_weekly_counts <- assaults %>% 
   mutate(week_date = floor_date(as_date(date), unit = "week")) %>%
   count(week_date, name = "count") %>%
+  # The code `(n() - 1)` gives us the row number of the second-to-last row in 
+  # the data because `n()` returns the number of rows in the data
   slice(2:(n() - 1))
 
-assault_weekly_counts
+head(assault_weekly_counts)
 ```
 
 Now we have weekly counts of aggravated assaults, we can plot them on a chart.
@@ -397,8 +458,8 @@ ggplot(assault_weekly_counts, aes(x = week_date, y = count)) +
 ```
 
 This plot is fine, but there are several things that we can do to make it 
-better. Most importantly, there seems to be many short-term fluctuations in the
-frequency of crime (e.g. from one week to another). While this variation is 
+better. Most importantly, there seems to be lots of short-term fluctuation in 
+the frequency of crime (e.g. from one week to another). While this variation is 
 real, we often refer to it as *noise* because it can obscure the *signal* of
 longer-term trends (this terminology originally came to statistics -- and 
 therefore crime analysis -- from radio engineering and has become common over 
@@ -434,14 +495,14 @@ We also specify `.complete = TRUE` to stop `slide_dbl()` from trying to
 calculate averages for the first few weeks in our data, because we don't have 
 the necessary data from previous weeks (i.e. before the start of our data) that 
 we would need to make these averages accurate. `slide_dbl()` will use `NA` as 
-the moving average value for those weeks, so we specify `na.rm = TRUE` to tell
-`ggplot()` to ignore these when we plot the data.
+the moving average value for those weeks, so we later need to specify 
+`na.rm = TRUE` to tell `ggplot()` to ignore these when we plot the data.
 
 Once we've calculated a moving average, we can show this using the line on our
 chart and show the individual weekly counts as small light-grey dots to show how 
 much short-term variation there is in the data.
 
-```{r change-exercise3, exercise=TRUE, exercise.lines=29}
+```{r change-exercise3, exercise=TRUE, exercise.lines=27}
 library(slider)
 
 assault_weekly_counts %>% 
@@ -530,7 +591,8 @@ time-series chart we have already produced, but it's hard to see the detail. For
 example, we might want to know how consisent this seasonal variation is across
 different years. Is it, for example, consistent enough that the local police
 might want to restrict the number of officers who can take holidays in certain
-weeks?
+weeks of the year to maximise the number of officers available when crime is
+likely to be highest?
 
 To do this we can create a *seasonal chart*. This can be used to show any type
 of repeating variation, but is often used to show patterns across a year (hence
@@ -587,8 +649,8 @@ assault_weekly_counts %>%
     moving_avg = slide_dbl(count, mean, .before = 3, .complete = TRUE),
     year = year(week_date),
     # By only specifying the `month` and `day` arguments to `make_date()` we
-    # will create a date in 1970, but that doesn't matter because we are not
-    # going to show the year on the chart
+    # will create a date in 1970 (the year that R uses by default), but that 
+    # doesn't matter because we are not going to show the year on the chart
     pseudo_date = make_date(month = month(week_date), day = mday(week_date))
   ) %>% 
   ggplot(aes(x = pseudo_date, y = moving_avg, colour = year, group = year)) +
@@ -638,7 +700,7 @@ assault_hourly_counts <- assaults %>%
   # By only setting the `hour` argument to `make_datetime()` we will create a
   # date-time on 1 January 1970, but that doesn't matter because we will not 
   # show the date on the chart
-  mutate(pseudo_date = make_datetime(year = 2010, hour = hour))
+  mutate(pseudo_date = make_datetime(hour = hour))
 
 ggplot(
   assault_hourly_counts, 
@@ -670,7 +732,7 @@ easy for a colour-blind person to translate between the colours of the lines and
 the colours in the legend. When you find that there are too many colours on a 
 chart, this is a good sign that you should consider using small-multiple charts
 instead. Fortunately, we can do this by adding a column to the data specifying
-if each day is a weekday or on a weekend, then adding `facet_grid()` to our
+whether each day is a weekday or on a weekend, then adding `facet_grid()` to our
 `ggplot()` stack. At the same time, we'll change `geom_line()` to `geom_area()`,
 which shows the magnitude of the values more effectively. We should also specify 
 `position = position_identity()` to stop `geom_area()` from stacking the area
@@ -697,9 +759,12 @@ assault_hourly_counts %>%
   theme_minimal()
 ```
 
-This shows the two distinct patterns (weekdays and weekends) more clearly. We
-could also add columns to this chart to show the same patterns in different 
-areas, such as police districts or local neighbourhoods.
+This shows the two distinct patterns (weekdays and weekends) more clearly, while
+also letting us see that Friday is not like other weekdays since the peak in
+assaults continues later in the evening. Now that we've created this chart using
+`facet_grid()`, we could also add columns to show the same patterns in 
+different areas, such as police districts or local neighbourhoods, or during
+different seasons.
 
 
 
@@ -718,7 +783,7 @@ decided to categorise the maximum temperature every day as being either 'hot' or
 'cold', we would lose a lot of information about whether a particular day was
 moderately hot, very hot, etc. The same is true of time, since by splitting time
 into periods (hours, days, weeks, etc.) we lose information about variations
-within each period. This is inevitable since we can't produce infinite maps 
+within each period. This is inevitable, since we can't produce infinite maps 
 showing all the infinite moments in time, but it's the reason why choosing 
 periods carefully is important.
 
@@ -726,9 +791,9 @@ When choosing a period over which to count crime, it is important not to just
 use default periods like the day from 00:00 to 23:59 just because that is the
 standard definition of a day. As we saw in the previous section, the peaks of
 many types of crime like assaults cross over the boundaries between days because
-the peak frequency is late at night. For this reason it may be better to, for
-example, define a day as a period from 05:00 to 04:59 and count the number of
-crimes within each day according to that definition.
+the peak frequency is late in the evening. For this reason it may be better to, 
+for example, define a day as a period from 05:00 to 04:59 and count the number 
+of crimes within each day according to that definition.
 
 Sometimes, it will be easy to choose periods because they will be dictated by
 the purpose for which you're creating the map. In this section we will create
@@ -741,17 +806,14 @@ To do this, we will estimate the density of assaults separately for each shift
 period, the combine the three density layers and plot them on small-multiple
 maps. First, we create a new object containing data for the Chicago Police
 districts we are interested in with a column showing which police shift each
-assault occurred in, which we can construct using the `case_when()` function 
-from `dplyr`. `case_when()` allows us to specify any number of tests that we can
-apply in-order to our data and when a test is passed the function assigns the
-corresponding label to that row (the label is separated from the test by a tilde
-character `~`). `case_when()` is like `recode()`, but for when we need to test 
-for more-complicated things than just whether a variable has a particular value. 
-We will set the last test to just have the value `TRUE`, so that any rows that 
-haven't passed any other previous tests still get a label. In this case, that
-final value will be `NA` (in fact, `NA_character_` because `case_when()` only
-accepts labels that are characters) to catch any rows that have missing values 
-of `date`.
+assault occurred in. 
+
+We can construct this column using the `case_when()` function from `dplyr`.
+`case_when()` allows us to specify any number of tests that we can apply to our
+data -- when a test is passed the function assigns the corresponding label to
+that row (the label is separated from the test by a tilde character `~`).
+`case_when()` is like `recode()`, but for when we need to test for
+more-complicated things than just whether a variable has a particular value. 
 
 ```{r map-exercise1, exercise=TRUE}
 assaults_by_shift <- assaults %>% 
@@ -767,54 +829,198 @@ assaults_by_shift <- assaults %>%
   # Transform it to a co-ordinate reference system based on metres
   st_transform(26916)
 
-assaults_by_shift
+head(assaults_by_shift)
 ```
+
+
+<div class="box extra-detail">
+
+<h5 id="map-box1-title" class="box-title">Why did we include `TRUE ~ NA_character_` in `case_when()`?</h5>
+
+<div id="map-box1" class="box-content">
+
+`case_when()` uses a series of true/false tests to create a variable, usually
+based on the values of other columns in the data. To make sure that every row
+in the dataset is matched by at least one of the tests, it is common practice to
+include a final test that is always true. The easiest way to do this is to 
+simply create a test with the fixed value `TRUE`, since `TRUE` is always true!
+This catch-all test must be the last test within the `case_when()` function,
+because `case_when()` runs the tests in the order in which they are given and
+stops testing a given row in the data as soon as a test produces a true value.
+
+In this case, we will set the label for this last test to be `NA` (in fact, the
+special value `NA_character_` because `case_when()` only accepts labels that are 
+characters) to catch any rows that have missing values of `date` or aren't 
+matched by any of our tests. Since our tests between them cover all the hours of
+the day, there shouldn't be any rows that are not matched by at-least one test,
+but including a catch-all test makes it easier to catch any problems with our 
+code.
+
+There's lot's more to learn about the `case_when()` function: you can find out
+more by looking at the [`case_when()` page on the package website](https://dplyr.tidyverse.org/reference/case_when.html).
+
+
+</div>
+
+</div>
+
+<script>
+$("#map-box1-title").click(function () { $("#section-map-box1").toggle("slow") })
+</script>
+
 
 The next step is to produce a kernel density (KDE) layer for assaults occurring
 in each shift. In a previous tutorial we learned how to do this using the 
-`SpatialKDE` package. We could run the `kde()` function from that package three
-times to create the KDE layers for each shift, but this is a good situation in
-which to use the `map()` family of functions from the `purrr` library to run a
-piece of code repeatedly for several pieces of data. In this case we will use
-`map_dfr()` because it processes every part of our dataset by applying a 
-function (in this case `kde()`) to each part and then binds the results together
-into a single SF object.
+`sfhotspot` package. We could run the `hotspot_kde()` function from that package 
+three times to create the KDE layers for each shift, but this is a good 
+situation in which to use the `map()` function from the `purrr` 
+package to run a piece of code repeatedly for several separate pieces of data.
 
-To prepare the data to be used by `map_dfr()` we first *nest* the data, i.e. we
-split the data up into chunks according to which shift the crime occurred in.
-Counter-intuitively, we tell `nest()` which columns to use to split the data up
-by specifying all the *other* columns in the dataset (i.e. those we want to be
-nested inside chunks). To make this easier, we first remove all the columns we
-don't need using `select()` and then we can just specify that we want the column
-`geometry` (which holds the locations of the crimes in an SF object) to be 
-nested into chunks in a column called `data`. We then use `deframe()` to convert
-our nested dataset to a list of tibbles, each with a name. The `map()` family of
-functions can be a bit tricky to use, but they are very powerful for managing
-large datasets and doing complicated data processing, so it's useful to have
-some familiarity with them.
+To prepare the data to be used by `map()`, we first have to *nest* the data.
+Nesting data means that we collect up bunches of rows from our dataset and store
+each bunch as a tibble stored _inside_ a column in a dataset. In a nested 
+dataset, each row will contain one or more columns that themselves contain a
+whole sub-dataset. 
+
+We create a nested dataset using the `nest()` function from the `tidyr` package 
+(loaded automatically by `tidyverse`). `nest()` is easier to work with if our
+dataset contains only the columns we need, so before we use `nest()` we'll use
+`select()` to remove all the columns that we don't need. We can then specify
+which columns in the dataset we want to be nested and what we want the new nest
+column to be called. We do this in the form:
+
+```r
+nest(column_name = c(vector_of_columns, that_we_want, to_nest))
+```
+
+In this case, we only want to nest the `geometry` column in the data and we want
+the nest column to be called `data`, so we use `nest(data = geometry)`. Let's
+look at the first few rows of the nested data:
+
+```{r map-exercise1a, exercise=TRUE}
+nested_assaults <- assaults_by_shift %>% 
+  # Remove all the columns except the ones we want
+  select(shift, geometry) %>% 
+  # Nest the `geometry` column
+  nest(data = geometry)
+
+# View the first few rows
+head(nested_assaults)
+```
+
+You can see that the nested dataset has two columns: `shift` and `data`. The
+`data` column contains all the rows of `geometry` corresponding to each value of
+`shift`. The `shift` column exists because we did not specify that it should be
+nested inside the `data` column – `nest()` will use any columns we don't specify
+should be nested to differentiate between the different groups of nested data. 
+In this case, this means we can use the `shift` column at a later step.
+
+We can look inside the nested column using the `pluck()` function from the 
+`purrr` package, which we have used in previous tutorials. For example, by using
+`pluck(nested_assaults, "data", 1)` we can extract and view the first row in the
+`data` column in the `nested_assaults` object.
+
+```{r map-exercise1b, exercise=TRUE}
+pluck(nested_assaults, "data", 1)
+```
+
+From this, we can see that the first row in the `data` column of the
+`nested_assaults` object contains an SF object with one column (`geometry`) and
+`r scales::comma(nrow(pluck(nested_assaults, "data", 1)))` rows. 
+
+Now that we've nested the data, we can use `map()` to apply the `hotspot_kde()`
+function to the data stored in each row of the the nested column in our dataset.
 
 ```{r map-exercise2, exercise=TRUE, exercise.lines=21}
-library(SpatialKDE)
-
-# Create a grid to use in calculating the KDE layers
-kde_grid <- create_grid_rectangular(assaults_by_shift, cell_size = 250)
+library(sfhotspot)
 
 kde_layers <- assaults_by_shift %>% 
-  # Remove all the columns except `shift` (and `geometry`, which is kept 
-  # automatically for SF objects)
-  select(shift) %>% 
-  # Group the `geometry` column of the data into three datasets, one for each 
+  # Remove all the columns except `shift` and `geometry`
+  select(shift, geometry) %>% 
+  # Bunch the `geometry` column of the data into three datasets, one for each 
   # shift
   nest(data = geometry) %>% 
   # Convert the data from a tibble to a list with names, since we can convert 
   # those names to a column in our final KDE dataset using the `.id` argument to
-  # `map_dfr()`
+  # `bind_rows()`. Remember that the first argument to `map()` is the function
+  # we want to apply to each group of data, while any remaining arguments are
+  # passed to the function we're using. This means we can pass arguments like
+  # `cell_size` to `hotspot_kde()` by providing them as arguments to `map()`.
   deframe() %>% 
-  map_dfr(kde, band_width = 1000, grid = kde_grid, .id = "shift") %>% 
+  map(hotspot_kde, cell_size = 250, bandwidth = 1000) %>% 
+  bind_rows(.id = "shift") %>% 
   st_transform(4326)
   
-kde_layers
+head(kde_layers)
 ```
+
+
+<div class="box extra-detail">
+
+<h5 id="map-box2-title" class="box-title">What do `deframe()` and `bind_rows()` do?</h5>
+
+<div id="map-box2" class="box-content">
+
+`map()` works on a _list_ of objects (in this case, the nested SF objects).
+`deframe()` (from the `tibble` package, which is loaded by `tidyverse`) converts 
+our dataset of nested SF objects into a list of SF objects so that `map()` 
+can use it. More exactly, `deframe()` converts any dataset with two columns into 
+a list of objects, converting the first column of the dataset to the names of 
+the list elements and the second column to the values of the list elements. So 
+if we had a nested dataset that looked like this (note that each row in 
+`second_column` contains a nested tibble):
+
+```{r}
+tribble(
+  ~first_column, ~second_column,
+  "a_name", tibble(a = 1, b = 2, c = 3),
+  "another_name", tibble(a = 4, b = 5, c = 6),
+  "yet_another_name", tibble(a = 7, b = 8, c = 9)
+)
+```
+
+We could use `deframe()` to convert it into a list that looked like this:
+
+```{r}
+tribble(
+  ~first_column, ~second_column,
+  "a_name", tibble(a = 1, b = 2, c = 3),
+  "another_name", tibble(a = 4, b = 5, c = 6),
+  "yet_another_name", tibble(a = 7, b = 8, c = 9)
+) %>% deframe()
+```
+
+`map()` produces a list, with each element in the list containing the results of
+applying the function – in our case, `hotspot_kde()` – to each dataset. Since
+we want a single SF object rather than a list of them, we can use the 
+`bind_rows()` function from `dplyr` to bind the results into a single SF object.
+
+It's important that `deframe()` produces a _named_ list because it means we can
+use the `.id` argument to `bind_rows()` to specify that the names of the list 
+items should be included in a new column in the result returned by `map()`. This
+converts the list above so that it's a single dataset again:
+
+```{r}
+tribble(
+  ~first_column, ~second_column,
+  "a_name", tibble(a = 1, b = 2, c = 3),
+  "another_name", tibble(a = 4, b = 5, c = 6),
+  "yet_another_name", tibble(a = 7, b = 8, c = 9)
+) %>% deframe() %>% map(identity) %>% bind_rows(.id = "name")
+```
+
+This approach to applying a function separately to different parts of a dataset
+is called _split, apply, combine_ and it is a very common way of wrangling data
+across different programming languages.
+
+</div>
+
+</div>
+
+<script>
+$("#map-box2-title").click(function () { $("#section-map-box2").toggle("slow") })
+</script>
+
 
 Now we have a KDE layer for each shift, we can download a base map as in 
 previous tutorials and then create three maps for the three shifts by adding 
@@ -830,7 +1036,7 @@ base_map <- kde_layers %>%
 
 ggmap(base_map) +
   geom_sf(
-    aes(fill = kde_value), 
+    aes(fill = kde), 
     data = kde_layers, 
     inherit.aes = FALSE, 
     alpha = 0.75, 
@@ -838,7 +1044,7 @@ ggmap(base_map) +
   ) +
   facet_wrap(vars(shift)) +
   scale_fill_distiller(
-    breaks = range(pull(kde_layers, kde_value)),
+    breaks = range(pull(kde_layers, kde)),
     labels = c("lower", "higher"),
     direction = 1
   ) +
@@ -864,10 +1070,11 @@ highest values within each shift.
 ```{r map-exercise4, exercise=TRUE, fig.asp=1}
 kde_highest <- kde_layers %>% 
   group_by(shift) %>% 
-  slice_max(order_by = kde_value, n = 10)
+  slice_max(order_by = kde, n = 10)
 
 ggmap(base_map) +
   geom_sf(
+    aes(fill = kde), 
     data = kde_highest, 
     inherit.aes = FALSE, 
     alpha = 0.75, 
@@ -895,8 +1102,8 @@ The small-multiple map we have produced of aggravated-assault hotspots in
 Chicago is useful, especially for policing because it uses periods based on 
 police shifts. But aggregating crimes into only three temporal periods 
 inevitably throws away a lot of information about when crime happens. For 
-example, at what time does the area of highest assault density move across the
-river from The Loop to River North?
+example, at what time of night does the area of highest assault density move 
+across the river from The Loop to River North?
 
 We could produce a series of small-multiple maps showing shorter periods 
 (meaning more small multiples). For example, we could show one small-multiple
@@ -912,7 +1119,7 @@ hour of the day. The code for this is the same as for the code we have already
 used to produce the KDE layers for each shift, except that we create a variable
 for hour of the day rather than police shift. Because an animated map of hours 
 of the day needs 24 KDE layers, in this case it is particularly useful to use
-`map_dfr()` to avoid having to create 24 different objects and then binding them
+`map()` to avoid having to create 24 different objects and then binding them
 together.
 
 ```{r animated-exercise1, exercise=TRUE, exercise.lines=27}
@@ -921,32 +1128,41 @@ library(gganimate)
 assaults_by_hour <- assaults %>% 
   filter(district %in% c(1, 18)) %>% 
   mutate(
+    # Create nicely formatted labels for each hour
     hour_name = str_pad(hour(date), width = 2, pad = "0"),
     hour_name = str_glue("{hour_name}:00 to {hour_name}:59")
   ) %>% 
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  # Convert the data to a suitable co-ordinate system for Chicago
   st_transform(26916)
 
 hour_layers <- assaults_by_hour %>% 
   # Remove all but the column we need
-  select(hour_name) %>% 
+  select(hour_name, geometry) %>% 
   # Split the dataset by hour
   nest(data = geometry) %>% 
   # Convert the dataset to a named list
   deframe() %>% 
   # Run the function `kde()` for each hour
-  map_dfr(kde, band_width = 1000, grid = kde_grid, .id = "hour_name") %>% 
+  map(hotspot_kde, cell_size = 250, bandwidth = 1000) %>% 
+  bind_rows(.id = "hour_name") %>% 
   st_transform(4326)
 
 # Extract only the 10 cells with the highest density in each hour
 hour_highest <- hour_layers %>% 
   group_by(hour_name) %>%
-  slice_max(order_by = kde_value, n = 10)
+  slice_max(order_by = kde, n = 10)
 ```
+
+
+<div class="box notewell">
 
 It is possible that this code will time out and give an error saying 
 `Your code ran longer than the permitted timelimit for this exercise.` -- if 
-that happens then just continue with the tutorial as normal.
+that happens then just continue with the rest of the tutorial as normal.
+
+</div>
+
 
 We can now use the `hour_layers` object as the basis for a new base map that
 only includes the areas of the highest density (so they appear larger on the
@@ -962,14 +1178,15 @@ clipped_base_map <- hour_highest %>%
 To create an animated map we use the `transition_states()` function from the
 `gganimate` package. `transition_states()` works in a similar way to 
 `facet_wrap()`, in that when added to a `ggplot()` or `ggmap()` stack it splits
- the chart or map up into a separate map for each value of one of the variables
- in the data (in this case, the hour of the day). The only difference is that
- while `facet_wrap()` arranges those separate maps next to one another,
- `transition_states()` arranges them into an animation.
+the chart or map up into a separate map for each value of one of the variables
+in the data (in this case, the hour of the day). The only difference is that
+while `facet_wrap()` arranges those separate maps next to one another,
+`transition_states()` arranges them into an animation.
 
 ```{r animated-exercise3, exercise=TRUE, exercise.lines=16, fig.asp=1}
 ggmap(clipped_base_map) +
   geom_sf(
+    aes(fill = kde),
     data = hour_highest, 
     inherit.aes = FALSE, 
     alpha = 0.75, 
@@ -985,34 +1202,50 @@ ggmap(clipped_base_map) +
   theme_void()
 ```
 
+
+<div class="box extra-detail">
+
+<h5 id="animated-box1-title" class="box-title">What does `deframe()` do?</h5>
+
+<div id="animated-box1" class="box-content">
+
 This code may take longer to run than is allowed for code inside an interactive 
-tutorial and may produce the error 
+tutorial. In which case, you may see the error 
 `Your code ran longer than the permitted timelimit for this exercise`. If that 
-happens, you may want to 
+happens, you can
 [download the Chicago assaults data](https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/chicago_aggravated_assaults.csv.gz) 
 and create an animated map in an R script of your own using the code in the 
-chunks above. This code should produce a map looking like this:
+chunks above. For reference, this code should produce a map looking like this:
 
 <p class="centered-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/16_mapping_time/images/chicago_animated_highest.gif" alt="Animated map showing how the areas of downtown Chicago with the highest density of aggravated assaults vary throughout the hours of the day."></p>
+
+</div>
+
+</div>
+
+<script>
+$("#animated-box1-title").click(function () { $("#section-animated-box1").toggle("slow") })
+</script>
+
 
 There is one other function of `gganimate` we have used in the code used to make
 this map. Yoy might have noticed that in the map `subtitle` is the code 
 `{closest_state}`. This is a special code that `gganimate` will replace with the
-current value of the variable in the data that is used to control which data 
+current value of the variable in the data that is used to control which facet 
 appears in each frame of the animation. So for this map, `{closest_state}` will
 be replaced in the animation with the value of the `hour` variable in the data
 for each frame in the animation.
 
-This animated map is very sensitive to the number of high-density grid cells we
-choose to extract (in the map above, 10 cells for each hour) -- it might look
-quite different if we had chosen a different number. To show the density of 
-crime in all of downtown Chicago, we can combine the base map and KDE layers we 
+This animated map is very sensitive to the number of grid cells we choose to 
+extract (in the map above, 10 cells for each hour) -- it might look quite 
+different if we had chosen a different number. To show the density of crime in 
+all of downtown Chicago, we can combine the base map and KDE layers we 
 have already created to produce another animated map.
 
 ```{r animated-exercise4, exercise=TRUE, exercise.lines=22}
 ggmap(base_map) +
   geom_sf(
-    aes(fill = kde_value), 
+    aes(fill = kde), 
     data = hour_layers, 
     inherit.aes = FALSE, 
     alpha = 0.75, 
@@ -1020,7 +1253,7 @@ ggmap(base_map) +
   ) +
   transition_states(states = hour_name) +
   scale_fill_distiller(
-    breaks = range(pull(hour_layers, kde_value)),
+    breaks = range(pull(hour_layers, kde)),
     labels = c("lower", "higher"),
     direction = 1
   ) +
@@ -1064,9 +1297,18 @@ anim_save(
 
 ## In summary
 
+<div class="box welldone">
+
 In this tutorial we have learned how to incorporate change over time into our 
 analysis of where crime happens. This is important because the distribution of
-crime across different places often varies at different times. 
+crime across different places often varies at different times. Being aware of
+the importance of time when we make maps means we can do things like create
+small-multiple or animated maps for different time periods, which we could use
+to make sure that scarce crime-prevention resources are used at the right time
+as well as in the right place.
+
+</div>
+
 
 You can learn more about:
 
