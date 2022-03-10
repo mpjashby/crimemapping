@@ -14,6 +14,10 @@ tutorial_options(exercise.timelimit = 120)
 knitr::opts_chunk$set(echo = FALSE, fig.align='center')
 
 # Load packages
+# Note that `gifski` and `transformr` aren't used in the tutorial, but are
+# required for `gganimate` to be able to create animated maps, so they are
+# loaded here to force `learnr` to prompt the user to install them the first
+# time they load this tutorial
 library(gganimate)
 library(ggmap)
 library(gifski)
@@ -22,6 +26,7 @@ library(sf)
 library(sfhotspot)
 library(slider)
 library(tidyverse)
+library(transformr)
 
 # Copy files
 if (!dir.exists("css")) dir.create("css")
