@@ -16,10 +16,14 @@ state_pop <- read_html("https://en.wikipedia.org/wiki/States_of_Germany") %>%
   html_table() %>%
   as_tibble() %>%
   janitor::clean_names() %>%
-  select(state, count = gdp_per_capita_in_euro_2020_9) %>%
+  select(
+    state,
+    population = population_dec_2020_7,
+    gdp_per_capita = gdp_per_capita_in_euro_2020_9
+  ) %>%
   mutate(
-    count = parse_number(count) / 1000,
-    measure = "GDP per capita (€1000)",
+    across(c(population, gdp_per_capita), parse_number),
+    gdp_per_capita = gdp_per_capita / 1000,
     state = recode(
       state,
       "Bavaria(Bayern)" = "Bayern",
@@ -31,7 +35,9 @@ state_pop <- read_html("https://en.wikipedia.org/wiki/States_of_Germany") %>%
       "Saxony-Anhalt(Sachsen-Anhalt)" = "Sachsen-Anhalt",
       "Thuringia(Thüringen)" = "Thüringen"
     )
-  )
+  ) %>%
+  pivot_longer(cols = -state, names_to = "measure", values_to = "count") %>%
+  mutate(measure = recode(measure, gdp_per_capita = "GDP per capita (€1000)"))
 
 # Load crime data
 crime_data <- data_file %>%
@@ -59,7 +65,8 @@ crime_data <- data_file %>%
   ) %>%
   filter(!is.na(type), state != "Bundesrepublik Deutschland") %>%
   select(state, measure = type, count) %>%
-  bind_rows(state_pop)
+  bind_rows(state_pop) %>%
+  arrange(state, measure)
 
 write_rds(
   crime_data,
