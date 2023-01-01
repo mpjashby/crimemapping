@@ -11,9 +11,11 @@ assignees: mpjashby
 - [ ] Add questions
 - [ ] Add further reading
 - [ ] Add concluding message with thumbs up emoji
+- [ ] Make sure tutorial (or section) starts with the final map that we'll create
 - [ ] Make sure tutorial finishes with a complete script
 - [ ] Reduce image sizes using `harmonise_image_sizes()`
 - [ ] Spell check
+- [ ] Add `css: ["css/tutorial_style.css", "css/2023.css"]`
 - [ ] Increment package version number
 - [ ] Check all code in RStudio Server
 - [ ] Update Moodle
