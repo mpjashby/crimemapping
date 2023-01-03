@@ -13,6 +13,7 @@ assignees: mpjashby
 - [ ] Add concluding message with thumbs up emoji
 - [ ] Make sure tutorial (or section) starts with the final map that we'll create
 - [ ] Make sure tutorial finishes with a complete script
+- [ ] Check that comments have initial caps
 - [ ] Reduce image sizes using `harmonise_image_sizes()`
 - [ ] Spell check
 - [ ] Add `css: ["css/tutorial_style.css", "css/2023.css"]`
