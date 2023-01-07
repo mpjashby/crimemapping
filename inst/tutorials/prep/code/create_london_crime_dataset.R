@@ -57,4 +57,4 @@ london_crimes <- crimes %>%
     month, type = crime_type, location, lsoa = lsoa_code, borough, longitude,
     latitude
   ) %>%
-  write_csv(here::here("inst/extdata/london_crimes.csv.gz"))
+  write_csv(here::here("inst/extdata/london_crimes_2021.csv.gz"))

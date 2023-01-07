@@ -4,7 +4,7 @@ description: "Get started with crime mapping by learning about why putting crime
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 

@@ -4,7 +4,7 @@ description: "Learn the building blocks of data analysis: loading, filtering, ma
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -16,9 +16,9 @@ library(tidyverse)
 
 # Copy files
 if (!dir.exists("css")) dir.create("css")
-walk(
+purrr::walk(
   dir("../css/"), 
-  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+  ~ file.copy(stringr::str_glue("../css/{.}"), stringr::str_glue("css/{.}"), overwrite = TRUE)
 )
 
 # set knitr options
@@ -39,17 +39,23 @@ audience.
 
 <p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/03_data_wrangling/images/datawrangling.jpg" alt="Cartoon of furry monsters putting boxes onto a conveyor belt with machines marked 'wrangle', 'vizualise' and 'model' adjusting the boxes as they move along the belt"></p>
 
+Start off by watching this video that walks through the different steps in 
+wrangling a dataset. We will cover all the steps in the video in more detail
+during the rest of this tutorial.
+
+![](https://youtu.be/pQeJKt6O9dU)
+
 
 ### Functions
 
 In this tutorial we will learn how to wrangle data in R using 
 *functions* – specialised pieces of code that do something to the data we give
-it. The code to use a function 
-(sometimes called *calling* the function) has two parts: the function name 
-followed by a pair of parentheses, inside which are zero or more *arguments* 
-separated by commas. Arguments are a way of providing input that a function 
-works on, or to fine-tune the way the function works (we will see many examples
-of this later).
+it. The code to use a function (sometimes called *calling* the function) has two 
+parts: the function name followed by a pair of parentheses, inside which are 
+zero or more *arguments* separated by commas. Arguments are a way of providing 
+input that a function works on, or to fine-tune the way the function works (we 
+will see many examples of this later). Remember that you can identify a function
+in R because the name will always have parentheses after it.
 
 To try a basic function, type `sqrt(2)` in the box below and click `Run Code` to 
 calculate the square root of 2. The `sqrt()` function has only one argument: the
@@ -76,8 +82,8 @@ tutorial.
 ### Packages
 
 ```{r count-cran-packages}
-package_count <- available.packages(repos = "https://cran.rstudio.com/") %>% 
-  nrow() %>% 
+package_count <- available.packages(repos = "https://cran.rstudio.com/") |> 
+  nrow() |> 
   scales::comma(accuracy = 100)
 ```
 
@@ -99,10 +105,9 @@ To use a package in R, we must do two things:
     
 The `install.packages()` function downloads and installs packages from the 
 [Comprehensive R Archive Network](https://cran.r-project.org/) (universally 
-known as CRAN), which at the time of writing contains about `r package_count`
-different packages. Some packages that are still in the early stages of 
-development are not available on CRAN, but all the packages we will use are
-there.
+known as CRAN), which contains about `r package_count` different packages. Some 
+packages that are still in the early stages of development are not available on 
+CRAN, but all the packages we will use are there.
 
 <a href="https://tidyverse.org/" title="tidyverse website"><img src="images/tidyverse.png" class="right-side-image"></a>
 
@@ -113,9 +118,9 @@ extensively in this tutorial, we run the R code:
 install.packages("tidyverse")
 ```
 
-We only have to install a package once for each computer that we will use to 
+We only have to _install_ a package once for each computer that we will use to 
 run R, although we would have to do it again if we updated to a new version of 
-R. Once a package is installed on our computer, we have to load it so that we 
+R. Once a package is installed on our computer, we have to _load_ it so that we 
 can use it in our code. We load packages using the `library()` function, which 
 should probably have been called `load_package()` but isn't. So to load the
 `tidyverse` package, we run the code:
@@ -151,13 +156,13 @@ rows. For example, crime data might have columns for the type of crime, date and
 address at which the crime occurred.
 
 ```{r tabular-data}
-tribble(
+tibble::tribble(
   ~type, ~date, ~address,
   "homicide", as_date(now(tzone = "UTC") - years(1) + days(10)), "274 Main St",
   "non-residential burglary", as_date(now(tzone = "UTC") - months(5) + days(20)), "541 Station Rd",
   "personal robbery", as_date(now(tzone = "UTC") - days(8)), "10 North Av"
-) %>% 
-  mutate(date = strftime(date, "%d %b %Y")) %>% 
+) |> 
+  dplyr::mutate(date = strftime(date, "%d %b %Y")) |>  
   knitr::kable(caption = "Crime data in rectangular format")
 ```
 
@@ -173,10 +178,10 @@ san_fran_rob <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst
 
 Data stored in CSV format is easy to load with the `read_csv()` function from 
 the [`readr`](https://readr.tidyverse.org) package. `readr` is one of the 
-packages loaded by the `tidyverse` package, so
-all we need to do to use this package is include the code `library(tidyverse)`
-on the first line of our R script. We will use comments (lines of code beginning 
-with `#`) to help explain as we go.
+packages loaded by the `tidyverse` package, so all we need to do to use this 
+package is include the code `library(tidyverse)` on the first line of our R 
+script. We will use comments (lines of code beginning with `#`) to help explain 
+as we go.
 
 ```r
 # Load the tidyverse suite of packages, including the readr package 
@@ -233,8 +238,9 @@ set 20 years ago. Tibbles behave just like data frames almost all of the time
 (so much so that people working with tibbles often call them data frames) except 
 for a few occasions where they behave in a more-convenient way.
 
-Use `read_csv()` to load data from `https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv` and store it in an object called `san_fran_rob`. Use the code above to help you, or click the
-`Solution` button to reveal the answer.
+Use `read_csv()` to load data from `https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv` 
+and store it in an object called `san_fran_rob`. Use the code above to help you, 
+or click the `Solution` button to reveal the answer.
 
 ```{r read-exercise1, exercise=TRUE}
 
@@ -310,8 +316,8 @@ the `readxl` package, which was installed automatically when we installed the
 There are two main things we must do to import Excel data that are not required
 for importing CSV data. The first is that the `readxl` package cannot directly
 load files from a URL, instead only loading files that are present on your 
-computer. To get round this file, we will first download an Excel file and store
-it in a temporary directory (to avoid cluttering up our computers).
+computer. To get round this, we will first download an Excel file and store it 
+in a temporary directory (to avoid cluttering up our computers).
 
 <div class="box notewell">
 
@@ -339,7 +345,7 @@ this.
 
 </div>
 
-```{r read-exercise3, exercise=TRUE}
+```{r read-exercise3, exercise=TRUE, exercise.lines=12}
 # Specify the name of and location of our temporary file: it does not matter
 # what this file is called or where it is stored, so we use the tempfile()
 # function to create a file in the correct location automatically
@@ -348,7 +354,8 @@ temp_file <- tempfile(fileext = ".xlsx")
 # Download the Excel file and store it in the temporary location
 download.file(
   url = "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/aggravated_assaults.xlsx",
-  destfile = temp_file
+  destfile = temp_file,
+  mode = "wb"
 )
 ```
 
@@ -369,7 +376,7 @@ library(readxl)
 # function to create a file in the correct location automatically
 temp_file <- tempfile(fileext = ".xlsx")
 
-# download the Excel file and store it in the temporary location
+# Download the Excel file and store it in the temporary location
 download.file(
   url = "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/aggravated_assaults.xlsx",
   destfile = temp_file,
@@ -378,19 +385,20 @@ download.file(
 ```
 
 ```{r read-exercise4, exercise=TRUE}
-# load the readxl package
+# Load the readxl package
 library(readxl)
 
-# get a list of sheets in an Excel file
+# Get a list of sheets in an Excel file
 excel_sheets(temp_file)
 ```
 
-We can now load the sheet containing data for Austin:
+We can now load the sheet containing data for Austin and view the first few rows
+of the resulting object:
 
 ```{r read-exercise5, exercise=TRUE, exercise.setup="read-exercise4-setup"}
 agg_assault_data <- read_excel(temp_file, sheet = "Austin")
 
-agg_assault_data
+head(agg_assault_data)
 ```
 
 Now we have learned how to load our data into an object, we can use other R 
@@ -502,10 +510,6 @@ package (one of the packages that is loaded automatically when we call the
 
 If we wanted to select just the `date` and `location_type` columns from the
 `agg_assault_data` we loaded in the previous section:
-
-```{r select-exercise1-setup}
-
-```
 
 ```{r select-exercise1, exercise=TRUE}
 select(agg_assault_data, date, location_type)
@@ -628,10 +632,10 @@ filter(agg_assault_data, location_type == "residence")
 
 Note that: 
 
-  * the column name `location_type` is not surrounded by quotes but the column 
-    value `"residence"` is, and
+  * the column _name_ `location_type` is not surrounded by quotes but the column 
+    _value_ `"residence"` is, and
   * the `==` (equal to) operator is used, since a single equals sign `=` has 
-    another meaning in R (but shouldn't be used).
+    another meaning in R.
 
 We can filter using the values of more than one column simultaneously. To filter
 offences in which the `location_category` is 'leisure' and the `location_type`
@@ -685,16 +689,16 @@ messages). A vector is a one-dimensional sequence of values of the same type
 several strings of text (as in the vector `c("open space", "street")`) or a
 series of numbers such as `c(1, 2, 3)`. There is lots we could learn about
 vectors, but for now it's only necessary to know that we can create vectors with
-the `c()` or combine function.
+the `c()` or _combine_ function.
 
 If we wanted to re-use a vector of values several times in our code, it might
 make sense to store the vector as an object. For example:
 
 ```{r filter-exercise6, exercise=TRUE}
-# create vector of location types we are interested in
+# Create vector of location types we are interested in
 location_types <- c("open space", "street")
 
-# filter the data
+# Filter the data
 filter(agg_assault_data, location_category %in% location_types)
 ```
 
@@ -739,7 +743,7 @@ quiz(
   ),
   
   question(
-    'Which offences (rows) will be returned by the code `filter(agg_assault_data, location_type == "restaurant" | location_type == "mall")`?',
+    'Which offences (rows) will be returned by the code `filter(agg_assault_data, location_type %in% c("restaurant", "mall"))`?',
     answer("Offences that occurred either in restaurants *or* in shopping malls", correct = TRUE),
     answer(
       "Offences that occurred in both restaurants *and* in shopping malls (e.g. at restaurants inside shopping malls)", 
@@ -795,6 +799,8 @@ to transform existing columns in our dataset using almost any R function.
 
 <p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/03_data_wrangling/images/mutate.jpg" alt="Cartoon showing furry monsters moving columns of data using a crane."></p>
 
+<a href="https://lubridate.tidyverse.org/" title="lubridate website"><img src="images/lubridate.png" class="right-side-image"></a>
+
 For example, say we wanted to create a new column in our aggravated-assault
 dataset specifying the day of the week on which each crime occurred. We can do
 this using the `wday()` function from the [`lubridate`](https://lubridate.tidyverse.org/)
@@ -816,7 +822,7 @@ show whether an offence occurred in the northern or southern half of the city:
 ```{r mutate-exercise2, exercise=TRUE}
 mutate(
   agg_assault_data, 
-  region = ifelse(latitude > median(latitude), "northern", "southern")
+  region = if_else(latitude > median(latitude), "northern", "southern")
 )
 ```
 
@@ -846,8 +852,8 @@ various ways, depending on which values we want to change:
 mutate(
   agg_assault_data,
   # Change a single value with a new value (and otherwise keep the existing 
-  # value) using the ifelse() function
-  location_type = ifelse(location_type == "street", "road", location_type),
+  # value) using the if_else() function
+  location_type = if_else(location_type == "street", "road", location_type),
   # Change multiple values in a categorical variable using the recode() 
   # function, in which values are changed using arguments in the format
   # old_value = new_value
@@ -858,8 +864,6 @@ mutate(
   )
 )
 ```
-
-<a href="https://lubridate.tidyverse.org/" title="lubridate website"><img src="images/lubridate.png" class="right-side-image"></a>
 
 We could also make changes based on more-complicated sets of criteria using the
 `case_when()` function, but we will return to that in a future tutorial.
@@ -886,10 +890,13 @@ our data. There is an identical function called `summarize()` so that you do not
 have to remember whether to use the US or British spelling.
 
 By default, `summarise()` collapses data into a single row, with each column
-summarised using a function that you specify. For example, if you wanted to
-identify the weighted centre of the locations of all the aggravated assaults in
-our dataset (perhaps to decide at which police station to base a specialist
-squad):
+summarised using a function that you specify. For example, suppose you want to 
+find out which police station a specialist squad should be based at to most 
+easily respond to reports of serious assaults. You might do this by working out
+the weighted centre of all the offence locations, i.e. the means of the 
+longitudes and latitudes for all the crimes. You could then base the squad at
+the police station that was closest to the weighted centre.
+
 
 ```{r summarise-exercise1, exercise=TRUE}
 summarise(
@@ -921,7 +928,7 @@ This logic applies in lots of cases. For example, if you create an R object
 called `value` with the code `value <- 2` and then run the R code `value > 1`,
 you will get the answer `TRUE`. But if you set the object `value` to be `NA` 
 using the code `value <- NA`, when you run the R code `value > 1` you will get 
-the answer `NA`, because there is no way to know if the missing value 
+the answer `NA`. This is because there is no way to know if the missing value 
 represented by `NA` is greater than 1 or not. This is why it is often useful to
 calculate statistics such as a mean value after removing any missing values 
 using the `na.rm = TRUE` argument.
@@ -1110,71 +1117,61 @@ steps separately, assigning the result of each step to a new object.
 library(lubridate)
 
 # Read San Francisco robbery data
-data1 <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
+robbery1 <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
 
-# Select all except the offense_type column, since it has the same value for
-# every row
-data2 <- select(data1, -offense_type)
+# Select only the columns we need
+robbery2 <- select(robbery1, date_time)
 
-# Filter only those offences that occurred in January 2019
-data3 <- filter(data2, as.Date(date_time) < as.Date("2019-02-01"))
+# Filter only those offences that occurred in the first quarter of 2019
+robbery3 <- filter(robbery2, as.Date(date_time) <= as.Date("2019-03-31"))
 
 # Create a new weekday variable
-data4 <- mutate(data3, weekday = wday(date_time, label = TRUE))
-
-# Group offences by weekday
-data5 <- group_by(data4, weekday)
+robbery4 <- mutate(robbery3, weekday = wday(date_time, label = TRUE))
 
 # Count how many offences occurred on each weekday
-jan_weekday_counts <- count(data5)
+q1_weekday_counts <- count(robbery4, weekday)
 
 # Print the first few rows of the result
-head(jan_weekday_counts)
+head(q1_weekday_counts, n = 7)
 ```
 
 This code works, but involves creating six new objects, even though we only need
 the final object for our analysis. You may notice that the first argument 
-expected by `select()`, `filter()`, `mutate()`, `group_by()` and `count()` is
+expected by `select()`, `filter()`, `mutate()` and `count()` is
 always the data tibble produced by the previous step. This means we can skip
 saving the result of each step as a new object, and just run the previous 
 function inside the first function. This approach produces the following code,
 which produces exactly the same result as the code above.
 
 ```{r pipe-exercise2, exercise=TRUE}
-jan_weekday_counts <- count(
-  group_by(
-    mutate(
-      filter(
-        select(
-          read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv"),
-          -offense_type
-        ), 
-        as.Date(date_time) < as.Date("2019-02-01")
-      ),
-      weekday = wday(date_time, label = TRUE)
-    ), 
-    weekday
+q1_weekday_counts <- count(
+  mutate(
+    filter(
+      select(
+        read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv"),
+        -offense_type
+      ), 
+      as.Date(date_time) <= as.Date("2019-03-31")
+    ),
+    weekday = wday(date_time, label = TRUE)
   )
 )
 
-jan_weekday_counts
+head(q1_weekday_counts, n = 7)
 ```
 
 This code works and takes up less space, but it's quite difficult to read –
 which can be a problem for finding and fixing problems with your code. For
-example, it's quite hard (without counting pairs of brackets) to work out that
-the reference to the column `weekday` on line 13 of this code belongs to the 
-`group_by()` function on line 2.
-
-<a href="https://magrittr.tidyverse.org/" title="magrittr website"><img src="images/magrittr.png" class="right-side-image"></a>
+example, it's quite hard (without counting pairs of parentheses) to work out 
+that the reference to the column `weekday` on line 13 of this code belongs to 
+the `group_by()` function on line 2.
 
 It's possible to write this code so that it is readable and does not require us
 to create multiple different objects to store the result of each step in our
-code. This method uses the `%>%` (pipe) operator from the
-[`magrittr`](https://magrittr.tidyverse.org/#usage) package. The pipe operator
-works by using the result of the code on the left-hand side of the pipe as the
-first argument to the function on the right-hand side. So the code `x %>% fun1()
-%>% fun2(y)` is the same as the code `fun2(fun1(x), y)`, but it is much easier
+code. This method uses the `|>` (or _pipe_) operator. The pipe operator works by 
+using the result of the code on the left-hand side of the pipe as the first 
+argument to a function on the right-hand side. So the code `x  |> fun1()
+ |> fun2(y)` is the same as the code `fun2(fun1(x), y)`, but it is much easier
 to see that `fun1()` is run before `fun2()`. It may be useful to read the pipe
 operator as 'and then', since piped code does the first thing *and then* the
 second thing with the result *and then* the third thing with the result of that,
@@ -1183,23 +1180,50 @@ of steps in a recipe.
 
 Since each function we are using returns the new data, and the first argument to 
 all of those functions is the name of the input data object, the pipe means we 
-can just omit the first argument to each function after the first one.
+can just omit the first argument to all except the first function.
 
 ```{r pipe-exercise3, exercise=TRUE}
-jan_weekday_counts <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv") %>% 
-  select(-offense_type) %>% 
-  filter(as.Date(date_time) < as.Date("2019-02-01")) %>% 
-  mutate(weekday = wday(date_time, label = TRUE)) %>% 
-  group_by(weekday) %>% 
-  count()
+san_fran_rob <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
 
-jan_weekday_counts
+q1_weekday_counts <- san_fran_rob |> 
+  select(-offense_type) |> 
+  filter(as.Date(date_time) <= as.Date("2019-03-31")) |> 
+  mutate(weekday = wday(date_time, label = TRUE)) |> 
+  count(weekday)
+
+head(q1_weekday_counts, n = 7)
 ```
 
 This code strikes a good balance between being easy to read and not requiring us
 to manage lots of intermediate variables. You might not find the pipe operator
 completely intuitive at the moment, but it will become easier as you see more
 examples in future tutorials. 
+
+
+<div class="box extra-detail">
+
+<h5 id="pipe-box1-title" class="box-title">What about the `%>%` pipe operator?</h5>
+
+<div id="pipe-box1" class="box-content">
+
+If you have learned any R coding before, you might have learned to use the `%>%` 
+pipe operator from the `magrittr` package. The `%>%` pipe operator was 
+introduced several years ago to allow people to construct pipelines of code in 
+R. The `%>%` operator was so widely used that the team that writes the R 
+programming language decided to provide a pipe operator in R itself, to avoid 
+the need to load the `magrittr` package. 
+
+You will still see the `%>%` pipe operator used in lots of R code examples 
+online. In almost all cases, when you see `%>%` you can replace it with the R 
+pipe operator `|>`, since they both work in very similar ways.
+
+</div>
+
+</div>
+
+<script>
+$("#pipe-box1-title").click(function () { $("#section-pipe-box1").toggle("slow") })
+</script>
 
 
 <div class="box reading">
@@ -1231,10 +1255,11 @@ further, you might be interested in:
   * [Data Wrangling with R](https://cengel.github.io/R-data-wrangling/) by
     Claudia Engel, a free online book that explains the functions introduced in
     this tutorial (and some others) in more detail.
-  * [Data Wrangling with dplyr and tidyr cheat sheet](https://rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf) 
-    by the team at RStudio, which provides a handy two-page guide to the main
-    functions in the `dplyr` package, which is very useful for reminding you of
-    the code needed to run each of the functions we have used in this tutorial.
+  * [Data transformation with dplyr cheat sheet](https://posit.co/wp-content/uploads/2022/10/data-transformation-1.pdf) 
+    by the team that makes RStudio, which provides a handy two-page guide to the 
+    main functions in the `dplyr` package, which is very useful for reminding 
+    you of the code needed to run each of the functions we have used in this 
+    tutorial.
   * [Data wrangling with R and RStudio](https://rstudio.com/resources/webinars/data-wrangling-with-r-and-rstudio/)
     by Garrett Grolemund, a recording of a webinar covering the data-wrangling
     functions introduced in this tutorial and some other very-useful related

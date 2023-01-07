@@ -13,6 +13,22 @@
   background-repeat: no-repeat;
   background-size: 100%;
 }
+.tutorialTitle::after {
+  content: "2022";
+  color: #000000;
+  background-color: #E03C31;
+  display: block;
+  /* Source: https://developer.mozilla.org/en-US/docs/Web/CSS/width */
+  width: intrinsic;           /* Safari/WebKit uses a non-standard name */
+  width: -moz-max-content;    /* Firefox/Gecko */
+  width: -webkit-max-content; /* Chrome */
+  width: max-content;
+  margin: 0.5em 0 0.5em;
+  padding: 0.25em 0.5em;
+  border-radius: 0.2em;
+  font-size: 0.5em;
+  font-weight: bold;
+}
 .topicsFooter > .resetButton {
   display: inline-block;
   border: 1pt solid #CCCCCC;
