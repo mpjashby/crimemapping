@@ -7,7 +7,7 @@ message(
   "code may take a few minutes to run and R will print messages for each\n",
   "package being installed. If you have any questions, please ask them on the\n",
   "module Q&A forum on Moodle at:\n\n",
-  "    https://moodle.ucl.ac.uk/mod/hsuforum/view.php?id=1753357\n\n",
+  "    https://moodle.ucl.ac.uk/mod/hsuforum/view.php?id=4439091\n\n",
   "(be warned that R may have wrapped this URL by inserting spaces into it).\n\n",
   "Another message will appear when the process is complete.\n\n",
   "-------------------------\n\n"
