@@ -57,9 +57,10 @@ input that a function works on, or to fine-tune the way the function works (we
 will see many examples of this later). Remember that you can identify a function
 in R because the name will always have parentheses after it.
 
-To try a basic function, type `sqrt(2)` in the box below and click `Run Code` to 
-calculate the square root of 2. The `sqrt()` function has only one argument: the
-number that we want to find the square root of.
+One basic R function is `sqrt()`, which calculates the square root of a number.
+The `sqrt()` function has only one argument: the number that we want to find the 
+square root of. Type `sqrt(2)` in the box below and click `Run Code` to 
+calculate the square root of 2.
 
 ```{r exercise2, exercise=TRUE}
 
@@ -69,14 +70,10 @@ number that we want to find the square root of.
 sqrt(2)
 ```
 
-When you click `Run Code`, R prints the output of your code – in this case, just
-the number ``r format(sqrt(2), digits = 7)`` (for now, you can ignore the number 
-`[1]` in square brackets).
+When you run code in R, by default R prints the output of your code – in this 
+case, just the number ``r format(sqrt(2), digits = 7)`` (for now, you can ignore 
+the number `[1]` in square brackets).
 
-Instead of clicking 'Run Code', you can use the short cut `Cmd+Return` (on Mac)
-or `Alt+Enter` (on Windows or Linux) to run the line of code that you cursor is
-on. Unfortunately, this short cut only works in the R console, not in this 
-tutorial.
 
 
 ### Packages
@@ -112,7 +109,7 @@ CRAN, but all the packages we will use are there.
 <a href="https://tidyverse.org/" title="tidyverse website"><img src="images/tidyverse.png" class="right-side-image"></a>
 
 So to install (for example) the package called `tidyverse`, which we will use
-extensively in this tutorial, we run the R code:
+extensively in this tutorial, we would run the R code:
 
 ```r
 install.packages("tidyverse")
@@ -203,9 +200,8 @@ In each of these examples, the code stores the result of the `read_csv()`
 function in an *object* named `san_fran_rob`. Objects are places where we can
 store data. To create an object and store our data in it, we use the assignment
 operator `<-` (a less-than sign followed by a dash). Continually typing `<-` can 
-be tedious, so in RStudio (but unfortunately not in this tutorial) we can use 
-the keyboard short cut `Option+-` (on Mac) or `Alt+-` (on Windows or Linux) to 
-insert the complete operator.
+be tedious, so in RStudio we can use the keyboard short cut `Option+-` (on Mac) 
+or `Alt+-` (on Windows or Linux) to insert the complete operator.
 
 
 <div class="box notewell">
