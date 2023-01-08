@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Wrangling data"
-description: "Learn the building blocks of data analysis: loading, filtering, manipulating and saving data for using crime mapping."
+description: "Learn the building blocks of data analysis: loading, filtering, manipulating and saving data for crime mapping."
 output: 
   learnr::tutorial:
     progressive: true
@@ -234,7 +234,7 @@ set 20 years ago. Tibbles behave just like data frames almost all of the time
 (so much so that people working with tibbles often call them data frames) except 
 for a few occasions where they behave in a more-convenient way.
 
-Use `read_csv()` to load data from `https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv` 
+We can use `read_csv()` to load data from `https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv` 
 and store it in an object called `san_fran_rob`. Use the code above to help you, 
 or click the `Solution` button to reveal the answer.
 
