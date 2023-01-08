@@ -12,6 +12,14 @@ runtime: shiny_prerendered
 library(learnr)
 library(tidyverse)
 
+# {ggspatial} uses {rosm} to download OSM map tiles and {rosm} needs {raster} to
+# render them, but {rosm} only Suggests {raster} rather than Importing it. If
+# {raster} is not installed on a user's machine, {learnr} will not install it
+# when loading the tutorial because {learnr} only installs Imported packages.
+# By loading {raster} explicitly (even though we don't need it directly), we 
+# force {learnr} to install it if it is not present.
+library(raster)
+
 knitr::opts_chunk$set(echo = FALSE)
 
 # Copy files

@@ -14,8 +14,13 @@ message(
 )
 
 # install packages
+# {ggspatial} uses {rosm} to download OSM map tiles and {rosm} needs {raster} to
+# render them, but {rosm} only Suggests {raster} rather than Importing it. If
+# {raster} is not installed on a user's machine, {learnr} will not install it
+# when loading the tutorial because {learnr} only installs Imported packages.
+# By installing {raster} explicitly, we avoid the code in the tutorials failing.
 invisible(lapply(
-  c("tidyverse", "crimedata", "learnr", "remotes"),
+  c("tidyverse", "crimedata", "learnr", "remotes", "raster"),
   function (x) {
     if (x %in% installed.packages()) {
       message(paste("package", x, "already installed"))
