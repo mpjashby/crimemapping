@@ -32,7 +32,13 @@ creating maps. We will return to all these details in future sessions, so
 for-now please don't worry about understanding every single line of code. 
 Everything will become clear as we work through the tutorials in this course.
 
-```{r make-final-map, include=FALSE}
+```{r make-final-map, include=FALSE, eval=FALSE}
+# THIS CODE DOES NOT RUN BY DEFAULT, SINCE LEARNR SOMETIMES RUNS THE CODE EVEN
+# WHEN THE FILE ALREADY EXISTS, AND THE FILE WILL ALWAYS EXIST WHEN THE TUTORIAL
+# IS DEPLOYED. THE CODE IS JUST HERE FOR FUTURE REFERENCE IF NEEDED. 
+# 
+# IF YOU NEED TO RE-CREATE THE FILE, RUN THE CODE MANUALLY.
+
 if (!file.exists(here::here("inst/tutorials/02_your_first_crime_map/images/atlanta_downtown_homicides.jpg"))) {
   
   # These packages are loaded inside this if statement because loading them at
