@@ -242,7 +242,7 @@ of the homicide location. Depending on the width of your screen, you may need to
 click on the '▸' symbol to view all the columns in the data. We can use this 
 data to plot the homicides on a map.
 
-<div class="notewell">
+<div class="box notewell">
 
 **In the code `head(homicides)`, there are no quote marks around the word
 `homicides`.**
