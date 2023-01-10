@@ -1,5 +1,5 @@
 ---
-name: Pre-flight checklist: tutorial XX, YYYY
+name: "Pre-flight checklist: tutorial XX, YYYY"
 about: Checklist of actions required before a tutorial is published
 title: ''
 labels: Release
