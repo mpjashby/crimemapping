@@ -37,6 +37,7 @@ inst/*.html
 *.utf8.md
 *.knit.md
 inst/tutorials/*.html
+rosm.cache
 
 # R Environment Variables
 .Renviron

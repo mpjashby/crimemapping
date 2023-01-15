@@ -11,3 +11,4 @@
 ^.github/*$
 ^marking/*$
 ^assessment_specimen_answers/*$
+^.*/rosm.cache

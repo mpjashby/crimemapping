@@ -4,7 +4,7 @@ description: "Learn how to format your code so that it is easier to read, both f
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -26,14 +26,23 @@ walk(
 
 Now that you're beginning to write code in R, it's time to introduce a few
 conventions for how to write code so that it's easier to read. This is 
-particularly important because it is much easier to find mistakes in 
-well-written code, and your code will inevitably contain mistakes (everyone's
-code contains mistakes!).
+important because "[good coding style is like correct punctuation: you can manage without it, butitsuremakesthingseasiertoread](https://style.tidyverse.org/)".
 
-It's been said that in data science that there are always at least two people 
-working on a project: you and future you. The problem is that *[past you does 
-not answer emails](https://datasciencecampus.ons.gov.uk/taking-reproducible-analytical-pipelines-on-a-virtual-tour-first-stop-the-caribbean/)*. So you can save yourself a lot of hassle later by writing
-readable code.
+Writing readable code is particularly important because it is much easier to 
+find mistakes in well-written code, and your code will inevitably contain 
+mistakes (everyone's code contains mistakes!).
+
+Writing code has been compared to performing in a band:
+
+> [I liken the situation to a group of musicians trying to form a band. Each one comes in believing that their way of doing things is best (their “method” or “process”). The band will struggle so long as everyone is trying to do their own thing. It’s impossible to create good music unless everyone in the band agrees on the tempo, the style and who should take lead during a song. Anyone who has ever heard a high school band perform knows this to be true. Unless everyone is on the same page, you aren’t going to accomplish much.](https://www.smashingmagazine.com/2012/10/why-coding-style-matters/)
+
+You might be relaxing at this point, thinking "that isn't a problem for me,
+because I'm the only person who is going to be working on my code". If so, think
+again. It's been said that in data science that there are always at least two 
+people working on a project: the _you_ who is working on the code now, and 
+the _past you_ who has worked on the same code previously. The problem is that 
+*[past you does 
+not answer emails](https://datasciencecampus.ons.gov.uk/taking-reproducible-analytical-pipelines-on-a-virtual-tour-first-stop-the-caribbean/)*. So you can save _future you_ a lot of hassle later by writing readable code.
 
 This tutorial introduces some basic guidelines on formatting your code. This is
 a condensed version of the [The tidyverse style guide](https://style.tidyverse.org/),
@@ -60,9 +69,12 @@ all your code for a specific project in one file or split it into multiple files
 is up to you. Generally you should do whatever makes it easier to understand how
 your code is structured.
 
+
+### Leaving notes for future you
+
 Within each `.R` file, you can make your code easier to understand in several
-ways. First, add a comment (one or more lines beginning with `#` followed by a
-space) at the top of the file to explain what the code in that file does. This 
+ways. First, add a comment (one or more lines beginning with `#` _followed by a
+space_) at the top of the file to explain what the code in that file does. This 
 will make it easier for you to know that you've found the right file if you are 
 looking for it in a few weeks when you've forgotten (which you will) what file 
 contains what code.
@@ -70,6 +82,12 @@ contains what code.
 ```r
 # This code produces a density map of bike thefts in Vancouver in 2020
 ```
+
+Comments should usually start with a capital letter and follow normal English
+rules of punctuation, spacing, etc.
+
+
+### Letting your code breathe
 
 Unless your code is very simple, it will probably consist of several separate
 tasks that are completed one after another. For example your code might download
@@ -108,8 +126,8 @@ ggplot() +
 ```
 
 Since data wrangling involves several steps and each function uses the result of
-the previous step, we could use the pipe operator `%>%` from the `magrittr` 
-package to make that code a bit cleaner:
+the previous step, we could use the pipe operator `|>` to make that code a bit 
+cleaner:
 
 ```r
 library(lubridate)
@@ -117,15 +135,18 @@ library(tidyverse)
 
 crimes <- read_csv("crime_data.csv")
 
-burglaries <- crimes %>% 
-  janitor::clean_names() %>% 
-  filter(type == "burglary") %>% 
+burglaries <- crimes |> 
+  janitor::clean_names() |> 
+  filter(type == "burglary") |> 
   mutate(month = month(date_time))
 
 ggplot() + 
   geom_point(aes(x = lon, y = lat, colour = month)) +
   theme_void()
 ```
+
+
+### Header comments
 
 If your code includes very long tasks (e.g. where the code takes up more than a
 full screen on your computer), you might want to use header comments to divide
@@ -161,6 +182,33 @@ In general, writing code that is readable is more important than writing the
 shortest code possible, so don't be afraid to let your code breathe by using
 space to separate your code into meaningful chunks.
 
+```{r comments-quiz}
+quiz(
+  caption = "",
+  
+  question(
+    "How do you write a comment in R?",
+    answer("A `#` symbol followed by a space. Comments should start with a capital leter. e.g. `# Load data`", correct = TRUE),
+    answer(
+      "A `#` symbol, followed by no spaces. Comments should start with a capital letter. e.g. `#Load data`",
+      message = "Not quite right: comments should start with a capital letter but should also have a space after the initial `#` symbol."
+    ),
+    answer(
+      "A `#` symbol followed by a space. Comments should be in lower case unless the comment is long enough to contain more than one sentence. e.g. `# load data`",
+      message = "Not quite right: comments should start with a space after the initial `#` symbol, but the comment text should start with a capital letter."
+    ),
+    answer(
+      "A `#` symbol, followed by no spaces. Comments should be in lower case unless the comment is long enough to contain more than one sentence. e.g. `#load data`",
+      message = "Not quite right: comments should start with a space after the initial `#` symbol and the comment text should start with a capital letter."
+    ),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+  
+)
+```
+
 
 
 ## Naming objects
@@ -173,7 +221,8 @@ you will find coding easier if you follow a few conventions.
     to remember whether a particular letter was upper- or lower-case.
   * Use *snake case* (`object_name`, with words separated by underscores) for 
     object names rather than camel case (`objectName`) or kebab case 
-    (`object-name`), and don't use dots in object names.
+    (`object-name`).
+  * Don't use dots in object names.
   * Don't give objects the same names as R functions, because re-using function
     names makes reading your code more difficult.
 
@@ -185,8 +234,36 @@ Just as `crime_data_atlanta_2020.csv` is a more-useful file name than
 `data_file_23.csv`, you will find it easier to read your code if you give your
 objects meaningful names. So when you load data into R (e.g. with `read_csv()`)
 don't just call it `data` (not least because there is a function named `data()`)
-but instead give it a name like `atl_crimes` if it contains (for example) crime
-data from Atlanta.
+but instead give it a name like `atlanta_crimes` if it contains (for example) 
+crime data from Atlanta.
+
+```{r naming-quiz}
+quiz(
+  caption = "",
+  
+  question(
+    "Which of these would be a good name for an object containing data on homicides in Abu Dhabi?",
+    answer("`abu_dhabi_homicides`", correct = TRUE),
+    answer(
+      "`homicide_data`",
+      message = "Not quite right: this name is in the right case, but could better describe the data it contains."
+    ),
+    answer(
+      "`Abu_Dhabi_homicides`",
+      message = "Not quite right: it's best to only use lower-case characters in variables, so you don't need to remember whether you've used upper- or lower-case characters."
+    ),
+    answer(
+      "`abu-dhabi-homicides`",
+      message = "This will cause an error because the `-` indicates R should subtract one value from another."
+    ),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+  
+)
+```
+
 
 <p class="credits">
 [Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
@@ -205,12 +282,12 @@ but not before, outside parentheses but not inside, etc.
 
 ```r
 # Good
-x[, 1]
+read_csv("crime_data.csv", skip = 4)
 
 # Bad
-x[,1]
-x[ ,1]
-x[ , 1]
+read_csv("crime_data.csv",skip = 4)
+read_csv("crime_data.csv" ,skip = 4)
+read_csv("crime_data.csv" , skip = 4)
 ```
 
 Don't put spaces inside parentheses, or between the names of functions and the
@@ -225,7 +302,8 @@ mean (x, na.rm = TRUE)
 mean( x, na.rm = TRUE )
 ```
 
-*Do* put spaces around most operators (`==`, `+`, `-`, `<-`, etc.):
+*Do* put spaces around most operators (`==`, `+`, `-`, `<-`, etc.), including
+either side of `=` when specifying the values of function arguments:
 
 ```r
 # Good
@@ -274,9 +352,9 @@ str_wrap(string = "some text to be wrapped", width = 10)
 The `string` argument provides the *data* that the `str_wrap()` function will 
 work on, while the `width` argument provides the details of how that work should
 be done. Since the data argument to a function is typically required (the 
-function makes no sense without it) and is often the first argument, you should
+function makes no sense without it) and is often the first argument, you can
 omit the name of data arguments to functions. For all other arguments, it is
-best to give the argument name. So to use `str_wrap()`:
+best to give the argument name. So to use `str_wrap()`, you can write:
 
 ```r
 str_wrap("some text to be wrapped", width = 10)
@@ -307,25 +385,53 @@ do_something_very_complicated(
 do_something_very_complicated("that", requires, many, arguments,
                               "some of which may be long"
                               )
+do_something_very_complicated(
+  something = "that",
+  requires = many,
+  arguments = "some of which may be long")
 ```
 
-When combining multiple functions using the pipe operator (`%>%`), put each 
+When combining multiple functions using the pipe operator (`|>`), put each 
 function on a single line, with all but the first line indented by two spaces:
 
 ```r
-a_function() %>% 
-  another_function() %>% 
+a_function() |> 
+  another_function() |> 
   and_a_third_function()
 ```
 
 Once you learn about other types of R code you will need to know how best to 
 style it, but we will learn about those when we need to.
 
+```{r functions-quiz}
+quiz(
+  caption = "",
+  
+  question(
+    "If a function is written across several lines of code because it will not fit on one line, where should the closing parenthesis `)` at the end of the function be placed?",
+    answer("On a separate line, indented as much as the function name.", correct = TRUE),
+    answer(
+      "On a separate line, indented as much as the arguments on the lines above it.",
+      message = "Not quite right: the closing parenthesis should be a separate line, but indented as much as the function name so that you can easily see where the function begins and ends."
+    ),
+    answer("At the end of the final function argument, on the same line."),
+    answer(
+      "It doesn't matter where the closing parenthesis is placed as long as there is one.",
+      message = "While your code will wherever you place the closing parenthesis, the coding style guide introduced in this chapter is designed to make your code easier to read. This is important because if your code is easier to read that will make it easier to find and fix any mistakes in it."
+    ),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+  
+)
+```
+
 
 
 ## Styling your code automatically
 
-You can get help on styling your R code using the [`styler`](https://styler.r-lib.org) 
+You can get help on styling your R code using the [`styler`](https://styler.r-lib.org/) 
 package, which can automatically format your code for you. After you install
 the `styler` package with the code `install.packages("styler")`, you can style
 your code by:
@@ -353,6 +459,16 @@ because it allows you to work out what the code is trying to achieve and because
 it makes it much easier to find and fix problems when your code is not behaving
 as you want it to.
 
+
+:::.box .reading
+
+Writing readable, understandable code is important. To find out more about this,
+read some of these articles:
+
+  * [Why Coding Style Matters](https://www.smashingmagazine.com/2012/10/why-coding-style-matters/) by Nicholas Zakas.
+  * [The tidyverse style guide](https://style.tidyverse.org/) by Hadley Wickham, which is the basis for the rules outlined in this tutorial.
+
+:::
 
 
 </div>
