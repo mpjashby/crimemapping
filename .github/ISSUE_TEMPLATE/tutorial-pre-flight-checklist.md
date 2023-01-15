@@ -19,5 +19,6 @@ assignees: mpjashby
 - [ ] Spell check
 - [ ] Add `css: ["css/tutorial_style.css", "css/2023.css"]`
 - [ ] Increment package version number
+- [ ] Add description of update to `NEWS.md`
 - [ ] Check all code in RStudio Server
 - [ ] Update Moodle
