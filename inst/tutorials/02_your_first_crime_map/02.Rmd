@@ -55,7 +55,7 @@ if (!file.exists(here::here("inst/tutorials/02_your_first_crime_map/images/atlan
   library(ggspatial)
   library(sf)
 
-  downtown_homicides <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv") |> 
+  downtown_homicides <- read_csv("https://mpjashby.github.io/crimemappingdata/downtown_homicides.csv") |> 
     st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
     st_transform("EPSG:26967")
 
@@ -205,7 +205,7 @@ suppressPackageStartupMessages(library("tidyverse"))
 
 ```{r exercise2, exercise=TRUE}
 # Download the data directly from a URL and store it as an object
-homicides <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv")
+homicides <- read_csv("https://mpjashby.github.io/crimemappingdata/downtown_homicides.csv")
 ```
 
 The `read_csv()` function loads data from a file and prints a message showing 
@@ -234,7 +234,7 @@ suppressPackageStartupMessages(library("tidyverse"))
 
 # Download the data directly from a URL and store it as an object
 homicides <- read_csv(
-  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  "https://mpjashby.github.io/crimemappingdata/downtown_homicides.csv",
   col_types = cols(
     report_number = col_double(),
     label = col_character(),
@@ -303,7 +303,7 @@ suppressPackageStartupMessages(library("tidyverse"))
 
 # Download the data directly from a URL and store it as an object
 homicides <- read_csv(
-  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  "https://mpjashby.github.io/crimemappingdata/downtown_homicides.csv",
   col_types = cols(
     report_number = col_double(),
     label = col_character(),
@@ -353,7 +353,7 @@ suppressPackageStartupMessages(library("tidyverse"))
 
 # Download the data directly from a URL and store it as an object
 homicides <- read_csv(
-  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  "https://mpjashby.github.io/crimemappingdata/downtown_homicides.csv",
   col_types = cols(
     report_number = col_double(),
     label = col_character(),
@@ -440,7 +440,7 @@ suppressPackageStartupMessages(library("tidyverse"))
 
 # Download the data directly from a URL and store it as an object
 homicides_sf_trans <- read_csv(
-  "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/downtown_homicides.csv",
+  "https://mpjashby.github.io/crimemappingdata/downtown_homicides.csv",
   col_types = cols(
     report_number = col_double(),
     label = col_character(),
@@ -504,7 +504,7 @@ library(sf)
 library(tidyverse)
 
 # Download the data directly from a URL and store it as an object
-homicides <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/glenrose_heights_homicides.csv")
+homicides <- read_csv("https://mpjashby.github.io/crimemappingdata/glenrose_heights_homicides.csv")
 
 # Convert the data to a simple features object, which we can use in functions 
 # that work on spatial data

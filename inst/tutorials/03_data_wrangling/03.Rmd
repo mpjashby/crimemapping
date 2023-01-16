@@ -168,7 +168,7 @@ tibble::tribble(
 ### Loading CSV data
 
 ```{r read-load-robbery-data}
-san_fran_rob <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
+san_fran_rob <- read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv")
 ```
 
 <a href="https://readr.tidyverse.org/" title="readr website"><img src="images/readr.png" class="right-side-image"></a>
@@ -234,7 +234,7 @@ set 20 years ago. Tibbles behave just like data frames almost all of the time
 (so much so that people working with tibbles often call them data frames) except 
 for a few occasions where they behave in a more-convenient way.
 
-We can use `read_csv()` to load data from `https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv` 
+We can use `read_csv()` to load data from `https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv` 
 and store it in an object called `san_fran_rob`. Use the code above to help you, 
 or click the `Solution` button to reveal the answer.
 
@@ -243,7 +243,7 @@ or click the `Solution` button to reveal the answer.
 ```
 
 ```{r read-exercise1-solution}
-san_fran_rob <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
+san_fran_rob <- read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv")
 ```
 
 If the data are loaded successfully, R will list the columns in the data and the
@@ -330,7 +330,7 @@ downloaded as a binary file. To do this, add the argument `mode = "wb"` to the
 
 ```r
 download.file(
-  url = "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/aggravated_assaults.xlsx",
+  url = "https://mpjashby.github.io/crimemappingdata/aggravated_assaults.xlsx",
   destfile = temp_file,
   mode = "wb"
 )
@@ -349,7 +349,7 @@ temp_file <- tempfile(fileext = ".xlsx")
 
 # Download the Excel file and store it in the temporary location
 download.file(
-  url = "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/aggravated_assaults.xlsx",
+  url = "https://mpjashby.github.io/crimemappingdata/aggravated_assaults.xlsx",
   destfile = temp_file,
   mode = "wb"
 )
@@ -374,7 +374,7 @@ temp_file <- tempfile(fileext = ".xlsx")
 
 # Download the Excel file and store it in the temporary location
 download.file(
-  url = "https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/aggravated_assaults.xlsx",
+  url = "https://mpjashby.github.io/crimemappingdata/aggravated_assaults.xlsx",
   destfile = temp_file,
   mode = "wb"
 )
@@ -1113,7 +1113,7 @@ steps separately, assigning the result of each step to a new object.
 library(lubridate)
 
 # Read San Francisco robbery data
-robbery1 <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
+robbery1 <- read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv")
 
 # Select only the columns we need
 robbery2 <- select(robbery1, date_time)
@@ -1144,7 +1144,7 @@ q1_weekday_counts <- count(
   mutate(
     filter(
       select(
-        read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv"),
+        read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv"),
         -offense_type
       ), 
       as.Date(date_time) <= as.Date("2019-03-31")
@@ -1179,7 +1179,7 @@ all of those functions is the name of the input data object, the pipe means we
 can just omit the first argument to all except the first function.
 
 ```{r pipe-exercise3, exercise=TRUE}
-san_fran_rob <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/san_francisco_robbery.csv")
+san_fran_rob <- read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv")
 
 q1_weekday_counts <- san_fran_rob |> 
   select(-offense_type) |> 
