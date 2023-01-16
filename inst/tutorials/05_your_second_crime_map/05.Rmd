@@ -1775,6 +1775,7 @@ educate people on how best to protect their bikes.
 
 In the next tutorial, we will learn how to improve this map further.
 
+::: {.box .reading}
 You can find out more about some of the things we have covered in this tutorial
 using these resources:
 
@@ -1785,5 +1786,5 @@ using these resources:
     by Hadley Wickham and Garrett Grolemund.
   * Learn more about making maps using simple features in [Chapter 1 of *Spatial Data Science*](https://keen-swartz-3146c4.netlify.app/intro.html)
     by Edzer Pebesma and Roger Bivand.
-
+:::
 

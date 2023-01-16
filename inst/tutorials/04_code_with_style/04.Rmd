@@ -465,7 +465,7 @@ as you want it to.
 Writing readable, understandable code is important. To find out more about this,
 read some of these articles:
 
-  * [Why Coding Style Matters](https://www.smashingmagazine.com/2012/10/why-coding-style-matters/) by Nicholas Zakas.
+  * [Why coding style matters](https://www.smashingmagazine.com/2012/10/why-coding-style-matters/) by Nicholas Zakas.
   * [The tidyverse style guide](https://style.tidyverse.org/) by Hadley Wickham, which is the basis for the rules outlined in this tutorial.
 
 :::
