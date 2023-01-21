@@ -18,6 +18,7 @@ assignees: mpjashby
 - [ ] Reduce image sizes using `harmonise_image_sizes()`
 - [ ] Spell check
 - [ ] Add `css: ["css/tutorial_style.css", "css/2023.css"]`
+- [ ] Check tutorial is not included in `.Rbuildignore`
 - [ ] Increment package version number
 - [ ] Add description of update to `NEWS.md`
 - [ ] Check all code in RStudio Server
