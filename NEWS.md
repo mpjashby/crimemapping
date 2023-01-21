@@ -1,21 +1,27 @@
+# crimemapping 1.2.0
+
+* Update content for 2023 Week 3 (tutorials 6 and 7).
+* Remove some datasets that have now been moved to the crimemappingdata package.
+
+
 # crimemapping 1.1.0
 
-* Update content for 2023 Week 2 (tutorials 4 and 5)
+* Update content for 2023 Week 2 (tutorials 4 and 5).
 
 
 # crimemapping 1.0.0
 
-* Update content for 2023 Week 1 (tutorials 1, 2 and 3)
+* Update content for 2023 Week 1 (tutorials 1, 2 and 3).
 
 
 # crimemapping 0.14.0
 
-* Update content for Week 9 (tutorial 16)
+* Update content for Week 9 (tutorial 16).
 
 
 # crimemapping 0.13.0
 
-* Update content for Week 8 (tutorials 14 and 15)
+* Update content for Week 8 (tutorials 14 and 15).
 
 
 # crimemapping 0.12.0
