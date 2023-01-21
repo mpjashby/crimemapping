@@ -23,10 +23,4 @@ update <- function (...) {
 
   remotes::install_github("mpjashby/crimemapping", upgrade = "always", ...)
 
-  message(
-    "\n\n--------------------------------------------------------------------------------\n\n",
-    "CRIME MAPPING COURSE UPDATE COMPLETED\n\n",
-    "--------------------------------------------------------------------------------\n\n"
-  )
-
 }
