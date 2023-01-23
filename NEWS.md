@@ -1,3 +1,8 @@
+# crimemapping 1.2.1
+
+* Fixed outdated URL for the aggravated assaults dataset in tutorial 3.
+
+
 # crimemapping 1.2.0
 
 * Update content for 2023 Week 3 (tutorials 6 and 7).
