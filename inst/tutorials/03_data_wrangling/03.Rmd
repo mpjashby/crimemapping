@@ -27,7 +27,8 @@ knitr::opts_chunk$set(echo = FALSE)
 # load data
 download.file(
   url = "https://mpjashby.github.io/crimemappingdata/aggravated_assaults.xlsx", 
-  destfile = agg_assaults_file <- tempfile(fileext = ".xlsx")
+  destfile = agg_assaults_file <- tempfile(fileext = ".xlsx"),
+  mode = "wb"
 )
 agg_assault_data <- readxl::read_excel(agg_assaults_file, sheet = "Austin")
 ```
