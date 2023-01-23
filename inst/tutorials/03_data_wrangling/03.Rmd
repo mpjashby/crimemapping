@@ -25,7 +25,11 @@ purrr::walk(
 knitr::opts_chunk$set(echo = FALSE)
 
 # load data
-agg_assault_data <- readxl::read_excel("../../extdata/aggravated_assaults.xlsx", sheet = "Austin")
+download.file(
+  url = "https://mpjashby.github.io/crimemappingdata/aggravated_assaults.xlsx", 
+  destfile = agg_assaults_file <- tempfile(fileext = ".xlsx")
+)
+agg_assault_data <- readxl::read_excel(agg_assaults_file, sheet = "Austin")
 ```
 
 
