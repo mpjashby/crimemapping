@@ -12,6 +12,7 @@
 ^marking/*$
 ^assessment_specimen_answers/*$
 ^.*/rosm.cache
+^rosm.cache
 ^inst/tutorials/08_projects
 ^inst/tutorials/09_mapping_areas
 ^inst/tutorials/10_place_data

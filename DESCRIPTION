@@ -1,7 +1,7 @@
 Package: crimemapping
 Type: Package
 Title: Crime Mapping with R
-Version: 1.2.1
+Version: 1.2.2
 Date: 2023-01-21
 Author: Matt Ashby
 Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
@@ -13,7 +13,8 @@ License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
 Imports: 
+    httr,
     learnr,
     remotes,
-    tidyverse
+    rlang
 RoxygenNote: 7.2.3

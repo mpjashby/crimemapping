@@ -1,3 +1,11 @@
+# crimemapping 1.2.2
+
+* `update()` function re-written to allow longer for download and provide more
+  useful messages to users.
+* Remove Queensland and Uttar Pradesh data that has been moved to the 
+  crimemappingdata package.
+
+
 # crimemapping 1.2.1
 
 * Fixed outdated URL for the aggravated assaults dataset in tutorial 3.
