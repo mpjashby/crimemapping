@@ -1,3 +1,8 @@
+# crimemapping 1.3.0
+
+* Updated content for 2023 Week 4 (tutorials 8 and 9).
+
+
 # crimemapping 1.2.2
 
 * `update()` function re-written to allow longer for download and provide more

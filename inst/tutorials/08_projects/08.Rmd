@@ -4,7 +4,7 @@ description: "Learn how to use RStudio Projects (and a little self discipline) t
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -43,7 +43,7 @@ common problems:
 All of this can make data analysis much harder, especially if you're trying to 
 find a particular file or check if a result is correct just before a deadline.
 
-<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/08_projects/images/data_cowboy.jpg" alt="Cartoon of a furry monster lassoing several sheets of data"></p>
+<p class="full-width-image"><img src="images/data_cowboy.jpg" alt="Cartoon of a furry monster lassoing several sheets of data"></p>
 
 Fortunately, we can solve these problems using a combination of the RStudio 
 Projects feature and a plan for organising our files. Once you've formed the 
@@ -63,7 +63,7 @@ easier to stay organised. For example, RStudio will save the project's _state_:
 if you have to close the project and re-open it later, all the files that you 
 had open before will re-open, too.
 
-<div class="box notewell">
+::: {.box .notewell}
 
 **I strongly recommend that you use projects for everything you do in RStudio.**
 There are no real costs to using projects and the benefits can be substantial,
@@ -72,25 +72,28 @@ for each project that you work on, for example you might have one project for
 each research report that you write or piece of analysis you do on a particular
 topic.
 
-</div>
+:::
 
 
 To create a new project from within RStudio, click `File` then `New Project …` 
 and choose to create the project in a new directory on your computer:
 
-<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/08_projects/images/new_project_1.png" alt="Screenshot of an RStudio window for choosing between opening a new project in a new directory, in an existing directory or based on a project from a version-control system"></p>
+<p class="full-width-image"><img src="images/new_project_1.png" alt="Screenshot of an RStudio window for choosing between opening a new project in a new directory, in an existing directory or based on a project from a version-control system"></p>
 
 Choose to create a new (empty) project, rather than use any of the templates for
 specific types of projects:
 
-<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/08_projects/images/new_project_2.png" alt="Screenshot of an RStudio window for choosing from different types of RStudio project"></p>
+<p class="full-width-image"><img src="/images/new_project_2.png" alt="Screenshot of an RStudio window for choosing from different types of RStudio project"></p>
 
 Choose what the new project <abbr title="directories on your computer are also sometimes called folders">
 directory</abbr> should be called, and where on your computer it should be 
 created (you might want to create a 'Crime Mapping' directory to hold all the 
 projects you will create during this course), then click `Create Project`:
 
-<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/08_projects/images/new_project_3.png" alt="Screenshot of an RStudio window for choosing the directory that should be used for a new project"></p>
+<p class="full-width-image"><img src="images/new_project_3.png" alt="Screenshot of an RStudio window for choosing the directory that should be used for a new project"></p>
+
+That's it -- you have created an RStudio project that you can organise your work 
+in.
 
 
 ## Organising a project
@@ -108,9 +111,9 @@ but the most important thing is that you have separate places to store:
     analysis, and finally,
   * the outputs from your analysis, including tables, charts and reports.
 
-Putting each of these four types of files in a separate directory makes it much
-easier to keep track of them. We can create the necessary directories directly
-in R using the `dir.create()` function.
+Putting each of these four types of files in a separate directory within the 
+project directory makes it much easier to keep track of them. We can create the 
+necessary directories directly in R using the `dir.create()` function.
 
 ```{r project-exercise1, exercise=TRUE}
 # `dir.create()` does not produce any output unless there is a problem
@@ -121,7 +124,7 @@ dir.create("outputs")
 ```
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 Because we are running these commands from inside an RStudio project, these
 directories will automatically be created as subdirectories of the project
@@ -133,13 +136,13 @@ reference to a file or folder as being relative to the folder that contains the
 RStudio project. So, for example, if your project for analysis of thefts in
 Vancouver is stored in a folder called 
 `/Documents/crime_mapping/vancouver_thefts/` and you run the R code 
-`read_csv("source-data/vancouver_thefts.csv")`, RStudio knows that you mean to
+`read_csv("source_data/vancouver_thefts.csv")`, RStudio knows that you mean to
 open the file stored at 
 `/Documents/crime_mapping/vancouver_thefts/source_data/vancouver_thefts.csv`.
 This can save you lots of time working out how to reference a particular file
 location in R.
 
-</div>
+:::
 
 
 <div class="box extra-detail">
@@ -163,7 +166,9 @@ different directory structure to your computer. So if the first line of your R
 script is `setwd("/Users/uctzaaa/Documents/crime_mapping_vancouver_thefts/")`
 because that is the location of the working directory on your computer, this 
 will produce an error on another computer that does not have a `/Users/uctzaaa`
-directory.
+directory (i.e. it will cause an error on almost every computer in the world).
+This makes it much harder to get help on your code, for example if you are using
+a reproducible example (reprex) to show someone else a problem with your code.
 
 Setting a working directory using the `Session > Set Working Directory` menu
 buttons in RStudio has the additional problem that it's not possible to work out
@@ -229,7 +234,7 @@ loop'. While you can create 'for' loops in R that would do the same thing as the
 both because [loops are often slower](https://stackoverflow.com/a/30241011/8222654) 
 -- which can be particularly important when analysing large spatial datasets --
 and because functions like `walk()` can easily be used inside pipelines 
-constructed with the `%>%` operator.
+constructed with the `|>` operator.
 
 **If you're ever tempted to use a 'for' loop in R, stop and think about how to
 achieve the same result using a function like `walk()`.**
@@ -257,10 +262,11 @@ on. To do this, stick to three principles:
 Computers can increasingly read file names that contain any characters you can
 think of, but many different characters make referencing your file names in your 
 code more difficult than need be. To keep your code simple, stick to files names 
-that contain only _lowercase_ letters (so you don't have to remember if each 
-letter is uppercase or lowercase), numbers, hyphens (`-`) and underscores (`_`) 
--- that's it. If your language uses letters with accents, its best to not use 
-those accents in file names. So, instead of having files with names like this:
+that contain only _lower-case_ letters (so you don't have to remember if each 
+letter is upper-case or lower-case), numbers, hyphens (`-`) and underscores 
+(`_`) -- that's it. If your language uses letters with accents, its best to not 
+use those accents in file names. So, instead of having files with names like 
+this:
 
 ```
 John's raw data.csv
@@ -327,7 +333,7 @@ files).
 ## In summary
 
 
-<div class="box welldone">
+::: {.box .notewell}
 
 **In this tutorial we've learned how to stay organised while mapping crime.**
 Following the rules outlined here might seem troublesome or unnecessary now, but
@@ -335,7 +341,7 @@ they'll make things much easier when you're up against a deadline. The best
 thing to do is get into good habits when you start coding, so you can make use
 of them as you develop your coding skills further.
 
-</div>
+:::
 
 
 #### Check your understanding
