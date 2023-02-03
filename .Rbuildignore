@@ -9,7 +9,7 @@
 ^inst/tutorials/.*?_files
 ^inst/tutorials/16_mapping_time/images/chicago_animated.*?\.gif
 ^.github/*$
-^marking/*$
+^marking
 ^assessment_specimen_answers/*$
 ^.*/rosm.cache
 ^rosm.cache

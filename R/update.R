@@ -6,7 +6,7 @@
 #'
 #' @export
 
-update <- function (...) {
+update <- function(...) {
 
   rlang::inform(
     c(

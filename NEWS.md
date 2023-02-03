@@ -1,3 +1,8 @@
+# crimemapping 1.4.0
+
+* Added `check_code()` function.
+
+
 # crimemapping 1.3.0
 
 * Updated content for 2023 Week 4 (tutorials 8 and 9).
