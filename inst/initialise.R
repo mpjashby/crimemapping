@@ -18,9 +18,9 @@ rlang::inform(
 # {raster} is not installed on a user's machine, {learnr} will not install it
 # when loading the tutorial because {learnr} only installs Imported packages.
 # By installing {raster} explicitly, we avoid the code in the tutorials failing.
-invisible(lapply(
+invisible(install.packages(
   c("tidyverse", "learnr", "remotes", "raster"),
-  install.packages(x, verbose = FALSE)
+  verbose = FALSE
 ))
 remotes::install_github("mpjashby/crimemapping", upgrade = "always")
 
