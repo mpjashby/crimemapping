@@ -7,7 +7,8 @@ rlang::inform(
     "CRIME MAPPING COURSE SETUP",
     "*" = "This code sets up RStudio for the UCL Crime Mapping module (SECU0005). More specifically, it installs some R packages that you will need for this module.",
     "*" = "The code may take a few minutes to run and R will print messages for each package being installed.",
-    "*" = "If you have any questions, please ask them on the module Q&A forum on Moodle at https://moodle.ucl.ac.uk/mod/hsuforum/view.php?id=4439091"
+    "*" = "If you have any questions, please ask them on the module Q&A forum on Moodle.",
+    "*" = "If you are asked whether to install packages from source, choose 'No'."
   ),
   use_cli_format = TRUE
 )
@@ -28,7 +29,8 @@ remotes::install_github("mpjashby/crimemapping", upgrade = "always")
 rlang::inform(
   c(
     "CRIME MAPPING COURSE SETUP FINISHED",
-    "*" = "If any errors or warnings occurred during setup, please post the complete error message on the module Q&A forum on Moodle at https://moodle.ucl.ac.uk/mod/hsuforum/view.php?id=4439091"
+    "*" = "If the setup completed successfully, the line above this message should say 'DONE (crimemapping)'.",
+    "*" = "If any errors or warnings occurred during setup, please post the complete error message on the module Q&A forum on Moodle."
   ),
   use_cli_format = TRUE
 )
