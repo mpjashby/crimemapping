@@ -201,6 +201,10 @@ p.centered-image > img {
   font-weight: bold;
 }
 
+.book {
+  display: none;
+}
+
 
 
 /* Faux markdown output */
