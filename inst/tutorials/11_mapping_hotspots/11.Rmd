@@ -4,7 +4,7 @@ description: "Learn what crime hotspots are, why they are important and how to m
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Load packages
 library(ggmap)
+library(ggspatial)
 library(osmdata)
 library(sf)
 library(sfhotspot)
@@ -27,89 +28,82 @@ walk(
   ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
 )
 
-# Load data
-districts <- read_sf("../../extdata/nottinghamshire_districts.gpkg")
+# Load data --------------------------------------------------------------------
 
-nottingham_boundary <- districts %>% 
-  filter(district_name == "Nottingham") %>% 
-  st_transform(27700)
 
-wards <- read_sf("../../extdata/nottingham_wards.gpkg") %>% 
+## Boundaries ----
+
+wards <- read_sf("https://mpjashby.github.io/crimemappingdata/nottingham_wards.gpkg") |> 
+  st_transform("EPSG:27700") |> 
   filter(ward_name %in% c("Castle", "Lenton & Wollaton East", "Meadows"))
 
-weapons <- read_sf("../../extdata/nottingham_weapons.gpkg") %>% 
-  st_transform(27700)
+burglaries <- read_csv("https://mpjashby.github.io/crimemappingdata/nottingham_burglary.csv.gz") |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
+  st_transform("EPSG:27700") |> 
+  st_intersection(wards)
 
-weapons_kde <- hotspot_kde(weapons, cell_size = 100, bandwidth = 1000)
-
-# THE FOLLOWING LINES COMMENTED OUT UNTIL DUAL KDE IS RETURNED TO THE TUTORIAL
-# burglaries <- read_csv("../../extdata/nottingham_burglaries.csv.gz") %>% 
-#   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-#   st_intersection(wards)
-# 
-# if (file.exists("www/nottingham_buildings.Rds")) {
-#   nottingham_buildings <- read_rds("www/nottingham_buildings.Rds")
-# } else {
-#   nottingham_buildings <- wards %>% 
-#     st_bbox() %>% 
-#     opq() %>% 
-#     add_osm_feature(key = "building") %>% 
-#     osmdata_sf()
-# }
-# 
-# nottingham_building_centroids <- bind_rows(
-#   st_centroid(pluck(nottingham_buildings, "osm_polygons")),
-#   st_centroid(pluck(nottingham_buildings, "osm_multipolygons"))
-# ) %>% 
-#   st_intersection(wards)
-# 
-# if (file.exists("www/nottingham_kde_risk.Rds")) {
-#   
-#   kde_risk <- read_rds("www/nottingham_kde_risk.Rds")
-#   
-# } else {
-#   
-#   kde_burglaries <- burglaries %>% 
-#     st_transform(27700) %>% 
-#     kde(band_width = 1000, grid = wards_grid) %>% 
-#     rename(kde_burglary = kde_value)
-#   kde_buildings <- nottingham_building_centroids %>% 
-#     st_transform(27700) %>% 
-#     kde(band_width = 1000, grid = wards_grid) %>% 
-#     rename(kde_building = kde_value)
-#   
-#   kde_risk <- kde_burglaries %>% 
-#     bind_cols(st_drop_geometry(kde_buildings)) %>% 
-#     mutate(
-#       id = row_number(),
-#       kde_risk = kde_burglary / kde_building,
-#       kde_risk = ifelse(is.finite(kde_risk), kde_risk, 0)
-#     ) %>% 
-#     st_transform(4326) %>% 
-#     st_intersection(wards)
-#   
-#   write_rds(kde_risk, "www/nottingham_kde_risk.Rds", compress = "gz")
-# }
-# 
-# kde_risk_with_counts <- nottingham_building_centroids %>% 
-#   st_join(select(kde_risk, id)) %>% 
-#   st_drop_geometry() %>% 
-#   count(id, name = "building_count") %>% 
-#   right_join(kde_risk, by = "id") %>% 
-#   replace_na(list(building_count = 0)) %>% 
-#   st_as_sf()
-
-robbery <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_robberies.csv.gz") %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+robbery <- read_csv("https://mpjashby.github.io/crimemappingdata/nottingham_robbery.csv.gz") |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
   st_transform(27700)
 
 robbery_gistar <- hotspot_gistar(robbery, cell_size = 100)
 
-base_map_tiles <- robbery %>%
-  st_transform(4326) %>%
-  st_bbox() %>%
-  set_names(c("left", "bottom", "right", "top")) %>% 
-  get_stamenmap(zoom = 13, maptype = "toner-lite")
+
+## Buildings ----
+
+if (file.exists("www/nottingham_buildings.Rds")) {
+  nottingham_buildings <- read_rds("www/nottingham_buildings.Rds")
+} else {
+  nottingham_buildings <- wards |> 
+    st_transform("EPSG:4326") |> 
+    st_bbox() |> 
+    opq() |> 
+    add_osm_feature(key = "building") |> 
+    osmdata_sf()
+}
+
+nottingham_building_centroids <- bind_rows(
+  st_centroid(pluck(nottingham_buildings, "osm_polygons")),
+  st_centroid(pluck(nottingham_buildings, "osm_multipolygons"))
+) |> 
+  st_transform("EPSG:27700") |> 
+  st_intersection(wards)
+
+building_counts <- hotspot_count(
+  nottingham_building_centroids, 
+  grid = hotspot_grid(wards, cell_size = 100)
+) |> 
+  # Clip the result to the area for which we have data
+  st_intersection(wards)
+
+
+## Burglary risk ----
+
+if (file.exists("www/nottingham_burglary_risk.Rds")) {
+
+  burglary_risk <- read_rds("www/nottingham_burglary_risk.Rds")
+
+} else {
+
+  burglary_risk <- hotspot_dual_kde(
+    burglaries, 
+    nottingham_building_centroids, 
+    bandwidth_adjust = 0.25, 
+    grid = hotspot_grid(wards, cell_size = 100)
+  ) |> 
+    st_intersection(wards)
+  
+  write_rds(burglary_risk, "www/nottingham_burglary_risk.Rds", compress = "gz")
+  
+}
+
+burglary_risk_filtered <- filter(burglary_risk, is.finite(kde))
+
+burglary_risk_bldg <- burglary_risk |> 
+  select(burglary_count = n, kde) |> 
+  st_drop_geometry() |> 
+  bind_cols(building_counts) |> 
+  filter(is.finite(kde))
 ```
 
 
@@ -118,40 +112,43 @@ base_map_tiles <- robbery %>%
 
 Crime is heavily concentrated in several different ways. A small number of 
 offenders commit a large proportion of crime (even though most people commit 
-offences occasionally) and a small number of people are repeatedly victimised.
-For most types of crime, a large proportion of crime occurs in a small number of
-places. **A hotspot is a specific location or small area where an unusual amount 
-of criminal activity occurs**.
+minor offences occasionally) and a small number of people are repeatedly 
+victimised. For most types of crime, a large proportion of crime occurs in a 
+small number of places. **A hotspot is a specific location or small area where 
+an unusual amount of criminal activity occurs**.
 
 Crime hotspots can occur in several different forms. Watch this video to 
 understand why hotspots are important in understanding and responding to crime.
 
 ![](https://youtu.be/ug-ZhvvQjmw)
 
-<!-- Some places are *chronic* hotspots -- they have more crime than surrounding  -->
-<!-- areas over a sustained period (which may appear to be permanent). Chronic  -->
-<!-- hotspots are often generated by a facility that draws vulnerable people into an -->
-<!-- area, such as a tourist attraction that draws crowds of people who are  -->
-<!-- vulnerable to pickpocketing. Other places are *acute* hotspots, in which crime -->
-<!-- increases in a place that previously experienced no or few crimes. This may be -->
-<!-- the result of some change in the environment or how it's managed, such as new -->
-<!-- management at a bar that ignores drug dealing that the previous owners would  -->
-<!-- have not permitted. -->
+Some places are *chronic* hotspots -- they have more crime than surrounding
+areas over a sustained period (which may appear to be permanent). Chronic
+hotspots are often generated by a facility that draws vulnerable people into an
+area, such as a tourist attraction that draws crowds of people who are
+vulnerable to pickpocketing. Other places are *acute* hotspots, in which crime
+increases in a place that previously experienced no or few crimes. This may be
+the result of some change in the environment or how it's managed, such as new
+management at a bar that ignores drug dealing that the previous owners would
+have not permitted.
 
 When analysing hotspots, it is best to focus on *small* areas such as an
 apartment block, a shopping centre, a park or a single street. Focusing on 
 smaller areas is important because resources to respond to crime are almost 
 always limited, so it is important that those resources are directed where the
-problem is worst. Analysing larger areas, such as a neighbourhood or a police 
-sector, is much more difficult because larger areas are always made up of many
-smaller areas, each of which might be quite different from one another. This 
-means that the factors causing one street to be a hotspot might be quite 
-different from the factors that make another street in the same district into a
-hotspot. Conflating different problems with different causes makes it much
-harder to find effective ways to reduce crime in any one place. This can be 
-avoided by keeping hotspots small: in an urban area, a useful rule of thumb is
-that you should be able to stand in the middle of a hotspot and see the whole
-hotspot area.
+problem is worst. 
+
+Analysing larger areas, such as a neighbourhood or a police sector, is much more 
+difficult because larger areas are always made up of many smaller areas, each of 
+which might be quite different from one another. This means that the factors 
+causing one street to be a hotspot might be quite different from the factors 
+that make another street in the same district into a hotspot. Conflating 
+different problems with different causes makes it much harder to find effective 
+ways to reduce crime in any one place. 
+
+These difficulties can be avoided (at least partly) by keeping hotspots small: 
+in an urban area, a useful rule of thumb is that you should be able to stand in 
+the middle of a hotspot and see the whole hotspot area.
 
 Being able to identify hotspots using crime mapping is important because it 
 forms a vital first step in many place-focused responses to crime. As an example
@@ -162,518 +159,94 @@ reduce crime.
 ![](https://youtu.be/0NUQsK0vnnM)
 
 
-
-## Better density maps
-
-We have already learned to use density maps to highlight areas with relatively
-high levels of crime. So far, we've relied on the `geom_density_2d_filled()`
-function from the `ggplot2` package to estimate the density of crime in 
-different regions of our maps. This approach is quick, but it has some 
-drawbacks.
-
-One of the limitations of estimating density using `geom_density_2d_filled()` is
-that it estimates density for every point on the map, whether or not we have
-data for that area. This map of criminal damage and arson offences in part of
-Nottingham in England clearly shows that these offences are concentrated in the
-city centre (area A), with another concentration in the suburb of Clifton (area
-B). Conversely, areas C and D look like they have a very low density of these
-offences.
-
-```{r notts-damage-map, include=FALSE, message=FALSE, warning=FALSE}
-if (
-  !file.exists("images/nottingham_damage.jpg") |
-  !file.exists("images/nottinghamshire_damage.jpg")
-) {
-  
-  city_damage <- read_sf("../../extdata/nottingham_damage.gpkg")
-  county_damage <- read_sf("../../extdata/nottinghamshire_damage.gpkg")
-  
-  map_crop <- districts %>% 
-    filter(district_name == "City of\nNottingham") %>% 
-    st_bbox() %>% 
-    set_names(c("left", "bottom", "right", "top")) %>% 
-    {
-      .[["top"]] <- 52.96
-      .
-    }
-  
-  districts_crop <- districts %>% 
-    filter(
-      district_name %in% c("Broxtowe", "City of\nNottingham", "Rushcliffe")
-    ) %>% 
-    st_crop(map_crop)
-  
-  points <- tribble(
-    ~longitude, ~latitude, ~label,
-    -1.150, 52.950, "A",
-    -1.182, 52.903, "B",
-    -1.210, 52.929, "C",
-    -1.130, 52.930, "D"
-  ) %>% 
-    st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-  
-  city_map <- map_crop %>% 
-    get_stamenmap(zoom = 13, maptype = "toner-background") %>% 
-    ggmap() +
-    geom_density2d_filled(
-      aes(longitude, latitude), 
-      data = city_damage, 
-      na.rm = TRUE,
-      bins = 9, 
-      n = 300,
-      adjust = 0.5,
-      alpha = 0.85
-    ) +
-    geom_sf_label(
-      aes(label = label), 
-      data = points, 
-      inherit.aes = FALSE, 
-      label.r = unit(0.5, "lines"),
-      label.size = NA, 
-      colour = "white",
-      fill = "black",
-      fontface = "bold", 
-      size = 4
-    ) +
-    scale_fill_brewer(
-      labels = c("low", rep("", 7), "high"),
-      guide = guide_legend(reverse = TRUE)
-    ) +
-    labs(
-      title = "Criminal damage and arson in south Nottingham",
-      caption = "Contains public sector information licensed under the Open Government Licence v3.0",
-      fill = "density of criminal\ndamage, 2020"
-    ) +
-    theme_void() +
-    theme(
-      legend.background = element_rect(colour = NA, fill = rgb(1, 1, 1, 0.75)),
-      legend.justification = c(1, 0),
-      legend.key.height = unit(0.75, "lines"),
-      legend.margin = margin(6, 6, 6, 6),
-      legend.position = c(0.98, 0.02),
-      plot.caption = element_text(colour = "grey40"),
-      plot.title = element_text(
-        colour = "grey50", 
-        face = "bold", 
-        size = 16, 
-        margin = margin(b = 9)
-      )
-    )
-  
-  county_map <- map_crop %>% 
-    get_stamenmap(zoom = 13, maptype = "toner-background") %>% 
-    ggmap() +
-    geom_density2d_filled(
-      aes(longitude, latitude), 
-      data = county_damage, 
-      na.rm = TRUE,
-      bins = 9, 
-      n = 300,
-      adjust = 0.5,
-      alpha = 0.85
-    ) +
-    geom_sf(data = districts, inherit.aes = FALSE, fill = NA) +
-    geom_sf_text(
-      aes(label = str_to_upper(district_name)),
-      data = districts_crop,
-      inherit.aes = FALSE,
-      colour = "grey66",
-      fontface = "bold",
-      lineheight = 1
-    ) +
-    geom_sf_label(
-      aes(label = label), 
-      data = points, 
-      inherit.aes = FALSE, 
-      label.r = unit(0.5, "lines"),
-      label.size = NA, 
-      colour = "white",
-      fill = "black",
-      fontface = "bold", 
-      size = 4
-    ) +
-    scale_fill_brewer(
-      labels = c("low", rep("", 7), "high"),
-      guide = guide_legend(reverse = TRUE)
-    ) +
-    labs(
-      title = "Criminal damage and arson in south Nottingham",
-      caption = "Contains public sector information licensed under the Open Government Licence v3.0",
-      fill = "density of criminal\ndamage, 2020"
-    ) +
-    theme_void() +
-    theme(
-      legend.background = element_rect(colour = NA, fill = rgb(1, 1, 1, 0.75)),
-      legend.justification = c(1, 0),
-      legend.key.height = unit(0.75, "lines"),
-      legend.margin = margin(6, 6, 6, 6),
-      legend.position = c(0.98, 0.02),
-      plot.caption = element_text(colour = "grey40"),
-      plot.title = element_text(
-        colour = "grey50", 
-        face = "bold", 
-        size = 16, 
-        margin = margin(b = 9)
-      )
-    )
-  
-  ggsave(
-    "images/nottingham_damage.jpg",
-    city_map,
-    width = 1200 / 150,
-    height = 900 / 150,
-    dpi = 300
-  )
-  
-  ggsave(
-    "images/nottinghamshire_damage.jpg",
-    county_map,
-    width = 1200 / 150,
-    height = 900 / 150,
-    dpi = 300
-  )
-  
-}
-```
-
-<p class="full-width-image"><img src="images/nottingham_damage.jpg" alt="Map of criminal damage in part of Nottingham in 2020" style="max-height: 600px;"></p>
-
-If we were thinking about where to concentrate efforts to prevent criminal
-damage in this area, we would probably give very low priority to areas C and D.
-But the absence of crime there is solely an artefact of us not having data for
-those areas. The boundary of the City of Nottingham administrative district is 
-quite a lot smaller than the urban area of Nottingham, so if we only have data
-for the City of Nottingham then it will inaccurately appear that places that are 
-on the map but not covered by the data have no crime. This second map includes
-data for the surrounding districts as well, from which we can see that areas C
-and D actually have higher densities of criminal damage than it previously 
-appeared.
-
-<p class="full-width-image"><img src="images/nottinghamshire_damage.jpg" alt="Map of criminal damage in part of Nottingham in 2020" style="max-height: 600px;"></p>
-
-To deal with this and other limitations of density maps created using 
-`geom_density_2d_filled()`, we will need to take more control over how the 
-density layer is constructed. We will do this using functions from the 
-`SpatialKDE` package.
+In this tutorial we will learn how to make maps that could be useful in 
+identifying and responding to hotspots of crime. As an example, we will create
+this map showing hotspots of robbery in Nottingham, England.
 
 
-### A better density map
+```{r make-robbery-map, eval=FALSE}
+# This dataset is not loaded above, so we load it here
+nottingham <- read_sf("https://mpjashby.github.io/crimemappingdata/nottingham_wards.gpkg") |> 
+  st_transform("EPSG:27700")
 
-<a href="https://github.com/mpjashby/sfhotspot/" title="sfhotspot website"><img src="images/sfhotspot.png" class="right-side-image"></a>
+robbery_gi <- robbery |> 
+  hotspot_gistar(cell_size = 100, bandwidth_adjust = 0.25) |> 
+  filter(gistar > 0, pvalue < 0.05) |> 
+  st_intersection(nottingham)
 
-Behind the scenes, the process of kernel density estimation (KDE) carried out by
-`geom_density_2d_filled()` involves:
-
-  1. If the data uses a geographic co-ordinate system (i.e. one where locations
-     are expressed using latitude and longitude), transforming the data to use a
-     projected co-ordinate system so that we can specify distances in units such
-     as metres or feet rather than decimal degrees.
-  2. Creating a grid of cells covering the area we are interested in.
-  3. For each cell, identifying all the other crimes within a certain distance
-     (called the *bandwidth*).
-  4. Counting all the crimes within the bandwidth, but *weight* that count so 
-     that closer crimes are weighted more highly and crimes that are further 
-     away are weighted less highly.
-  5. Totalling up the weighted count for all the crimes in each cell.
-  6. Displaying the total for each cell on the map.
-  
-`geom_density_2d_filled()` does all of this within the code that produces a map.
-If we instead estimate the density of crimes _before_ we create the map, we can
-then manipulate that density object in various ways to make a better density 
-map.
-
-To do this, we will use the `hotspot_kde()` function from the `sfhotspot` 
-package to create an SF object containing a grid of cells with the density of
-crimes in each cell. Since we can store the output from `hotspot_kde()`, we can
-then do other things to it before we plot the map. 
-
-To demonstrate this process, lets create a density map of possession of weapons 
-offences in Nottingham in 2020. The data for this are available at
-`https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_weapons.gpkg`
-and can be loaded directly using `read_sf()` because they are already stored in 
-a spatial format (a geopackage file). The data in this file uses latitude and 
-longitude to store locations, so we will transform it to a projected co-ordinate 
-reference system (i.e. one based on metres) to make the KDE process easier. 
-Since the data are for an area of Great Britain we will use the British National 
-Grid, for which the EPSG code is `27700`. Run the code needed to load the data 
-into an object called `weapons`, then transform the co-ordinates to the British 
-National Grid and display the first few rows.
-
-```{r density-exercise1, exercise=TRUE, exercise.lines=5}
-
-```
-
-```{r density-exercise1-solution}
-weapons <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_weapons.gpkg") %>% 
-  st_transform(27700)
-
-head(weapons)
-```
-
-By default, `hotspot_kde()` will choose reasonable default values for all the
-possible ways we could fine-tune density estimation process. This means we can
-produce a KDE map very simply by passing the object produced by `hotspot_kde()`
-onto `ggplot()`.
-
-```{r density-exercise2, exercise=TRUE, fig.asp=1, out.width="100%"}
-library(sfhotspot)
-
-weapons_kde <- hotspot_kde(weapons)
-
-ggplot(weapons_kde) + 
-  geom_sf(aes(colour = kde, fill = kde)) +
-  scale_colour_distiller(aesthetics = c("colour", "fill")) + 
-  theme_void()
-```
-
-
-<div class="box extra-detail">
-
-<h5 id="density-box1-title" class="box-title">What does the argument `aesthetics = c("colour", "fill")` mean?</h5>
-
-<div id="density-box1" class="box-content">
-
-The object produced by `hotspot_kde()` consists of thousands of grid cells. Each
-cell is a square polygon, meaning we can specify both the colour of the border
-around each cell (using the `colour` aesthetic) and the colour of the inside of
-the cell (using the `fill` aesthetic). 
-
-In a KDE map, we almost always want the `colour` and `fill` aesthetics to be set
-to the same colour because each grid cell is so small that having a different
-colour for the cell borders would make the map look very cluttered. This is why
-we specify that _both_ the `colour` and `fill` aesthetics should be controlled
-by the values in the `kde` column in the data, by using the code
-`geom_sf(aes(colour = kde, fill = kde))`.
-
-Because the `kde` column is controlling two aesthetics (`colour` and `fill`), if 
-we want to change the colour scheme using a `scale_` function we have to do this 
-for both `colour` and `fill`. We could do this like this:
-
-```r
-ggplot(weapons_kde) + 
-  geom_sf(aes(colour = kde, fill = kde)) +
-  scale_colour_distiller() +
-  scale_fill_distiller()
-```
-
-But rather than duplicate the arguments inside both `scale_` functions (and then
-have to make sure we remember to make any changes inside both functions), we can
-save ourselves a line of code by specifying one scale and then making it apply 
-to both aesthetics:
-
-```r
-ggplot(weapons_kde) + 
-  geom_sf(aes(colour = kde, fill = kde)) +
-  scale_colour_distiller(aesthetics = c("colour", "fill"))
-```
-
-
-</div>
-
-</div>
-
-<script>
-$("#density-box1-title").click(function () { $("#section-density-box1").toggle("slow") })
-</script>
-
-
-You might have noticed that `hotspot_kde()` has produced two messages, one 
-saying that the cell size has been set automatically and another saying the
-bandwidth has been set automatically using a rule of thumb. Since the `weapons`
-object uses a projected co-ordinate system measured in metres, both these values
-are set in metres as well. 
-
-By default, `hotspot_kde()` creates a grid of cells that covers all of the input
-data and has 50 cells on the shorter side of the grid (adjusted so that the size
-of each cell is a round number of hundreds of metres). `hotspot_kde()` will also
-set the size of the bandwidth based on an established rule of thumb (which we
-don't need to go into the details of). 
-
-In this case, it doesn't look like the default settings have produced the 
-optimum KDE map. In particular, it looks like the automatically chosen bandwidth 
-might be too large, since the resulting map lacks sufficient detail to be used
-to make decisions (the areas of high density look like oval blobs). By default,
-the colour palette created by `scale_colour_distiller()` also shows the areas of
-_lowest_ density of weapons possession offences with the colour that has the
-_highest_ saturation.
-
-To fix these issues, we can produce another map but specify the bandwidth
-ourselves. To do this we can look at the message produced by `hotspot_kde()`
-stating what bandwidth was chosen automatically, then use that as the starting
-point in choosing our own bandwidth. So if the automatically chosen bandwidth
-was 2,247 metres, we might choose 1,000 metres as a potentially useful bandwidth
-and then try that out to see what the resulting map looks like. To do this, we
-set the `bandwidth` argument to `hotspot_kde()`. At the same time we will: 
-
-  * set the `cell_size` argument of `hotspot_kde()` to `100` to suppress the
-    message telling us what value was chosen automatically, and
-  * add the `direction = 1` argument to `scale_colour_distiller()` so that the 
-    cells with the highest density are represented by the most vibrant colour.
-
-```{r density-exercise3, exercise=TRUE, fig.asp=1, out.width="100%"}
-# Both `cell_size` and `bandwidth` are specified in metres, since the `weapons`
-# dataset uses a CRS that is specified in metres
-weapons_kde <- hotspot_kde(weapons, cell_size = 100, bandwidth = 1000)
-
-ggplot(weapons_kde) + 
-  geom_sf(aes(colour = kde, fill = kde)) +
-  scale_colour_distiller(direction = 1, aesthetics = c("colour", "fill")) + 
-  theme_void()
-```
-
-<!--
-From this map we can see several things. The first is that the grid created by
-`create_rectangular_grid()` has not produced a grid covering the bounding box of
-the `weapons` layer, which is what `geom_density_2d_filled()` would have done.
-Instead, the grid only covers what is referred to by geographers as the *convex
-hull* of the data. This is the smallest shape that contains all the points in 
-the data: if the crimes were represented by pins stuck into a board, the convex
-hull would be the shape made by an elastic band stretched around the outermost
-pins. This reduces (but doesn't eliminate) the problem of calculating spurious
-density estimates for areas that are not covered by the data.
--->
-
-Because this method of kernel density estimation uses `geom_sf()` to plot the
-density estimates rather than `geom_density_2d_filled()`, we need to make some
-minor changes to how we present the data. To produce a suitable legend for a KDE
-map using `geom_density_2d_filled()`, we used the `labels` argument to the
-`scale_fill_brewer()` function to specify that all but the first and last labels
-in the legend should be blank, e.g. using `c("lower", rep("", 7), "higher")`.
-When using `geom_sf()` to plot the KDE estimates, we instead use the `breaks`
-argument to `scale_colour_distiller()` to specify that there should be two 
-labels corresponding to the highest and lowest value in the data, and the 
-`labels` argument to specify what those two labels should be. 
-
-To find the highest and lowest density values, we extract the `kde` column from 
-the `weapons_kde` object using the `pull()` function and then use the `range()` 
-function to calculate the values.
-
-```{r density-exercise7-setup}
-weapons_kde <- hotspot_kde(weapons, cell_size = 100, bandwidth = 1000)
-```
-
-```{r density-exercise7, exercise=TRUE, fig.asp=1, out.width="100%"}
-ggplot(weapons_kde) +
-  geom_sf(aes(colour = kde, fill = kde)) +
-  scale_colour_distiller(
-    breaks = range(pull(weapons_kde, kde)),
-    labels = c("lower", "higher"),
-    direction = 1, 
-    aesthetics = c("colour", "fill")
+nottingham_robbery_map <- ggplot() + 
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  geom_sf(
+    aes(fill = kde), 
+    data = robbery_gi, 
+    alpha = 0.8,
+    colour = NA
   ) +
-  theme_void()
-```
-
-
-## Clipping a KDE layer
-
-The KDE layer we have created using the functions in the `sfhotspot` package is
-based on the bounding box of the crime data. As we saw earlier, this means there
-will be many cells in our KDE layer that represent areas not covered by our 
-dataset. We can see this by plotting the boundary of the City of Nottingham over 
-our new KDE layer, which also shows there are some parts of the city that are 
-outside our KDE grid because no weapons-possession offences were recorded there 
-(they are mostly fields or rivers).
-
-```{r overlay-map, include=FALSE, message=FALSE, warning=FALSE}
-if (!file.exists("images/nottingham_weapons_overlay.jpg")) {
-  
-  weapons_kde <- hotspot_kde(weapons, cell_size = 100, bandwidth = 1000)
-  
-  overlay_map <- ggplot() +
-    geom_sf(aes(colour = kde, fill = kde), data = weapons_kde) +
-    geom_sf(data = filter(districts, district_name == "Nottingham"), fill = NA) +
-    scale_colour_distiller(
-      breaks = range(pull(weapons_kde, kde)),
-      labels = c("lower", "higher"),
-      direction = 1, 
-      aesthetics = c("colour", "fill")
-    ) +
-    theme_void()
-  
-  ggsave(
-    "images/nottingham_weapons_overlay.jpg",
-    overlay_map,
-    width = 1200 / 150,
-    height = 900 / 150,
-    dpi = 300
+  geom_sf(data = nottingham, colour = "grey70", fill = NA) +
+  scale_fill_gradient(
+    low = "lightblue",
+    high = "darkblue",
+    breaks = range(pull(robbery_gi, kde)),
+    labels = c("lower", "higher")
+  ) +
+  fixed_plot_aspect() +
+  labs(
+      title = "Nottingham robbery hotspots",
+      subtitle = str_glue(
+        "density of robbery in places with more violence than expected by ",
+        "chance"
+      ),
+      # Don't forget to add the licence statement -- it's a legal requirement!
+      caption = str_wrap(
+        str_glue(
+          "Contains public sector information licensed under the Open ",
+          "Government Licence v3.0. Map data from OpenStreetMap."
+        ),
+        width = 60
+      ),
+      fill = str_wrap("density of robbery at significant hotspots, 2022", 15)
+  ) +
+  theme_void() +
+  theme(
+    legend.text = element_text(size = rel(0.7)),
+    legend.title = element_text(size = rel(0.8)),
+    plot.caption = element_text(colour = "grey40", hjust = 0),
+    plot.subtitle = element_text(margin = margin(t = 6, b = 6), size = rel(0.7)),
+    plot.title = element_text(colour = "grey50", face = "bold", size = rel(1.2))
   )
-  
-}
+
+ggsave(
+  here::here("inst/tutorials/11_mapping_hotspots/images/nottingham_robbery_map.jpg"), 
+  nottingham_robbery_map,
+  width = 900 / 150,
+  height = 800 / 150,
+  dpi = 150
+)
 ```
 
-<p class="full-width-image"><img src="images/nottingham_weapons_overlay.jpg" alt="Map showing the City of Nottingham boundary in relation to the convex hull of our data layer" style="max-height: 600px;"></p>
-
-We can deal with this problem by clipping the KDE layer to the City of 
-Nottingham boundary. Since `hotspot_kde()` produces an SF object, this is easy 
-to do using the `st_intersection()` function from the `sf` package.
-
-To clip the KDE layer to the city boundary, we first need to load the boundary.
-In this case, we will load a dataset containing all the district boundaries in
-Nottinghamshire and then filter it to keep only the city boundary. Since 
-`st_intersection()` produces an error if used with datasets that use different
-co-ordinate systems, we will also transform the boundary so that it represents 
-co-ordinates using the British National Grid.
-
-```{r kde-exercise8, exercise=TRUE}
-nottingham_boundary <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottinghamshire_districts.gpkg") %>% 
-  filter(district_name == "Nottingham") %>% 
-  st_transform(27700)
-```
-
-We can now create a clipped KDE layer using `st_intersection()`, which acts as a
-spatial filter, keeping only the elements of the first object passed to the 
-function that are located within the polygon that is given as the second 
-argument. In this case, it will produce an object containing the KDE values for
-only those cells in our grid that are within the city boundary.
-
-```{r kde-exercise9, exercise=TRUE, exercise.setup="density-exercise7-setup", exercise.timelimit=300, fig.asp=1}
-weapons_kde_clipped <- st_intersection(weapons_kde, nottingham_boundary)
-```
+<p class="full-width-image"><img src="images/nottingham_robbery_map.jpg" alt="A hotspot map of robberies in Nottingham" style="max-height: 700px;"></p>
 
 
-<div class="box notewell">
+### Check your understanding
 
-`st_intersection()` can take a minute or two to run and (depending on the speed 
-of your computer) may not finish before the time limit set for running code 
-within this tutorial expires. If you see an error saying 
-`Your code ran longer than the permitted timelimit for this exercise` or 
-`reached elapsed time limit`, you can continue with the rest of the tutorial as
-usual.
-
-</div>
-
-
-We can plot the clipped KDE layer on a basic map and overlay it with the 
-boundary of the City of Nottingham, which shows that `weapons_kde_clipped` now
-only contains grid cells that are inside the city boundary.
-
-```{r clipped-map, include=FALSE, message=FALSE, warning=FALSE}
-if (!file.exists("images/nottingham_weapons_clipped.jpg")) {
-  
-  weapons_kde_clipped <- st_intersection(weapons_kde, nottingham_boundary)
-  
-  clipped_map <- ggplot() +
-    geom_sf(aes(colour = kde, fill = kde), data = weapons_kde_clipped) +
-    geom_sf(data = nottingham_boundary, fill = NA) +
-    scale_colour_distiller(direction = 1, aesthetics = c("colour", "fill")) +
-    theme_void()
-  
-  ggsave(
-    "images/nottingham_weapons_clipped.jpg", 
-    clipped_map,
-    width = 1200 / 150,
-    height = 900 / 150,
-    dpi = 300
+```{r why-maps-quiz}
+quiz(
+  caption = "",
+  question("Which *one* of these statements is true?",
+    answer("Crime is very geographically concentrated – we can expect half of crime to be concentrated in about 5% of micro places", correct = TRUE),
+    answer("Crime is usually not geographically concentrated at micro places"),
+    answer("Crime is slightly geographically concentrated – we can expect half of crime to be concentrated in about one quarter of micro places"),
+    answer("Crime is extremely geographically concentrated – we can expect half of crime to be concentrated in about 1% of micro places"),
+    correct = "That's correct – based on previous studies, we can expect half of crime to be concentrated in about 5% of micro places",
+    incorrect = "That's not correct – try re-watching the first video above and then try the question again.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
   )
-  
-}
+)
 ```
 
-<p class="full-width-image"><img src="images/nottingham_weapons_clipped.jpg" alt="Map showing the convex hull of our data layer clipped to the City of Nottingham boundary"></p>
 
 
-<!--
 ## Showing the density of risk
 
 In the tutorial on mapping area data we learned how to produce maps showing the
@@ -686,23 +259,27 @@ cases, we can produce better maps of the risk of crime in different areas by
 producing a *dual KDE* map that shows the density of crime *risk* in different
 places.
 
-To create a dual KDE map, we estimate the density of crime as in the previous
-section, then estimate the density of the population at risk using the same
-technique. Since the incidence rate is calculated as the number of crimes 
-divided by the number of people or objects at risk, we can calculate the density
-of risk by dividing the density of crime estimated for each cell in the grid by
-the density of population estimated for the same cell.
+To create a dual KDE map, we must estimate the density of crime and compare it 
+to an estimate the density of the population at risk. Since the incidence rate 
+is calculated as the number of crimes divided by the number of people or objects 
+at risk, we can calculate the density of risk by dividing the density of crime 
+estimated for each cell in the grid by the density of population estimated for 
+the same cell. The `hotspot_dual_kde()` function from the `sfhotspot` package
+does this for us.
 
-To illustrate this, we will use reports of burglaries in three wards in Nottingham in 
-2020. Since the essential element of the crime of burglary is that an offender 
-enters a building as a trespasser in order to steal something, the best measure 
-of the population at risk of burglary is the number of *buildings* in each area. 
-This is an example of why the routine activities approach to thinking about 
-crime that we introduced in a previous tutorial emphasises thinking about 
-*targets* of crime rather than focusing exclusively on crime victims. In this 
-case, one person might be the owner of a large number of buildings (e.g. a farm 
-with lots of out-buildings) or lots of people might own a single building (such 
-as a house converted into flats). By thinking about the targets that are 
+To illustrate making a dual KDE map, we will use reports of burglaries in three 
+wards in Nottingham in 2020. Since the essential element of the crime of 
+burglary in England is that an offender enters a _building_ as a trespasser in 
+order to steal something, the best measure of the population at risk of burglary 
+is the number of _buildings_ in each area (the definition of burglary is more 
+complicated than this, but we don't need to worry about that here). 
+
+Burglary is a good example of why the routine activities approach to thinking 
+about crime that we introduced in a previous tutorial emphasises thinking about 
+_targets_ of crime rather than focusing only on crime _victims_. In the case of
+burglary, one person might be the owner of a large number of buildings (e.g. a 
+farm with lots of out-buildings) or lots of people might own a single building 
+(such as a house converted into flats). By thinking about the targets that are 
 attacked by offenders, we can identify that burglary rates should be calculated 
 based on buildings rather than, for example, residential population. Note that 
 if our crime data only included _residential_ burglaries then we would want to
@@ -712,45 +289,55 @@ for all burglaries, both residential and non-residential.
 
 ### Data wrangling
 
-Before we can create our KDE layers we have to complete some data wrangling. We
-will extract the boundaries for the wards of interest from a dataset of 
-boundaries for all wards in Nottingham using `filter()` as we have done 
-previously. To extract only the burglaries occurring in those three wards from
-a dataset of all burglaries in Nottingham, we will use `st_intersection()` as
-we did in the previous section.
+Before we can create our dual KDE layer, we have to complete some data 
+wrangling. We will extract the boundaries for the wards of interest from a 
+dataset of boundaries for all wards in Nottingham using `filter()` as we have 
+done previously. To extract only the burglaries occurring in those three wards 
+from a dataset of all burglaries in Nottingham, we will use `st_intersection()`.
+We will also transform both datasets to use the British National Grid (EPSG code
+27700), since we will need to do that anyway before calculating the KDE values.
 
-```{r risk-exercise1, exercise=TRUE, eval=FALSE}
-wards <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_wards.gpkg") %>% 
+```{r risk-exercise1, exercise=TRUE}
+wards <- read_sf("https://mpjashby.github.io/crimemappingdata/nottingham_wards.gpkg") |> 
+  st_transform("EPSG:27700") |> 
   filter(ward_name %in% c("Castle", "Lenton & Wollaton East", "Meadows"))
 
-burglaries <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_burglaries.csv.gz") %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+burglaries <- read_csv("https://mpjashby.github.io/crimemappingdata/nottingham_burglary.csv.gz") |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
+  st_transform("EPSG:27700") |> 
   st_intersection(wards)
 ```
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
-Remember that `st_intersection()` can take longer to run than the maximum time
-limit for running code within this tutorial. If you see an error saying 
-`Your code ran longer than the permitted time limit for this exercise` or 
-`reached elapsed time limit`, you can continue with the rest of the tutorial as
-usual.
+`st_intersection()` can take longer to run than the maximum time limit for 
+running code within this tutorial. If you see an error saying `Your code ran 
+longer than the permitted time limit for this exercise` or `reached elapsed time 
+limit`, you can continue with the rest of the tutorial as usual.
 
-</div>
+:::
 
 
 We do not have a source of open data for all the buildings in Nottingham, so we
 will use the `osmdata` package to get the locations of buildings from 
-OpenStreetMap (OSM). Run the code needed to download data from OSM for all the
-buildings in the three wards we are interested in and store it in an object 
-called `nottingham_buildings`. The OSM feature key for a building is 'building' 
+OpenStreetMap (OSM). You may remember from a previous tutorial that to do this 
+we need to know which key (and possibly value) the OSM database uses for storing
+the locations of buildings. The OSM feature key for a building is 'building' 
 and it is not necessary to specify a value (since we want to capture all types 
 of building). The `osmdata` package expects data to use the WGS84 co-ordinate 
-reference system, so make sure any data sources you use are projected using that 
-system (EPSG code 4326).
+reference system, so we must also make sure any data sources we use are 
+projected using that system (EPSG code 4326).
 
-```{r risk-exercise2, exercise=TRUE, exercise.lines=10, eval=FALSE}
+
+
+::: {.tutorial}
+
+Run the code needed to download data from OSM for all the buildings in the three 
+wards we are interested in and store it in an object called 
+`nottingham_buildings`. 
+
+```{r risk-exercise2, exercise=TRUE, exercise.lines=10}
 
 ```
 
@@ -758,32 +345,39 @@ system (EPSG code 4326).
 # Remember to load the `osmdata` package
 ```
 
-```{r risk-exercise2-hint-2, eval=FALSE}
-# To download OSM data, use the `opq()` function to specify the bounding box of
-# the area you want to download data for, the `add_osm_feature()` function to
-# specify what type of features to download and the `osmdata_sf()` function to
-# download the data as an SF object
+```{r risk-exercise2-hint-2}
+# To download OSM data, use:
+#   * `st_transform()` to transform the data to use the WGS84 co-ordinate system
+#   * `st_bbox()` to calculate the bounding box of the wards
+#   * `opq()` to set up the OSM query 
+#   * `add_osm_feature()` to specify what type of features to download
+#   * `osmdata_sf()` to download the data as an SF object
 ```
 
-```{r risk-exercise2-hint-3, eval=FALSE}
+```{r risk-exercise2-hint-3}
 library(osmdata)
 
-nottingham_buildings <- wards %>% 
-  st_bbox() %>% 
-  opq() %>% 
-  add_osm_feature(key = "?????") %>% # <- specify type of data here
+nottingham_buildings <- wards |> 
+  st_transform("EPSG:4326") |> 
+  st_bbox() |> 
+  opq() |> 
+  add_osm_feature(key = "?????") |>  # <- specify type of data here
   osmdata_sf()
 
 nottingham_buildings
 ```
 
-```{r risk-exercise2-hint-4, eval=FALSE}
+:::
+
+
+```{r risk-exercise2-hint-4}
 library(osmdata)
 
-nottingham_buildings <- wards %>% 
-  st_bbox() %>% 
-  opq() %>% 
-  add_osm_feature(key = "building") %>% 
+nottingham_buildings <- wards |> 
+  st_transform("EPSG:4326") |> 
+  st_bbox() |> 
+  opq() |> 
+  add_osm_feature(key = "building") |> 
   osmdata_sf()
 
 nottingham_buildings
@@ -820,47 +414,40 @@ $("#risk-box1-title").click(function () { $("#section-risk-box1").toggle("slow")
 Let's plot these features on a base map to check that OSM has reasonable 
 coverage of the buildings in these three wards.
 
-```{r risk-exercise3, exercise=TRUE, message=FALSE, exercise.lines=30, fig.asp=1, out.width="100%", eval=FALSE}
-wards %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>% 
-  get_stamenmap(zoom = 13, maptype = "toner-lite") %>% 
-  ggmap() + 
+```{r risk-exercise3, exercise=TRUE, message=FALSE, exercise.lines=23, fig.asp=1, out.width="100%"}
+ggplot() +
+  annotation_map_tile(type = "cartodark", zoomin = 0, progress = "none") +
   # Add building features stored as points
   geom_sf(
     data = pluck(nottingham_buildings, "osm_points"), 
-    inherit.aes = FALSE, 
-    colour = "lightgreen",
+    colour = "green",
     size = 0.1
   ) +
   # Add building features stored as polygons
   geom_sf(
     data = pluck(nottingham_buildings, "osm_polygons"), 
-    inherit.aes = FALSE, 
     colour = NA,
-    fill = "lightblue"
+    fill = "blue"
   ) + 
   # Add building features stored as multi-polygons
   geom_sf(
     data = pluck(nottingham_buildings, "osm_multipolygons"), 
-    inherit.aes = FALSE, 
     colour = NA,
-    fill = "pink"
+    fill = "darkred"
   ) +
-  # Add ward boundaries
-  geom_sf(data = wards, inherit.aes = FALSE, colour = "purple", fill = NA) +
+  geom_sf(data = wards, colour = "red", fill = NA, linewidth = 1.25) +
   theme_void()
 ```
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 Remember that `osmdata_sf()` gets OSM data for the area covered by the _bounding 
 box_ of the input feature, not the feature boundaries. This means some of the
 buildings returned by the code above will be outside the wards we are interested
 in. We will deal with this in a minute.
 
-</div>
+:::
 
 
 It looks like almost all the streets in the three wards we are interested in are
@@ -868,15 +455,13 @@ lined with buildings in the OSM data, which is what we would expect of streets
 in an urban area. There are some streets without buildings in the top-left of 
 the map, but these streets are outside our three wards so this does not matter.
 
-THE NEXT LINE SHOULD HAVE ` CHANGED TO ` r ONCE DUAL KDE IS RETURNED TO THE 
-TUTORIAL
+We can also see from this map that the 
+`r scales::comma(nrow(pluck(nottingham_buildings, "osm_points")))` point 
+features in the OSM data (shown as green dots on the map) typically represent 
+the corners of buildings that are also represented as polygons, so we know we 
+can ignore the points layer within the OSM data.
 
-We can also see from this map that the `scales::comma(nrow(pluck(nottingham_buildings, "osm_points")))`
-point features in the OSM data (shown as green dots on the map) typically 
-represent the corners of buildings that are also represented as polygons, so we
-know we can ignore the points layer within the OSM data.
-
-Since the `hotspot_kde()` function works on points, we need to convert the 
+Since the `hotspot_dual_kde()` function works on points, we need to convert the 
 polygon and multipolygon layers to points by calculating their centroids, then 
 merge the two layers together. This will generate a warning that 
 `st_centroid does not give correct centroids for longitude/latitude data` but we
@@ -886,15 +471,69 @@ National Grid, calculate the centroids and then transform it back).
 
 Since we are only interested in those buildings in three particular wards, we
 can also at this stage remove any buildings that are outside those wards using
-`st_intersection()`, as we have already done for the `burglaries` object.
+`st_intersection()`, as we have already done for the `burglaries` object. Since
+the `wards` object uses the British National Grid and `st_intersection()`
+requires both datasets to use the same co-ordinate system, we will transform
+the building centroids before clipping them.
 
 ```{r risk-exercise4, exercise=TRUE, eval=FALSE}
 nottingham_building_centroids <- bind_rows(
   st_centroid(pluck(nottingham_buildings, "osm_polygons")),
   st_centroid(pluck(nottingham_buildings, "osm_multipolygons"))
-) %>% 
+) |> 
+  st_transform("EPSG:27700") |> 
   st_intersection(wards)
 ```
+
+
+<div class="box extra-detail">
+
+<h5 id="risk-box2-title" class="box-title">What does the warning `st_centroid assumes …` mean?</h5>
+
+<div id="risk-box2" class="box-content">
+
+You might have seen a warning saying 
+`st_centroid assumes attributes are constant over geometries of x`. You will see
+this warning when you use the `st_centroid()` function. It is there to remind
+you that columns in the original data (which the SF package refers to as the
+_attributes_ associated with each spatial feature) refer to the polygon as a 
+whole, but in the object produced by `st_centroid()` it will appear that the
+columns relate to the centroid point. In many cases this will not be a problem,
+but it could expose you to the ecological fallacy so it is sometimes useful to 
+be reminded.
+
+</div>
+
+</div>
+
+<script>
+$("#risk-box2-title").click(function () { $("#section-risk-box2").toggle("slow") })
+</script>
+
+
+<div class="box extra-detail">
+
+<h5 id="risk-box3-title" class="box-title">What does the warning `attribute variables are assumed …` mean?</h5>
+
+<div id="risk-box3" class="box-content">
+
+`st_intersection()` produces a warning message whenever it is used:
+
+```
+Warning: attribute variables are assumed to be spatially constant throughout all
+geometries
+```
+
+As long as you are simply using `st_intersection()` to remove parts of the data
+outside a boundary, you can ignore this message.
+
+</div>
+
+</div>
+
+<script>
+$("#risk-box3-title").click(function () { $("#section-risk-box3").toggle("slow") })
+</script>
 
 
 ### Calculating dual kernel density
@@ -905,120 +544,82 @@ in the three Nottingham wards that we are interested in, and the object
 those three wards. We can use these layers to estimate the density of burglaries
 and buildings, then combine these to estimate the density of burglary risk.
 
-In our previous KDE map of weapons possession, we based our grid on the convex 
-hull of the crime data, meaning that some areas of the city were not covered by 
-our KDE layer because no crimes occurred there. For a dual KDE map, we need the 
-grid that we will use to calculate the density of crime to cover the same area 
-as the grid we will use to calculate the density of the population at risk. To 
-make sure both KDE layers cover the same area, we will base our grid on the 
-ward outlines. Run the code needed to create a rectangular grid of 50-metre 
-cells and store it in an object called `wards_grid`. Remember that we want the
-grid to be specified using the British National Grid (EPSG code 27700), so you
-will need to transform the data before creating the grid.
+`hotspot_dual_kde()` works in the same way as `hotspot_kde()`, except that it
+requires two datasets. In this case, that means one dataset of crime locations 
+and one dataset of building locations. `hotspot_dual_kde()` will set the cell 
+size and bandwidth automatically, but we can set them manually using the 
+`cell_size`, `bandwidth_adjust` and `grid` arguments in the same way we have 
+done for `hotspot_kde()`. In this case, we will use the `hotspot_grid()` helper 
+function to create a grid based on the boundaries of the wards we are interested 
+in. All the spatial objects we are going to use here have co-ordinates specified 
+using the British National Grid because we have already transformed them, so we 
+do not need to do any transformation here.
 
-```{r risk-exercise5, exercise=TRUE, eval=FALSE}
-
-```
-
-```{r risk-exercise5-hint-1, eval=FALSE}
-# Use the `create_grid_rectangular()` function from the `SpatialKDE` package to
-# create the grid, using the `cell_size` argument to specify the cell size. You
-# can get more help on this function by typing `?create_grid_rectangular` in the
-# R console.
-```
-
-```{r risk-exercise5-hint-2, eval=FALSE}
-# Make sure the grid is based on the `wards` object that contains the ward
-# boundaries
-```
-
-```{r risk-exercise5-hint-3, eval=FALSE}
-wards_grid <- wards %>% 
-  st_transform(27700) %>% 
-  create_grid_rectangular(cell_size = 50)
-```
-
-We can use this same grid to calculate both KDE layers. We must also use the
-same bandwidth (in this example, 1 kilometre) to calculate the density of both 
-burglaries and buildings. Once again, we will need to transform the data before 
-using it. Since we will combine the two KDE layers, we will also give the 
-columns containing the density estimates for each cell a different name in the 
-two datasets.
-
-```{r risk-exercise6, exercise=TRUE, exercise.setup="risk-exercise4", eval=FALSE}
-kde_burglaries <- burglaries %>% 
-  st_transform(27700) %>% 
-  kde(band_width = 1000, grid = wards_grid) %>% 
-  rename(kde_burglary = kde_value)
-kde_buildings <- nottingham_building_centroids %>% 
-  st_transform(27700) %>% 
-  kde(band_width = 1000, grid = wards_grid) %>% 
-  rename(kde_building = kde_value)
-```
-
-Since the to KDE objects `kde_burglaries` and `kde_buildings` were created from
-the same grid, we already know that there are the same number of rows in both
-objects and that the cells appear in the same order in both. This means we can
-combine the two layers using `bind_cols()` -- which simply combines objects by
-adding all the columns from the first object and then all the columns from the
-second -- rather than having to use a function such as `left_join()`. Since both
-objects contain a column for the geometry of each cell, we will avoid 
-duplication by removing this from one of the datasets before combining them.
-
-Once we have combined the density estimates for burglaries and buildings, we can
-calculate the density of burglary risk by simply dividing one by the other to
-create the column `kde_risk`. There are two cases where dividing `kde_burglary`
-by `kde_building` will produce an invalid result. If, for a particular cell, the
-density of burglaries and density of buildings are both zero, dividing one by
-the other will produce the result `NaN`, for 'not a number'. If the density of
-burglaries is greater than zero but the density of buildings is exactly zero,
-the result will be `Inf`, for 'infinite'. We can deal with both these problems
-by checking if `kde_risk` is a finite number using the `is.finite()` function 
-(`NaN` is not a finite number), and if it is not a finite number replacing the
-value with zero.
-
-Since `wards_grid` covers a larger area than the boundaries of the wards, we 
-will also clip the `kde_risk` layer to the ward boundaries. To do this, we first
-transform `kde_risk` back to the WGS84 co-ordinate reference system, since that
-is what the `wards` object uses and that is what `ggmap()` uses to plot base
-maps.
-
-```{r risk-exercise7, exercise=TRUE, exercise.setup="risk-exercise6", eval=FALSE}
-kde_risk <- kde_burglaries %>% 
-  bind_cols(st_drop_geometry(kde_buildings)) %>% 
-  mutate(
-    kde_risk = kde_burglary / kde_building,
-    kde_risk = ifelse(is.finite(kde_risk), kde_risk, 0)
-  ) %>% 
-  st_transform(4326) %>% 
+```{r risk-exercise5, exercise=TRUE}
+burglary_risk <- hotspot_dual_kde(
+  burglaries, 
+  nottingham_building_centroids, 
+  bandwidth_adjust = 0.25, 
+  grid = hotspot_grid(wards, cell_size = 100)
+) |> 
   st_intersection(wards)
+
+head(burglary_risk)
 ```
 
-We can now plot this estimate of the density of burglary risk. By controlling
+You might recall from earlier in this tutorial that the value of the `kde`
+column in the object produced by `hotspot_dual_kde()` is calculated by dividing
+the density of burglary in each grid cell by the density of buildings in the
+same grid cell. There are two cases where this will produce a result that is not
+a finite number:
+
+  * If, for a particular cell, the density of burglaries and density of 
+    buildings are both zero, dividing one by the other will produce the result 
+    `NaN`, for 'not a number'.
+  * If the density of burglaries is greater than zero but the density of 
+    buildings is exactly zero, the result will be `Inf`, for 'infinite'.
+
+Since it is not possible to calculate burglary risk in either of those cases, we
+can exclude these cases from the `burglary_risk` object by using `filter()`
+together with the `is.finite()` function (R does not count `NaN` as a finite 
+number):
+
+```r
+burglary_risk <- hotspot_dual_kde(
+  burglaries, 
+  nottingham_building_centroids, 
+  bandwidth_adjust = 0.25, 
+  grid = hotspot_grid(wards, cell_size = 100)
+) |> 
+  st_intersection(wards)
+
+burglary_risk_filtered <- filter(burglary_risk, is.finite(kde))
+```
+
+You might wonder why we didn't simply add `filter()` to the existing pipeline
+that creates the `burglary_risk` object. It is because we will need the 
+unfiltered object in the next section. But for now …
+
+We can plot the estimate of the density of burglary risk. By controlling
 for the density of buildings, this map shows us where building owners *on 
 average* face the highest risk of being burgled. This might be useful in working
 out, for example, which building owners should be offered visits from a 
 crime-prevention advisor or funding to install crime-prevention measures.
 
-```{r risk-exercise8, exercise=TRUE, message=FALSE, exercise.lines=40, exercise.setup="risk-exercise7", fig.align='center', fig.asp=1, eval=FALSE}
-wards %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>% 
-  get_stamenmap(zoom = 14, maptype = "toner-lite") %>% 
-  ggmap() + 
-  # add risk layer
+```{r risk-exercise6, exercise=TRUE, message=FALSE, exercise.lines=36, fig.align='center', fig.asp=1}
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  # Add burglary risk layer
   geom_sf(
-    aes(fill = kde_risk),
-    data = kde_risk,
-    inherit.aes = FALSE,
-    alpha = 0.8,
-    colour = NA,
-    size = NA
+    aes(fill = kde), 
+    data = burglary_risk_filtered, 
+    alpha = 0.8, 
+    colour = NA
   ) +
-  # add ward boundaries
-  geom_sf(data = wards, inherit.aes = FALSE, fill = NA) + 
+  # Add ward boundaries
+  geom_sf(data = wards, fill = NA) + 
   scale_fill_distiller(
-    breaks = range(pull(kde_risk, "kde_risk")),
+    breaks = range(pull(burglary_risk_filtered, "kde")),
     labels = c("lower", "higher"),
     direction = 1
   ) +
@@ -1042,7 +643,35 @@ wards %>%
     plot.title = element_text(colour = "grey50", face = "bold", size = 16)
   )
 ```
--->
+
+
+### Check your understanding
+
+```{r dual-kde-quiz}
+quiz(
+  caption = "",
+
+  question("Which *one* of these statements is true?",
+    answer("`hotspot_dual_kde()` requires co-ordinates to use a projected co-ordinate system (i.e. not longitude and latitude).", correct = TRUE),
+    answer("`hotspot_dual_kde()` can work on any co-ordinates, whether they use a geographic co-ordinate system (i.e. longitude and latitude) or a projected system."),
+    answer("`hotspot_dual_kde()` requires co-ordinates to use a geographic co-ordinate system (i.e. longitude and latitude)."),
+    answer("`hotspot_dual_kde()` does not work with co-ordinates, so it does not matter which type of co-ordinate system a dataset uses."),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question(
+    "Why do we usually clip the result of `hotspot_dual_kde()` using `st_intersection()`?",
+    answer("To eliminate any areas that we do not have data for, since displaying KDE values for such areas on a map might be misleading.", correct = TRUE),
+    answer("To make our maps look nicer."),
+    answer("To transform the co-ordinate system our data uses from the system `hotspot_dual_kde()` uses to the one we need to produce a map."),
+    answer("To make it easier to see the other layers on our map."),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
 
 
 ## Finding hotspots
@@ -1050,8 +679,6 @@ wards %>%
 We now know how to produce a better map of the density of crime in different
 areas. But how do we know which areas count as hotspots and which don't? 
 
-
-<!--
 There are several ways to answer this question. If we were planning a particular
 activity to respond to a crime problem, we might know what resources we had
 available to respond. For example, we might know that we have enough funding to
@@ -1061,50 +688,90 @@ then count all the premises in each cell until we have reached our limit.
 
 To do this, we need to know how many buildings are in each grid cell. We have
 already learned how to count crimes in areas when we learned about mapping area
-data, so we can apply the same technique to count buildings. Specifically, we
-will use `st_join()` to find out which grid cell each building is in, `count()`
-to find the number of buildings in each cell and `right_join()` to join these
-counts to the relevant grid cells.
+data. When we want to count crimes in each cell in a grid, we can use the 
+`hotspot_count()` function from the `sfhotspot` package to count the number of
+buildings in each grid cell. We will then be able to combine those building 
+counts to the estimates of burglary risk we have already calculated.
 
-```{r hotspot-exercise1, exercise=TRUE, exercise.lines=19, eval=FALSE}
-# Add a unique identifier for each grid cell, which we will use to join the 
-# counts to later in the process
-kde_risk <- mutate(kde_risk, id = row_number())
 
-kde_risk_with_counts <- nottingham_building_centroids %>% 
-  st_join(select(kde_risk, id)) %>% 
-  # Drop the geometry column to speed up processing, since we will add it back
-  # in when we use `right_join()` below anyway
-  st_drop_geometry() %>% 
-  count(id, name = "building_count") %>% 
-  right_join(kde_risk, by = "id") %>% 
-  # Any cells with zero buildings will be have NA values in the `building_count`
-  # column, so replace these with zeros
-  replace_na(list(building_count = 0)) %>% 
-  # `right_join()` converts our SF object into a tibble, so convert it back
-  st_as_sf()
+::: {.box .notewell}
 
-kde_risk_with_counts
+So that we can join the building counts to the burglary risk estimates, it is
+important that both layers are based on the same grid. In the code above we
+created a grid with the code `hotspot_grid(wards, cell_size = 100)`, so to make
+sure we use the same grid to count buildings we can either use that same code
+again, or we could have saved the result of that code as an object (maybe called
+`nottingham_wards_grid`) and then provided that object to the `grid` argument of
+both `hotspot_dual_kde()` and `hotspot_count()`.
+
+Note that the results of `hotspot_dual_kde()` and `hotspot_count()` will only
+have the same structure before we wrangle then any further, for example by using
+`filter()` as in the previous section. This is why we saved an unfiltered 
+version of the dataset in the `burglary_risk` object.
+
+:::
+
+
+```{r count-exercise1, exercise=TRUE}
+building_counts <- hotspot_count(
+  nottingham_building_centroids, 
+  grid = hotspot_grid(wards, cell_size = 100)
+) |> 
+  # Clip the result to the area for which we have data
+  st_intersection(wards)
+
+head(building_counts)
+```
+
+The `building_counts` and `burglary_risk` objects have the same structure: each
+row represents a cell in the same grid, and the rows are in the same order 
+(because both grids were created by identical calls to `hotspot_grid()`). This
+means we can combine the two objects using the `bind_cols()` function from the 
+`dplyr` package (part of the tidyverse). 
+
+```{r count-exercise2, exercise=TRUE}
+burglary_risk_bldg <- bind_cols(burglary_risk, building_counts)
+
+head(burglary_risk_bldg)
+```
+
+Looking at this object, we can see that `bind_cols()` has changed the column
+names. This is because some of the column names were duplicated across the two
+datasets. Some of these new column names, such as `ward_code...3` would be
+difficult to work with, so lets go back and remove duplicate columns before we
+combine the two datasets together.
+
+```{r count-exercise3, exercise=TRUE}
+burglary_risk_bldg <- burglary_risk |> 
+  # Keep only the `n` and `kde` columns, renaming `n` to `burglary_count`
+  # because there is also a column called `n` in the `building_counts` object
+  select(burglary_count = n, kde) |> 
+  # Remove the geometry column (since an identical one exists in 
+  # `building_counts`). Note that we do this separately because we can't use
+  # `select()` to remove the `geometry` column.
+  st_drop_geometry() |> 
+  bind_cols(building_counts) |> 
+  # After calling `bind_cols()` it is safe to use `filter()` to wrangle the
+  # data
+  filter(is.finite(kde))
 ```
 
 We can now order the dataset with the cells with highest burglary risk at the 
-top and calculate the *cumulative total* (also called a running total) using the
-`cumsum()` function. We can use this running total to find the 100 buildings in 
-the cells with highest burglary risk
+top and calculate the *cumulative total* (also called a running total) of 
+buildings using the `cumsum()` function. We can use this running total to find 
+the 100 buildings in the cells with highest burglary risk.
 
-```{r hotspot-exercise2, exercise=TRUE, exercise.lines=13, eval=FALSE}
-cells_for_prevention <- kde_risk_with_counts %>% 
+```{r count-exercise4, exercise=TRUE, exercise.lines=13, eval=FALSE}
+cells_for_prevention <- burglary_risk_bldg |> 
   # Arrange cells from highest to lowest burglary risk
-  arrange(desc(kde_risk)) %>% 
-  # Remove cells without buildings that won't contribute to the building count
-  filter(building_count > 0) %>% 
+  arrange(desc(kde)) |> 
   # Count the number of buildings in a cell and all the cells with higher 
   # burglary risk than that cell
-  mutate(sum_buildings = cumsum(building_count)) %>% 
+  mutate(sum_buildings = cumsum(n)) |> 
   # Keep only those cells that contain the first 100 buildings
   filter(sum_buildings < 100)
 
-cells_for_prevention
+head(cells_for_prevention)
 ```
 
 We could now plot the `cells_for_prevention` object on a map to show the grid
@@ -1113,11 +780,9 @@ We could also use `st_join()` to join those cells to the dataset of buildings
 in the `nottingham_building_centroids` object, which would give us a list of
 buildings to visit.
 
--->
 
 
-
-<!-- ### Distinguishing hotspots from random variation -->
+### Distinguishing hotspots from random variation
 
 The density maps below show density estimates based on 1,000 points placed 
 completely at random on 16 different maps. There are no real patterns in the 
@@ -1131,7 +796,7 @@ tibble(
   x = runif(n = 1000 * 16, min = 0, max = 100), 
   y = runif(n = 1000 * 16, min = 0, max = 100),
   group = rep(1:16, each = 1000)
-) %>% 
+)  |>  
   ggplot() + 
   geom_density_2d_filled(aes(x, y), bins = 9) + 
   scale_fill_brewer(
@@ -1156,27 +821,41 @@ response to them, it is likely that over time some of the areas with high
 density would become areas of low density, and _vice versa_. However, the harm
 caused by crime means it is very hard for agencies to justify sitting back and
 do nothing to respond to it -- many people would consider it immoral to do so.
-So police and other agencies are very likely to try to respond to crime
-patterns, even if those patterns have occurred by chance. This is very
+So police and other agencies are very likely to try to respond to crime 
+patterns, even if those patterns might have occurred by chance. This is very
 frustrating, because if we were to go back and look at the same data in a few
 months time it is very likely that the apparent hotspots would have shifted to
 somewhere different, making all the effort spent in responding to crime seem
 worthless (which, if the apparent patterns were actually artefacts of the KDE
 process, it may have been).
 
+You might be thinking it's better safe than sorry, and that police should 
+respond to the apparent patterns just in case they represent real concentrations
+in crime. But police resources are always scarce, so responding to one problem 
+in one place means not responding to another problem in another place. This is
+known as the _opportunity cost_ of acting: if police focus their limited 
+resources in one area, that comes at the cost of not being able to deploy those
+resources in other areas that might need it more.
+
 We can try to avoid this problem of wasting resources responding to random
 variation in crime by determining whether the number of crimes in an area is
 more than the greatest number we would reasonably expect if there were no actual
 patterns in the data (if you have studied statistics before, you might recognise
 this as a description of a *null hypothesis*, but you don't need to have studied
-statistics to apply this technique).
+statistics to apply the techniques in this course).
 
 To determine if the number of crimes in each area is greater than we would 
 expect by chance, we can use the *Getis-Ord Gi\* statistic* (also called the
-*local G* statistic, spoken out-loud as the *GI star statistic*). If the Gi* 
+*local G* statistic, spoken out-loud as the *G-I star statistic*). If the Gi* 
 statistic for an area is greater than a certain value, we can say that the 
 number of crimes in that area is higher than we would expect if there were no 
-patterns in the data -- we will call these areas hotspots.
+patterns in the data. We will call areas with more crimes than we would expect
+by chance as _hotspots_.
+
+To see how this is done, watch this video that walks through the code needed to 
+make a hotspot map using the Gi* statistic.
+
+![](https://youtu.be/VhVBfvfp8OY)
 
 We can calculate the Gi* statistic using the `hotspot_gistar()` function from 
 the `sfhotspot` package. This works in a similar way to the `hotspot_kde()`
@@ -1193,8 +872,8 @@ we can specify the cell size in metres) and then use the resulting object to
 calculate the Gi* values.
 
 ```{r hotspot-exercise3, exercise=TRUE}
-robbery <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_robberies.csv.gz") %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+robbery <- read_csv("https://mpjashby.github.io/crimemappingdata/nottingham_robbery.csv.gz") |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
   st_transform(27700)
 
 robbery_gistar <- hotspot_gistar(robbery, cell_size = 100)
@@ -1224,58 +903,52 @@ Fortunately, the values in the `pvalue` column have already been automatically
 adjusted to take account of the multiple comparison problem, so we can interpret 
 the $p$-values instead of interpreting the Gi* statistic directly.
 
-By convention, $p$-values are considered to be significant if they are less than
-0.05. So if $p<0.05$ we can say that the number of robberies occurring in a 
-given grid cell is significantly different from zero. Values of Gi* greater than
-zero indicate cells with more robberies than expected and values of Gi* less
-than zero indicate cells with fewer robberies than expected. We can combine 
-these two values to find cells with significantly more robberies than expected
-by chance, which are those cells for which $Z>0$ and $p<0.05$.
+By convention, $p$-values are considered to be significant if they are _less 
+than 0.05_. So if $p<0.05$, we can say that the number of robberies occurring in 
+a given grid cell is significantly different from zero. Values of Gi* greater 
+than zero indicate cells with more robberies than expected and values of Gi* 
+less than zero indicate cells with fewer robberies than expected. We can combine 
+these two values to find cells with significantly _more_ robberies than expected
+by chance, which are those cells for which $Z>0$ and $p<0.05$. To put that into
+R code, we would write `gistar > 0` and `p < 0.05`.
 
 We could use this information in various ways. For example, if we wanted to give
 local police officers a printed map of which areas to patrol, we could simply
 show the significant hotspot cells over a base map.
 
-```{r hotspot-exercise4, exercise=TRUE, exercise.lines=18, message=FALSE, fig.asp=1, out.width="100%"}
-# Get base map tiles
-base_map_tiles <- robbery %>%
-  st_transform(4326) %>%
-  st_bbox() %>%
-  set_names(c("left", "bottom", "right", "top")) %>% 
-  get_stamenmap(zoom = 13, maptype = "toner-lite")
-
+```{r hotspot-exercise4, exercise=TRUE, message=FALSE, fig.asp=1, out.width="100%"}
 # Plot a map
-ggmap(base_map_tiles) +
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(
     data = filter(robbery_gistar, gistar > 0, pvalue < 0.05), 
-    inherit.aes = FALSE,
-    colour = "red", 
     fill = "red", 
-    alpha = 0.75
+    alpha = 0.75,
+    colour = NA
   ) +
-  coord_sf(crs = 4326) +
+  fixed_plot_aspect() +
   theme_void()
 ```
 
 Since `hotspot_gistar()` also estimates density for each grid cell, we could 
-also show the density of robberies in each cell, but only for cells that the Gi*
-values showed were significant hotspots.
+more usefully show the density of robberies in each cell, but only for cells 
+that the Gi* values showed were significant hotspots.
 
 ```{r hotspot-exercise5, exercise=TRUE, fig.asp=1, out.width="100%"}
-ggmap(base_map_tiles) +
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(
     aes(fill = kde),
     data = filter(robbery_gistar, gistar > 0, pvalue < 0.05), 
-    inherit.aes = FALSE,
     alpha = 0.75,
     colour = NA
   ) +
   scale_fill_distiller(direction = 1) + 
-  coord_sf(crs = 4326) +
+  fixed_plot_aspect() +
   theme_void()
 ```
 
-This map would be very useful for police officers deciding where to conduct
+This map could be very useful for police officers deciding where to conduct
 anti-robbery patrols, because it not only shows the areas with the highest
 density of robberies but only shows those areas if there are more robberies
 than we would expect by chance. This makes it more likely that officers won't
@@ -1283,102 +956,128 @@ waste time chasing apparent patterns that are actually the result of random
 variation.
 
 
+### Check your understanding
+
+```{r gistar-quiz}
+quiz(
+  caption = "",
+
+  question("`robbery_gi` is an object storing a result produced by the `hotspot_gistar()` function. Which of these pieces of code could be used to extract _only_ those rows in the data with significant p-values?",
+    answer("`filter(robbery_gi, pvalue < 0.05)`", correct = TRUE),
+    answer(
+      "`filter(robbery_gi, pvalue > 0.05)`",
+      message = "That code would extract only _non-significant_ p-values. Try again!"
+    ),
+    answer(
+      "`filter(robbery_gi, pvalue <= 0.05)`",
+      message = "Almost right, but not quite. Try re-reading the section of the tutorial above."
+    ),
+    answer(
+      "`filter(robbery_gi, pvalue == 0.05)`",
+      message = "That's not right. Try re-reading the section of the tutorial above."
+    ),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question("Which *one* of these statements is true about an SF object called `robberies_in_nottingham`?",
+    answer("We cannot remove the `geometry` column of an SF object with `select()`, so we must use `st_drop_geometry()` instead.", correct = TRUE),
+    answer("We can remove the `geometry` column with the code `select(robberies_in_nottingham, -geometry)`."),
+    answer("We can remove the `geometry` column with the code `filter(robberies_in_nottingham, -geometry)`."),
+    answer("There is no way to remove the `geometry` column from an SF object."),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+
 
 ## Putting it all together
 
-In this tutorial we have learned several techniques for improving our hotspot
-maps, including how to clip a kernel density estimation layer to the boundary of
-the area we have data for <!-- , how to create dual KDE maps --> and how to find 
-significant hotspots using the Gi* statistic. In this final section we will
-combine some of these techniques to produce a map showing the density of 
-violent crime at statistically significant violence hotspots in Nottingham in
-2020.
+::: {.box .welldone}
+
+In this tutorial we have learned about hotspots, how to create dual KDE maps and 
+how to find significant hotspots using the Gi* statistic. We can put this all
+together to create a complete script for producing a map of robbery hotspots in
+Nottingham
+
+:::
 
 The following code is all that is needed to produce this map. Read through the
 comments accompanying the code to see how what we have learned in this tutorial
 fits together, then run the code to produce the map. 
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 It is possible that this code will not run in this tutorial window because of 
 limits on how long code can run in an R tutorial. If that happens, paste the 
 code below into a blank R script in RStudio and run it from there to see the 
 map.
 
-</div>
+:::
 
 
-```{r final-exercise1, exercise=TRUE, exercise.lines=77, message=FALSE, fig.asp=1, out.width="100%"}
+```{r final-exercise1, exercise=TRUE, exercise.lines=66, message=FALSE, fig.asp=1, out.width="100%"}
 # Prepare ----------------------------------------------------------------------
 
 # Load packages
-library(ggmap)
+library(ggspatial)
 library(sf)
 library(sfhotspot)
 library(tidyverse)
 
 # Load data and transform to British National Grid, which is easier to work with
 # for functions that use spatial units such as metres
-violence <- read_csv("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottingham_violence.csv.gz") %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-  st_transform(27700)
-nottingham <- read_sf("https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/nottinghamshire_districts.gpkg") %>% 
-  filter(district_name == "Nottingham") %>% 
-  st_transform(27700)
-
-# Download map tiles
-nottingham_base_map <- nottingham %>% 
-  st_transform(4326) %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>% 
-  get_stamenmap(zoom = 13, maptype = "toner-lite")
-
+robbery <- read_csv("https://mpjashby.github.io/crimemappingdata/nottingham_robbery.csv.gz") |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
+  st_transform("EPSG:27700")
+nottingham_wards <- read_sf("https://mpjashby.github.io/crimemappingdata/nottingham_wards.gpkg") |> 
+  st_transform("EPSG:27700")
 
 
 # Find significant grid cells --------------------------------------------------
 
 # Calculate Gi* statistic, filter for only significant hotspot cells and clip to
 # the city boundary
-violence_gi <- violence %>% 
-  hotspot_gistar(cell_size = 100) %>% 
-  filter(gistar > 0, pvalue < 0.05) %>% 
-  st_intersection(nottingham) %>% 
-  # Transform to WGS84 for mapping together with a base map from `ggmap()`
-  st_transform(4326)
-
+robbery_gi <- robbery |> 
+  hotspot_gistar(cell_size = 100, bandwidth_adjust = 0.25) |> 
+  filter(gistar > 0, pvalue < 0.05) |> 
+  st_intersection(nottingham_wards)
 
 
 # Plot map ---------------------------------------------------------------------
 
-ggmap(nottingham_base_map) + 
+ggplot() + 
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   # Add density for significant cells
   geom_sf(
     aes(fill = kde), 
-    data = violence_gi, 
-    inherit.aes = FALSE, 
+    data = robbery_gi, 
     alpha = 0.8,
     colour = NA
   ) +
-  # Add city boundary
-  geom_sf(data = nottingham, inherit.aes = FALSE, fill = NA, size = 1.5) +
+  # Add ward boundaries
+  geom_sf(data = nottingham_wards, colour = "grey70", fill = NA) +
   scale_fill_distiller(
-    breaks = range(pull(violence_gi, kde)),
+    breaks = range(pull(robbery_gi, kde)),
     labels = c("lower", "higher"),
     direction = 1
   ) +
+  fixed_plot_aspect() +
   labs(
-      title = "Nottingham violence hotspots",
+      title = "Nottingham robbery hotspots",
       subtitle = str_glue(
-        "density of violence in places with more violence than expected by ",
+        "density of robbery in places with more violence than expected by ",
         "chance"
       ),
       # Don't forget to add the licence statement -- it's a legal requirement!
       caption = str_glue(
         "Contains public sector information licensed under the Open ",
-        "Government Licence v3.0"
+        "Government Licence v3.0. Map data from OpenStreetMap."
       ),
-      fill = str_wrap("density of violence at significant hotspots, 2020", 15)
+      fill = str_wrap("density of robbery at significant hotspots, 2022", 15)
   ) +
   theme_void() +
   theme(
@@ -1388,17 +1087,3 @@ ggmap(nottingham_base_map) +
   )
 ```
 
-<div class="box welldone">
-
-In this tutorial we have learned how to make much better density maps. In 
-particular, the maps we have made in this tutorial are less likely to be 
-misleading than density maps produced using `geom_density_2d_filled()` because
-these new maps don't erroneously show low densities of crime in areas for which
-we don't have data, and because they are less likely to lead users to react to
-random variation.
-
-For the rest of this course, and in any exercises you do, **I strongly recommend
-you make density maps using the code shown above** rather than by using
-`geom_density_2d_filled()`.
-
-</div>
