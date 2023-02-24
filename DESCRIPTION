@@ -1,8 +1,8 @@
 Package: crimemapping
 Type: Package
 Title: Crime Mapping with R
-Version: 1.5.0
-Date: 2023-02-17
+Version: 1.6.0
+Date: 2023-02-124
 Author: Matt Ashby
 Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
 Description: Learn how to effectively map crimes in R using a series of 
@@ -23,3 +23,5 @@ Suggests:
     dplyr,
     lintr,
     reprex
+Depends: 
+    R (>= 2.10)

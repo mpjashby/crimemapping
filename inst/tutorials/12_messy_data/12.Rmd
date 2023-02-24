@@ -4,7 +4,7 @@ description: "Learn how to tidy messy data so that it is easier to use for data 
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -14,6 +14,7 @@ tutorial_options(exercise.timelimit = 120)
 knitr::opts_chunk$set(echo = FALSE)
 
 # Load packages
+library(rnaturalearth)
 library(sf)
 library(tidygeocoder)
 library(tidyverse)
@@ -36,18 +37,31 @@ crime_counts <- tribble(
 victims <- tribble(
   ~first_name, ~last_name, ~age_sex,
   "Lyda", "Gartrell", "40/F",
-  "Colby", "Clausen", "26",
-  "Cornelius", "Cola", "21/M",
+  "Kareem", "David", "26",
+  "Lisa", "Dean", "21/F",
   "Melina", "Shehan", "25/F",
   "Alfredo", "Matamoros", "18/M"
 )
 
-addresses <- read_csv("../../extdata/chicago_addresses.csv.gz")
+addresses <- tribble(
+  ~"offense_date", ~"location_type", ~"address",
+  "2019-01-01T00:00:00Z", "residence",	"2400 W Carmen Ave",
+  "2019-01-01T00:00:00Z",	"residence",	"2700 S TRIPP AVE",
+  "2019-01-01T11:44:00Z",	"residence",	"3700 S PAULINA ST",
+  "2019-01-01T11:44:00Z",	"residence",	"3700 S Paulina St",
+  "2019-01-01T16:37:00Z",	"government",	"1100 S HAMILTON AVE",
+  "2019-01-02T17:09:00Z",	"gas station",	NA,
+  "2019-01-02T17:09:00Z",	"gas station",	"8200 S HALSTED ST",
+  "2019-01-05T00:01:00Z",	"residence",	"1300 N HUDSON AVE",
+  "2019-01-05T14:00:00Z",	"other", "6200 N Claremont Ave",
+  "2019-01-07T06:50:00Z",	"residence",	"9500 S BELL AVE",
+) |> 
+  readr::type_convert()
 
-addresses_for_geocoding <- addresses %>% 
-  drop_na(address) %>% 
-  mutate(address = str_to_upper(str_glue("{address}, CHICAGO, IL"))) %>% 
-  select(address) %>% 
+addresses_for_geocoding <- addresses |> 
+  drop_na(address) |> 
+  mutate(address = str_to_upper(str_glue("{address}, CHICAGO, IL"))) |> 
+  select(address) |> 
   distinct(address)
 
 if (file.exists("www/chicago_addresses_geocoded.Rds")) {
@@ -60,6 +74,10 @@ if (file.exists("www/chicago_addresses_geocoded.Rds")) {
   )
   write_rds(addresses_geocoded, "www/chicago_addresses_geocoded.Rds")
 }
+
+# Random addresses in Cairo
+cairo_offenders <- crimemapping:::cairo_suspects |> 
+  st_as_sf(coords = c("lon", "lat"), crs = "EPSG:4326")
 
 monthly_counts <- tribble(
   ~area, ~jan_2020, ~feb_2020, ~mar_2020, ~apr_2020, ~may_2020,
@@ -142,8 +160,8 @@ different areas. We could store this data in wide format, where there is a
 column for the name of the area and then a column for each type of crime.
 
 ```{r wide-table}
-crime_counts %>% 
-  knitr::kable() %>%
+crime_counts |>  
+  knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -194,8 +212,8 @@ observations are made of some value over time. For example, we might have
 monthly counts of crimes for different areas.
 
 ```{r monthly-table}
-monthly_counts %>% 
-  knitr::kable() %>%
+monthly_counts |>  
+  knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -210,13 +228,21 @@ since we want to gather all the columns except one, we can just specify that we
 should *not* gather the `area` column, which implicitly tells `pivot_longer()` 
 to gather all the other columns. We tell `pivot_longer()` not to gather the area
 column by specifying `cols = -area` (note the minus sign in front of the column
-name). Run the code needed to gather a dataset called `monthly_counts` so that
+name). 
+
+
+::: {.tutorial}
+
+Run the code needed to gather a dataset called `monthly_counts` so that
 the names of the monthly counts are stored in a variable called `month` and the
 monthly counts themselves are stored in a variable called `count`.
 
 ```{r structure-exercise3, exercise=TRUE, exercise.lines=7}
 
 ```
+
+:::
+
 
 ```{r structure-exercise3-solution}
 pivot_longer(
@@ -269,7 +295,7 @@ read_excel(str_glue("{tempdir()}/cybercrime.xlsx"), sheet = "Table E1")
 ```
 
 It's clear that this dataset has not loaded in the way that we want, because
-the first row don't contain the column names. Fortunately, we can deal with this
+the first row doesn't contain the column names. Fortunately, we can deal with this
 problem using the `skip` argument to the `read_excel()` function. This allows us
 to specify a number of rows to ignore at the start of the dataset. In this case,
 we want to ignore the first three rows of the data (the table title, a blank
@@ -306,8 +332,8 @@ so row 34 on the spreadsheet is actually row 30 in our loaded dataset. Knowing
 this, we can remove all the rows below row 30 using `slice()`:
 
 ```{r structure-exercise6, exercise=TRUE, exercise.setup="structure-exercise4"}
-str_glue("{tempdir()}/cybercrime.xlsx") %>% 
-  read_excel(sheet = "Table E1", skip = 3) %>% 
+str_glue("{tempdir()}/cybercrime.xlsx") |> 
+  read_excel(sheet = "Table E1", skip = 3) |> 
   slice(1:30)
 ```
 
@@ -321,11 +347,11 @@ shorter, which will make it easier to refer to them in our code.
 ```{r structure-exercise7, exercise=TRUE, exercise.setup="structure-exercise4"}
 library(janitor)
 
-str_glue("{tempdir()}/cybercrime.xlsx") %>% 
-  read_excel(sheet = "Table E1", skip = 3) %>% 
-  slice(1:30) %>% 
-  remove_empty(which = "rows") %>% 
-  clean_names() %>% 
+str_glue("{tempdir()}/cybercrime.xlsx") |> 
+  read_excel(sheet = "Table E1", skip = 3) |> 
+  slice(1:30) |> 
+  remove_empty(which = "rows") |> 
+  clean_names() |> 
   rename(
     offence = offence_group3, 
     crimes = number_of_incidents_thousands, 
@@ -349,8 +375,8 @@ data about crime victims stored in an object called `victims` might include a
 single column representing both age and sex.
 
 ```{r victims-table}
-victims %>% 
-  knitr::kable() %>%
+victims |> 
+  knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -421,8 +447,8 @@ tribble(
   "A stRinG oF TeXT", "`st_to_upper()`", str_to_upper("A stRinG oF TeXT"),
   "A stRinG oF TeXT", "`st_to_sentence()`", str_to_sentence("A stRinG oF TeXT"),
   "A stRinG oF TeXT", "`st_to_title()`", str_to_title("A stRinG oF TeXT")
-) %>% 
-  knitr::kable() %>% 
+) |> 
+  knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -441,8 +467,8 @@ users that the locations of crimes are deliberately obscured by being 'snapped'
 to the centre of the street on which they occur to protect victims' privacy. 
 
 ```{r uk-data-table, include=TRUE}
-uk_data %>% 
-  knitr::kable() %>% 
+uk_data |> 
+  knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -490,7 +516,7 @@ the characters matched by the pattern, `str_replace()` to replace the first
 group of characters matched by the pattern and `str_replace_all()` to replace
 all the groups of characters matched by the pattern. For more tips on using 
 regular expressions together with functions from the `stringr` package, see the 
-[`stringr` package cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/strings.pdf)
+[`stringr` package cheat sheet](https://github.com/rstudio/cheatsheets/blob/main/strings.pdf)
 or visit [regexr.com](https://regexr.com/).
 
 
@@ -539,11 +565,11 @@ categories. It can be useful to change these categories, for example so that we
 can join two datasets or abbreviate category names for use in the axis labels of
 a chart.
 
-We can use the `ifelse()` function to chance particular values, but this only
-allows us to change a single value and can produce slightly untidy code. Instead
-we can use  the `recode()` function from the `dplyr` package to change one or
-more values at the same time. For example, if we wanted to change the value
-`Supermarket` to `Shop` in the UK police data.
+We can use the `if_else()` function from the `dplyr` package to change 
+particular values, but this only allows us to change a single value and can 
+produce slightly untidy code. Instead we can use  the `recode()` function from 
+the `dplyr` package to change one or more values at the same time. For example, 
+if we wanted to change the value `Supermarket` to `Shop` in the UK police data.
 
 ```{r recoding-exercise1, exercise=TRUE}
 # Once again we will remove the unnecessary 'On or near ' using `str_remove()`
@@ -556,32 +582,39 @@ mutate(
 )
 ```
 
+
+::: {.tutorial}
+
 Run the code needed to change the value `Nottingham` to `City of Nottingham` in
 the `district` column in the `uk_data` object (you will need to create the 
 `district` column from the `lsoa_name` first).
 
-```{r recoding-exercise2, exercise=TRUE}
+```{r recoding-exercise2, exercise=TRUE, exercise.lines=8}
 
 ```
 
 ```{r recoding-exercise2-solution}
-uk_data %>% 
+uk_data |> 
   mutate(
     district = str_remove(lsoa_name, "\\s\\w{4}$"),
     district = recode(district, "Nottingham" = "City of Nottingham")
-  ) %>% 
+  ) |> 
   # Select only some columns to make the result easier to see below
   select(lsoa_name, district)
 
 ```
+
+:::
 
 
 ### Missing values
 
 We have already encountered the `NA` value, which R uses to represent a value 
 that is missing from a dataset. While R uses `NA` to represent missing values,
-some data providers use other codes. Fortunately, we can convert any value to
-`NA` so that we know that it represents a missing value.
+some data providers use other codes. For example, a data provider might use a 
+dash (`-`) or two periods (`..`) to represent missing values. Fortunately, we 
+can convert any value to `NA` so that we know that it represents a missing 
+value.
 
 Imagine that you have been provided with a dataset of burglaries that includes 
 an estimate of the value of the goods that were stolen in British pounds. You 
@@ -591,7 +624,7 @@ average value of property stolen, the value `-1` will give us an incorrect
 result. If we instead convert that value to `NA` first, `mean()` will know to 
 ignore that value as long as we specify the argument `na.rm = TRUE`.
 
-```{r missing-exercise1, exercise=TRUE}
+```{r missing-exercise1, exercise=TRUE, exercise.lines=16}
 # Print some rows of burglary values
 head(burglary_values)
 
@@ -602,7 +635,7 @@ mean(pull(burglary_values, "value"))
 # Convert `-1` to `NA` first, now you get the correct mean value
 burglary_values <- mutate(
   burglary_values,
-  value = ifelse(value == -1, NA, value)
+  value = if_else(value == -1, NA, value)
 )
 
 # Calculate the mean value again, now excluding the missing value
@@ -612,6 +645,220 @@ mean(pull(burglary_values, "value"), na.rm = TRUE)
 Excluding the value `-1` makes a substantial difference to the mean, increasing
 it by over £100.
 
+
+### Null Island
+
+The problem of missing values being stored as numbers manifests itself in a 
+particularly frustrating way when it comes to spatial data. People and 
+organisations that produce spatial datasets sometimes recording missing 
+co-ordinates as being _zero_, instead of being _missing_. This is a problem 
+because the longitude/latitude co-ordinates "0, 0" correspond to a real location 
+on the surface of the earth, in the Gulf of Guinea off the coast of Ghana. This 
+location is incorrectly recorded in spatial datasets so often that it's become 
+known as _Null Island_. Watch this video to find out more about Null Island and
+the problems it causes.
+
+![](https://youtu.be/bjvIpI-1w84)
+
+```{r null-island-map, eval=FALSE}
+ortho <- "+proj=ortho +lon_0=0 +lat_0=15"
+
+countries <- rnaturalearth::countries110 |> 
+  st_as_sf() |> 
+  filter(NAME != "Antarctica") |> 
+  st_cast("MULTILINESTRING") |>
+  st_cast("LINESTRING", do_split = TRUE) |>
+  st_cast("POLYGON")
+
+null_island <- st_point(c(0, 0)) |> 
+  st_sfc(crs = "EPSG:4326") |> 
+  st_sf() |> 
+  st_set_geometry("geometry") |> 
+  st_transform(ortho) |> 
+  mutate(label = "Null\nIsland")
+
+limits <- null_island |> 
+  st_buffer(10^6.5) |> 
+  st_bbox()
+
+graticule <- st_graticule(
+  x = c(-180, -80, 180, 80), 
+  crs = "EPSG:4326",
+  lon = seq(-180, 180, by = 20),
+  lat = seq(-80, 80, by = 20)
+) |> 
+  mutate(highlight = degree == 0)
+
+graticule_labels <- tribble(
+  ~label, ~geometry,
+  "0º", st_point(c(-30, 0)),
+  "40ºS", st_point(c(-30, -40)),
+  "20ºS", st_point(c(-30, -20)),
+  "20ºN", st_point(c(-30, 20)),
+  "40ºN", st_point(c(-30, 40)),
+  "60ºN", st_point(c(-30, 60)),
+  "0º", st_point(c(0, -50)),
+  "20ºE", st_point(c(-20, -50)),
+  "20ºW", st_point(c(20, -50))
+) |> 
+  st_as_sf(crs = "EPSG:4326")
+
+world_bg <- st_graticule() |> 
+  st_transform(ortho) |> 
+  st_convex_hull() |> 
+  summarise(geometry = st_union(geometry)) |> 
+  st_convex_hull()
+
+# null_island_map <- 
+ggplot() + 
+  geom_sf(data = world_bg, colour = NA, fill = "#C6ECFF") +
+  geom_sf(
+    aes(colour = highlight, linetype = highlight), 
+    data = graticule, 
+    linewidth = 0.33
+  ) +
+  geom_sf(
+    data = countries, 
+    colour = "grey60", 
+    fill = "#FEFEE9",
+    linewidth = 0.2
+  ) +
+  geom_sf_text(
+    aes(label = label), 
+    data = null_island, 
+    hjust = 1, 
+    lineheight = 0.9, 
+    nudge_x = -8^6,
+    nudge_y = -8^6,
+    vjust = 1
+  ) +
+  geom_sf(data = null_island, colour = "#CC0000", shape = 21, size = 5) + 
+  geom_sf(data = null_island, colour = "#CC0000", size = 2) + 
+  geom_sf_text(
+    aes(label = label), 
+    data = graticule_labels, 
+    colour = "grey30", 
+    size = 2.75
+  ) +
+  scale_colour_manual(values = c(`TRUE` = "#CC0000", `FALSE` = "grey70")) +
+  scale_linetype_manual(values = c(`TRUE` = "solid", `FALSE` = "62")) +
+  coord_sf(crs = ortho) +
+  theme_void() +
+  theme(legend.position = "none")
+
+ggsave(
+  here::here("inst/tutorials/12_messy_data/images/null_island.jpg"), 
+  null_island_map,
+  width = 900 / 150,
+  height = 900 / 150,
+  dpi = 150
+)
+```
+
+So if you see any co-ordinates on your map located in the Atlantic off the south
+coast of West Africa, you know that there are almost certainly rows in your data
+that have co-ordinates located at Null Island.
+
+<p class="full-width-image"><img src="images/null_island.jpg" alt="A globe map showing Null Island at co-ordinates of 0 longitude and latitude" style="max-height: 700px;"></p>
+
+When we make crime maps we are generally dealing with small areas such as cities
+and counties. So if you plot a dataset on a map and instead of seeing a map of
+the area you are interested in, you see a large area of the world with the place
+you are interested in in one corner and Null Island in the opposite corner, that
+almost certainly means some co-ordinates are located at Null Island. 
+
+As an example, imagine we were trying to create a map of the home addresses of
+several (fictional) suspects for bank fraud in and around Cairo, Egypt. The data
+contain 10 rows stored in an object called `cairo_suspects` that looks like 
+this:
+
+```{r cairo-suspects-table}
+cairo_suspects |> 
+  knitr::kable()
+```
+
+
+```{r cairo-suspects-maps, eval=FALSE}
+library(ggspatial)
+
+cairo_null_island_map1 <- cairo_suspects |> 
+  filter(lon != 0) |> 
+  ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 1) +
+  geom_sf() +
+  scale_x_continuous(expand = expansion(mult = 0.2)) +
+  fixed_plot_aspect(16/9) +
+  theme_void()
+
+ggsave(
+  here::here("inst/tutorials/12_messy_data/images/null_island_cairo1.jpg"), 
+  cairo_null_island_map1,
+  width = 900 / 150,
+  height = 500 / 150,
+  dpi = 150
+)
+
+cairo_null_island_map2 <- cairo_suspects |> 
+  ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 1) +
+  geom_sf() +
+  fixed_plot_aspect(16/9) +
+  theme_void()
+
+ggsave(
+  here::here("inst/tutorials/12_messy_data/images/null_island_cairo2.jpg"), 
+  cairo_null_island_map2,
+  width = 900 / 150,
+  height = 500 / 150,
+  dpi = 150
+)
+```
+
+If we plotted these locations on a map, we might expect to see something like
+this:
+
+<p class="full-width-image"><img src="images/null_island_cairo1.jpg" alt="A map showing several points in the city of Cairo, Egypt"></p>
+
+But look again at the final row of data in the table above -- the co-ordinates 
+for the final row are both zero. There are several reasons why this might be.
+Perhaps the address was recorded incorrectly in a police database and that meant
+that when the addresses were run through geocoding software (which we will learn
+more about in the next section), no co-ordinates for that row could be found.
+What this means is that when we plot the data on a map, that map will actually
+look like this:
+
+<p class="full-width-image"><img src="images/null_island_cairo2.jpg" alt="A map showing a large proportion of Africa, with several points clustered around the city of Cairo, Egypt in the top-right corner and a single point located in the Atlantic Ocean off the coast of Ghana."></p>
+
+What we can see here is most of the points on this map are correctly located in
+and around Cairo, but a single point is incorrectly located at Null Island.
+
+We can deal with the problem of our data including points located at Null Island 
+using the `st_intersection()` function that we have previously used to clip
+datasets to the boundaries of other datasets. In this case, we can use
+`st_intersection()` to remove any rows from the data that are not within the
+area that the data is supposed to cover.
+
+For example, we know that all the addresses of bank fraud suspects are supposed
+to be in Egypt, so we can safely clip the suspect data to the boundary of Egypt
+before mapping the data. There are lots of sources of data on the outlines of
+countries, but perhaps the most convenient to use in R is the data provided by
+the `rnaturalearth` package. We can use the `ne_countries()` function to
+retrieve the outline of Egypt as an SF object, which we can then use to clip the
+suspect dataset.
+
+```{r null-island-exercise1, exercise=TRUE}
+# By default, `ne_countries()` does not return an SF object, so we have to
+# specify that is what we want using the `returnclass = "sf"` argument
+egypt_outline <- rnaturalearth::ne_countries(
+  country = "Egypt", 
+  returnclass = "sf"
+)
+
+cairo_suspects_valid <- st_intersection(cairo_suspects, egypt_outline)
+```
+
+Now if we were to plot a map using the `cairo_suspects_valid` object, we would
+see the map covered only the Cairo area, as we originally wanted.
 
 <p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
 
@@ -675,8 +922,8 @@ tribble(
   "[Google](https://developers.google.com/maps/documentation/geocoding/overview)", "Worldwide", "[register for Google](https://cloud.google.com/maps-platform/)", "40,000 addresses per month",
   "[Geocodio](https://www.geocod.io/)", "United States and Canada", "[register for Geocodio](https://dash.geocod.io/register)", "2,500 addresses per day",
   "[US Census](https://geocoding.geo.census.gov/)", "United States", "not required", "none"
-) %>% 
-  knitr::kable() %>% 
+) |> 
+  knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -694,7 +941,7 @@ To illustrate the geocoding process, we will find co-ordinates for the addresses
 in the object `addresses`, which holds data for 10 sexual assaults in Chicago.
 
 ```{r}
-addresses %>% knitr::kable() %>% kableExtra::kable_styling(full_width = FALSE)
+addresses |> knitr::kable() |> kableExtra::kable_styling(full_width = FALSE)
 ```
 
 Since most geocoding services limit the number of addresses you can look up at
@@ -708,16 +955,16 @@ moment (as with much data produced by local organisations) it includes only the
 building number and street.
 
 ```{r geocoding-exercise1, exercise=TRUE}
-addresses_for_geocoding <- addresses %>% 
+addresses_for_geocoding <- addresses |> 
   # Drop rows that have NA values in the `address` column
-  drop_na(address) %>% 
+  drop_na(address) |> 
   # Add city and state then convert to upper case so that `count()` will not 
   # treat identical addresses as different because of different cases, e.g. 
   # 'ST' vs 'St' as abbreviations for 'Street'
-  mutate(address = str_to_upper(str_glue("{address}, CHICAGO, IL"))) %>% 
+  mutate(address = str_to_upper(str_glue("{address}, CHICAGO, IL"))) |> 
   # Select only the address column, since we won't send the other columns to the
   # geocoding function
-  select(address) %>% 
+  select(address) |> 
   # Find all the unique rows in the data
   distinct(address)
 
@@ -752,13 +999,13 @@ together. To do this we will create a temporary column in the original
 address.
 
 ```{r geocoding-exercise3, exercise=TRUE}
-addresses %>% 
+addresses |> 
   # Create a temporary address column to use in matching the geocoded addresses
-  mutate(temp_address = str_to_upper(str_glue("{address}, CHICAGO, IL"))) %>% 
+  mutate(temp_address = str_to_upper(str_glue("{address}, CHICAGO, IL"))) |> 
   # `left_join()` keeps all the rows in the left-hand dataset (the original
   # `addresses` object) and matching rows in the right-hand dataset (the 
   # geocoding results)
-  left_join(addresses_geocoded, by = c("temp_address" = "address")) %>% 
+  left_join(addresses_geocoded, by = c("temp_address" = "address")) |> 
   # Remove the temporary address column
   select(-temp_address)
 ```
@@ -789,12 +1036,12 @@ functions that expect to receive a particular type of input.
 
 One example of functions from two different packages with the same name is the
 `geocode()` function. We have already learned that the `tidygeocoder` package
-contains a function called `geocode()`, but the `ggmap` package (which we use to
-download base maps) also has a function called `geocode()`.
+contains a function called `geocode()`, but the `ggmap` package also has a 
+function called `geocode()`.
 
 If both the `tidygeocoder` and `ggmap` packages are loaded, R will use the
-`geocode()` function from the package that has been loaded most recently. So if
-your script includes the code:
+`geocode()` function _from the package that has been loaded most recently_. So 
+if your script includes the code:
 
 ```r
 library(ggmap)
@@ -940,7 +1187,7 @@ question(
 
 ## In summary
 
-<div class="box welldone">
+::: {.box .welldone}
 
 In this tutorial we have learned to tidy messy data to make it easier to work
 with. In real-world data analysis (not just crime mapping), you will often have
@@ -948,7 +1195,10 @@ to deal with data that is messy in different ways. Fortunately, you can use R to
 fix all of these problems in a way that minimises the risk that you might 
 introduce mistakes when you clean the data.
 
-</div>
+:::
+
+
+::: {.box .reading}
 
 You can find out more about data cleaning and tidying with these 
 resources:
@@ -958,6 +1208,9 @@ resources:
   * A more-detailed [Introduction to `tidygeocoder`](https://jessecambon.github.io/tidygeocoder/articles/tidygeocoder.html).
   * An [introduction to some other packages than can help you clean and tidy data](https://rfortherestofus.com/2019/12/how-to-clean-messy-data-in-r/).
   * A more-detailed [description of how to use the `conflicted` package](https://conflicted.r-lib.org/).
+
+:::
+
     
 <p class="full-width-image"><img src="images/tidydata_7.jpg" alt="Cartoon saying make friends with tidy data!"></p>
 
