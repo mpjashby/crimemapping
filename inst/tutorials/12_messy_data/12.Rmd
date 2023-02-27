@@ -76,7 +76,7 @@ if (file.exists("www/chicago_addresses_geocoded.Rds")) {
 }
 
 # Random addresses in Cairo
-cairo_offenders <- crimemapping:::cairo_suspects |> 
+cairo_suspects <- crimemapping:::cairo_suspects |> 
   st_as_sf(coords = c("lon", "lat"), crs = "EPSG:4326")
 
 monthly_counts <- tribble(
@@ -635,7 +635,7 @@ mean(pull(burglary_values, "value"))
 # Convert `-1` to `NA` first, now you get the correct mean value
 burglary_values <- mutate(
   burglary_values,
-  value = if_else(value == -1, NA, value)
+  value = if_else(value == -1, NA_real_, value)
 )
 
 # Calculate the mean value again, now excluding the missing value
@@ -742,6 +742,7 @@ ggplot() +
   ) +
   scale_colour_manual(values = c(`TRUE` = "#CC0000", `FALSE` = "grey70")) +
   scale_linetype_manual(values = c(`TRUE` = "solid", `FALSE` = "62")) +
+  labs(x = NULL, y = NULL) +
   coord_sf(crs = ortho) +
   theme_void() +
   theme(legend.position = "none")
