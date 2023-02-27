@@ -4,7 +4,7 @@ description: "Learn how to tidy messy data so that it is easier to use for data 
 output: 
   learnr::tutorial:
     progressive: true
-    css: css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
