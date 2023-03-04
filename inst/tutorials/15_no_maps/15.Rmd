@@ -4,7 +4,7 @@ description: "Learn how to use tables and charts to effectively communicate info
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -29,16 +29,19 @@ walk(
 )
 
 # Load data
-burglary <- read_rds("../../extdata/northants_burglary.rds")
-vehicle_theft <- read_rds("../../extdata/south_africa_vehicle_theft.Rds")
-violence <- read_rds("../../extdata/malaysia_violence_counts.Rds")
+burglary <- read_rds("https://mpjashby.github.io/crimemappingdata/northants_burglary_counts.rds")
+vehicle_theft <- read_rds("https://mpjashby.github.io/crimemappingdata/south_africa_vehicle_theft.rds")
+violence <- read_rds("https://mpjashby.github.io/crimemappingdata/malaysia_violence_counts.rds") |> 
+  filter(year == 2017)
 
-vehicle_theft_wider <- vehicle_theft %>% 
-  mutate(crime_category = recode(
-    crime_category,
-    "Theft of motor vehicle" = "theft_of",
-    "Theft out of or from motor vehicle" = "theft_from"
-  )) %>% 
+vehicle_theft_wider <- vehicle_theft |> 
+  mutate(
+    crime_category = recode(
+      crime_category,
+      "Theft of motor vehicle" = "theft_of",
+      "Theft out of or from motor vehicle" = "theft_from"
+    )
+  ) |> 
   pivot_wider(names_from = crime_category, values_from = theft_rate)
 ```
 
@@ -90,7 +93,9 @@ map to help people understand which area is which:
 
 But in most circumstances in which you create crime maps, you will be creating
 them for an audience (such as local police officers) that already has sufficient 
-knowledge of the area and so an inset map such as this would not be needed.
+knowledge of the area and so an inset map such as this would not be needed. In
+that case, a bar chart will probably be more effective at showing this 
+information than a map would be.
 
 
 #### When you need to convey several different things about one place
@@ -110,7 +115,7 @@ we will learn about them in a future tutorial.
 
 #### When the geographic relationship between places on the map is not the most important thing about them
 
-Maps emphasise the spatial relationship between different places, but it does
+Maps emphasise the spatial relationship between different places, but they do
 this at the expense of making non-spatial relationships between those places
 less obvious. If the spatial relationships are the most important thing that you
 want to convey, a map makes sense. For example, a hotspot map is often a very 
@@ -148,8 +153,8 @@ slice_sample(violence, n = 10)
 ```
 
 The output of `slice_sample()` looks acceptable as a table, especially if it is 
-included in an Rmarkdown document, but readers of our reports probably don't 
-want to know the type of each variable (underneath the variable names) and won't
+included in a Quarto document, but readers of our reports probably don't want 
+to know the type of each variable (underneath the variable names) and won't
 want to page through the table if there are more rows or columns than can fit in
 the available space.
 
@@ -184,8 +189,8 @@ two types of robbery appear next to each other.
 
 
 ```{r tables-exercise2a, exercise=TRUE}
-violence %>% 
-  pivot_wider(names_from = crime_type, values_from = count) %>% 
+violence |> 
+  pivot_wider(names_from = crime_type, values_from = count) |> 
   select(
     region, state, murder, rape, `aggravated assault`, `armed robbery`, 
     `unarmed robbery`
@@ -201,7 +206,7 @@ We can create much better display tables with the [`gt` package](https://gt.rstu
 which is designed to format data for display. The `gt` package works in a 
 similar way to the `ggplot2` package, in that tables are made up of stacks of
 functions that contribute to the appearance of the final table. One difference
-is that the layers in a `gt` stack are joined using the pipe operator (`%>%`)
+is that the layers in a `gt` stack are joined using the pipe operator (`|>`)
 rather than the plus operator (`+`).
 
 We can create a very basic `gt` table by just passing a data frame or tibble to
@@ -209,16 +214,16 @@ the `gt()` function. So we can add `gt()` to the end of the pipeline of
 functions we have already started to build to create a good display table.
 
 ```{r tables-exercise3, exercise=TRUE}
-violence %>% 
-  pivot_wider(names_from = crime_type, values_from = count) %>% 
+violence |> 
+  pivot_wider(names_from = crime_type, values_from = count) |> 
   select(
     region, state, murder, rape, `aggravated assault`, `armed robbery`, 
     `unarmed robbery`
-  ) %>% 
+  ) |> 
   gt()
 ```
 
-This table is already better than the default table produced by Rmarkdown if we
+This table is already better than the default table produced by Quarto if we
 just print a data frame or tibble. The `gt` table does not take up the whole
 width of the page unnecessarily (which can make it harder to read across rows)
 and has hidden the type of each column.
@@ -248,13 +253,13 @@ the default values of all the other arguments to `fmt_number()` -- type
 available on the help page for the `fmt_number()` function.
 
 ```{r tables-exercise4, exercise=TRUE}
-violence %>% 
-  pivot_wider(names_from = crime_type, values_from = count) %>% 
+violence |> 
+  pivot_wider(names_from = crime_type, values_from = count) |> 
   select(
     region, state, murder, rape, `aggravated assault`, `armed robbery`, 
     `unarmed robbery`
-  ) %>% 
-  gt() %>% 
+  ) |> 
+  gt() |> 
   fmt_number(columns = where(is.numeric), decimals = 0)
 ```
 
@@ -277,15 +282,15 @@ which column (in this case, `region`) contains the values that we should use to
 determine which group each row is in.
 
 ```{r tables-exercise5, exercise=TRUE}
-violence %>% 
-  pivot_wider(names_from = crime_type, values_from = count) %>% 
+violence |> 
+  pivot_wider(names_from = crime_type, values_from = count) |> 
   select(
     region, state, murder, rape, `aggravated assault`, `armed robbery`, 
     `unarmed robbery`
-  ) %>% 
-  group_by(region) %>% 
-  # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
-  gt() %>% 
+  ) |> 
+  group_by(region) |> 
+  # Functions from `dplyr`, `tidyr` etc above and functions from `gt` below
+  gt() |> 
   fmt_number(columns = where(is.numeric), decimals = 0)
 ```
 
@@ -314,25 +319,25 @@ out the range of possible values automatically.
 ```{r tables-exercise7, exercise=TRUE, exercise.lines=17}
 library(scales)
 
-violence %>% 
-  pivot_wider(names_from = crime_type, values_from = count) %>% 
+violence |> 
+  pivot_wider(names_from = crime_type, values_from = count) |> 
   select(
     region, state, murder, rape, `aggravated assault`, `armed robbery`, 
     `unarmed robbery`
-  ) %>% 
-  group_by(region) %>% 
-  # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
-  gt() %>% 
-  fmt_number(columns = where(is.numeric), decimals = 0) %>% 
+  ) |> 
+  group_by(region) |> 
+  # Functions from `dplyr`, `tidyr` etc above and functions from `gt` below
+  gt() |> 
+  fmt_number(columns = where(is.numeric), decimals = 0) |> 
   data_color(
     columns = `unarmed robbery`,
     colors = col_numeric("Oranges", domain = NULL)
-  ) %>% 
+  ) |> 
   data_color(columns = rape, colors = col_numeric("Blues", domain = NULL))
 ```
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 In this table we use two different colours to show the patterns in the frequency
 of murder and unarmed robbery. This is because we want readers to remember that
@@ -349,7 +354,7 @@ of crimes in each state -- when we total all types of crime together, we are
 implicitly assuming that all types of crime are the same when that is obviously
 untrue.
 
-</div>
+:::
 
 
 ### Adding summary rows
@@ -382,21 +387,21 @@ By default, `summary_rows()` formats the calculated summary values as numbers
 using `fmt_numeric()`, we also need to specify `decimals = 0` as before.
 
 ```{r tables-exercise8, exercise=TRUE, exercise.lines=20}
-violence %>% 
-  pivot_wider(names_from = crime_type, values_from = count) %>% 
+violence |> 
+  pivot_wider(names_from = crime_type, values_from = count) |> 
   select(
     region, state, murder, rape, `aggravated assault`, `armed robbery`, 
     `unarmed robbery`
-  ) %>% 
-  group_by(region) %>% 
-  # functions from `dplyr`, `tidyr` etc above and functions from `gt` below
-  gt() %>% 
-  fmt_number(columns = where(is.numeric), decimals = 0) %>% 
+  ) |> 
+  group_by(region) |> 
+  # Functions from `dplyr`, `tidyr` etc above and functions from `gt` below
+  gt() |> 
+  fmt_number(columns = where(is.numeric), decimals = 0) |> 
   data_color(
     columns = `unarmed robbery`,
     colors = col_numeric("Oranges", domain = NULL)
-  ) %>% 
-  data_color(columns = rape, colors = col_numeric("Blues", domain = NULL)) %>% 
+  ) |> 
+  data_color(columns = rape, colors = col_numeric("Blues", domain = NULL)) |> 
   summary_rows(
     columns = where(is.numeric),
     fns = list("total" = "sum"),
@@ -404,12 +409,20 @@ violence %>%
   )
 ```
 
+
+::: {.box .notewell}
+
 Tables are good for showing detailed information, particularly when we want to
 present multiple pieces of information about a single place. But it can be hard
-to spot patterns in tables even with coloured cells. In the next section, we 
-will learn to create bar chart in R to show patterns more effectively.
+to spot patterns in tables even with coloured cells. For this reason, **do not
+use tables when you are primarily trying to show the relationship between two or
+more variables**. In the next section, we will learn to create bar chart in R to 
+show patterns more effectively.
+
+:::
 
 
+<!--
 <div class="box extra-detail">
 
 <h5 id="gtword-box1-title" class="box-title">Using the `gt` package with Word documents</h5>
@@ -445,13 +458,13 @@ may want to prefer producing output as HTML where possible.
 <script>
 $("#gtword-box1-title").click(function () { $("#section-gtword-box1").toggle("slow") })
 </script>
-
+-->
 
 
 ## Bar charts
 
-Bar charts are useful for showing values of a continuous variable (e.g. a
-count of crimes) for each value of a categorical variable (e.g. states of a
+Bar charts are useful for showing values of one _continuous_ variable (e.g. a
+count of crimes) for each value of one _categorical_ variable (e.g. states of a
 country). Bar charts are very common, but there are several things we can do to
 make them more useful. In this section we will learn how to construct a good bar
 chart.
@@ -471,8 +484,8 @@ To create a simple bar chart, we will work with the original (long-format) data
 and filter it to show only the number of murders in each state.
 
 ```{r bars-exercise1, exercise=TRUE}
-violence %>% 
-  filter(crime_type == "murder") %>% 
+violence |> 
+  filter(crime_type == "murder") |> 
   ggplot() +
   geom_col(aes(x = state, y = count))
 ```
@@ -486,8 +499,8 @@ We can improve this chart in several ways:
   * We can reduce the visual clutter in the chart using `theme_minimal()`.
 
 ```{r bars-exercise2, exercise=TRUE}
-violence %>% 
-  filter(crime_type == "murder") %>% 
+violence |> 
+  filter(crime_type == "murder") |> 
   ggplot() +
   geom_col(aes(x = count, y = state)) +
   labs(
@@ -526,8 +539,8 @@ use is the helper function `element_blank()`, which sets the grid lines to be
 blank.
 
 ```{r bars-exercise3, exercise=TRUE, exercise.lines=17}
-violence %>% 
-  filter(crime_type == "murder") %>% 
+violence |> 
+  filter(crime_type == "murder") |> 
   ggplot() +
   geom_col(aes(x = count, y = state)) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -585,9 +598,9 @@ changing an existing variable, we will do this inside a call to the `mutate()`
 function.
 
 ```{r bars-exercise4, exercise=TRUE, exercise.lines=18}
-violence %>% 
-  filter(crime_type == "murder") %>% 
-  mutate(state = fct_reorder(state, count)) %>% 
+violence |> 
+  filter(crime_type == "murder") |> 
+  mutate(state = fct_reorder(state, count)) |> 
   ggplot() +
   geom_col(aes(x = count, y = state)) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -626,10 +639,10 @@ length, on a scale from zero to one) the legend should be placed.
 tibble(
   x = c(0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1), 
   y = c(0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1)
-) %>% 
+) |> 
   mutate(
     label = str_glue("{number(x, accuracy = 0.1)}, {number(y, accuracy = 0.1)}")
-  ) %>% 
+  ) |> 
   ggplot(aes(x = x, y = y, label = label)) +
   geom_point() +
   geom_label() +
@@ -658,7 +671,7 @@ horizontal axis and the bottom-most point on the vertical axis by specifying
 the actual size of the legend depending on how much space is required by its
 contents. By default, a legend will spread out in all directions from the anchor
 point, i.e. the legend will be horizontally and vertically centred on the
-anchor point. If we have positioned the legend in a corner of the plot, this is
+anchor point. As we have positioned the legend in a corner of the plot, this is
 probably not what we want since some of the legend will be hidden outside the
 plot area. Instead, we can set the `legend.justifcation` argument of `theme()`
 using a similar specification to that for `legend.position` based on which way
@@ -672,14 +685,14 @@ tibble(
   yend = c(1.25, 0.75, 1.25, 0.75, 1, 1, 0.75, 1.25),
   h = c(0, 0, 1, 1, 0, 1, 0.5, 0.5),
   v = c(0, 1, 0, 1, 0.5, 0.5, 1, 0)
-) %>% 
+)  |>  
   mutate(
     label = str_glue("{number(h, accuracy = 0.1)}, {number(v, accuracy = 0.1)}")
-  ) %>% 
+  ) |> 
   ggplot() +
   geom_segment(
     aes(x = x, y = y, xend = xend, yend = yend), 
-    size = 1, 
+    linewidth = 1, 
     arrow = arrow(length = unit(3, "mm"), type = "closed")
   ) +
   geom_label(aes(x = xend, y = yend, hjust = h, vjust = v, label = label)) +
@@ -691,18 +704,15 @@ tibble(
 ```
 
 If you want the legend to grow 'inwards' from a corner, just set 
-`legend.justification` to the same value as you used for `legend.position`; if
-you want the legend to grow 'outwards', just set `legend.justification` to the 
-opposite (e.g. 
-`theme(legend.justification = c(0, 1), legend.position = c(1, 0))`). In this
-case, we want the legend to be anchored in the bottom-right corner and to grow 
-inwards from it, so we will set both arguments to `c(1, 0)`.
+`legend.justification` to the same value as you used for `legend.position`. In 
+this case, we want the legend to be anchored in the bottom-right corner and to 
+grow inwards from it, so we will set both arguments to `c(1, 0)`.
 
 
 ```{r bars-exercise5, exercise=TRUE, exercise.lines=21}
-violence %>% 
-  filter(crime_type == "murder") %>% 
-  mutate(state = fct_reorder(state, count)) %>% 
+violence |> 
+  filter(crime_type == "murder") |> 
+  mutate(state = fct_reorder(state, count)) |> 
   ggplot() +
   geom_col(aes(x = count, y = state, fill = region)) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -729,16 +739,17 @@ are not used to interpreting charts or who only have time to look at the chart
 for a few seconds. 
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 One of the reasons why bar charts are easy to interpret is
 that the *length* of each bar directly corresponds to the relative size of that
 particular value. But this direct relationship between bar length and value only
 applies if the bars start at zero. If you create a bar chart in which the bars 
 don't start at zero, readers are likely to be mislead, so remember *bar charts 
-should always start at zero*.
+should always start at zero*. But don't worry -- `ggplot()` will handle this for 
+you automatically.
 
-</div>
+:::
 
 
 
@@ -756,109 +767,76 @@ Let's start with the simple example of showing the distribution of burglary
 counts within a single district. The `burglary` object contains counts of
 burglaries in each lower-layer super output area (LSOA) in Northamptonshire in 
 England in 2020. To show the distribution of burglary counts within one district
-(Kettering), we can create a *dot plot* using `geom_dotplot()`.
+(Kettering), we can create a *histogram* using `geom_histogram()`.
 
-A dot plot shows a single dot for each observation in the data (in this case,
-each LSOA). The position of each dot on the horizontal (*x*) axis shows how many
-burglaries occurred in that neighbourhood. The bars are then stacked on top of
-each other so that they don't overlap one another. 
+A histogram divides the range of values present in the data into a number of
+equally sized _bins_, then shows bars representing the number of observations 
+(rows) in the data that have values fitting into each bin. We can either allow
+`geom_histogram()` to set the number of bins automatically, or set it ourself
+with the `binwidth` argument.
 
-We will set the `binwidth` argument of the `geom_dotplot()` function to
-`binwidth = 1` so that dots will only be stacked on top of each other when
-neighbourhoods have the same burglary counts. We will also add some labels to
-help readers interpret the chart and limit the *y* axis to focus on the data.
+We will set the `binwidth` argument of the `geom_histogram()` function to
+`binwidth = 1` so that each bar on the chart will show now many LSOAs have each
+individual value. We will also add some labels to help readers interpret the 
+chart.
 
 ```{r dist-exercise1, exercise=TRUE}
-burglary %>% 
-  filter(district == "Kettering") %>% 
+burglary |> 
+  filter(district == "Kettering") |> 
   ggplot() +
-  geom_dotplot(aes(x = count), binwidth = 1) +
+  geom_histogram(aes(x = count), binwidth = 1) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
   labs(
-    title = "Number of burglaries in Ketting neighbourhoods",
-    subtitle = "each dot represents one LSOA",
+    title = "Number of burglaries in Kettering neighbourhoods",
     x = "count of burglaries, 2020",
     y = "number of LSOAs"
   ) +
   theme_minimal() +
-  theme(axis.text.y = element_blank())
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
 ```
 
 
-<div class="box extra-detail">
-
-<h5 id="dist-box1-title" class="box-title">Why did we set `axis.text.y = element_blank()`?</h5>
-
-<div id="dist-box1" class="box-content">
-
-By default, `geom_dotplot()` produces a vertical (y) axis labels that suggest
-the y axis shows the proportion of points in each stack. However, these
-proportions are only true in certain circumstances, so they can be misleading.
-Since it's obvious what the vertical axis represents, it's better to remove the
-potentially misleading axis text in this case.
-
-</div>
-
-</div>
-
-<script>
-$("#dist-box1-title").click(function () { $("#section-dist-box1").toggle("slow") })
-</script>
-
-
 We can see on this chart that most LSOAs had only a few burglaries in 2020 (i.e.
-most dots are to the left of the chart), while a few LSOAs had a larger number
-(the dots to the right of the chart). This is what we would expect, since we
-know the crimes are generally concentrated in a few places.
+the largest bars are to the left of the chart), while a few LSOAs had a larger 
+number (the bars to the right of the chart). This is what we would expect, since 
+we know the crimes are generally concentrated in a few places.
 
 
 ### Plotting density curves
 
 Dot plots can be effective at showing the distribution of a variable, but are
-only really useful for a single group since they become cluttered if you try to
-show several types of dot (e.g. of different colours). One way to show the
+only really useful for a _single_ group since they become cluttered if you try 
+to show several types of dot (e.g. of different colours). One way to show the
 general distribution of a variable is to summarise the locations of the points
-on the horizontal axis by adding a *density curve* with `geom_density()`. 
+on the horizontal axis by adding a *density curve* with `geom_density()`. A
+density curve is a _smoothed_ version of a histogram, which is useful to show
+the general distribution of a variable (in this case, the number of LSOAs with
+different numbers of burglaries) at the cost of not showing the exact data. The
+mathematical procedure used by `geom_density()` to calculate a density curve is
+the same as the kernel-density estimation process we have already learned to use
+to show concentrations of crime on a map.
 
 ```{r dist-exercise2, exercise=TRUE}
-burglary %>% 
-  filter(district == "Kettering") %>% 
+burglary |> 
+  filter(district == "Kettering") |> 
   ggplot() +
-  geom_dotplot(aes(x = count), binwidth = 1, colour = NA, fill = "grey50") +
-  geom_density(aes(x = count), colour = "red", size = 2) +
-  scale_y_continuous(limits = c(0, 0.25)) +
+  geom_density(aes(x = count), colour = "red", linewidth = 1) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(labels = scales::label_percent()) +
   labs(
-    title = "Number of burglaries in Ketting neighbourhoods",
-    subtitle = "each dot represents one LSOA",
+    title = "Number of burglaries in Kettering neighbourhoods",
     x = "count of burglaries, 2020",
-    y = "proportion of LSOAs"
+    y = "percentage of LSOAs"
   ) +
   theme_minimal() +
-  theme(axis.text.y = element_blank())
-```
-
-In the code above, the `aes()` function that specifies which columns in the data
-should be used to control the appearance of different parts of the chart is 
-duplicated, once inside `geom_dotplot()` and once inside `geom_density()`. If 
-all the layers in a plot use the same aesthetic specification, we can move the
-call to the `aes()` function from the individual `geom_` functions to the 
-`ggplot()` function that begins the stack. This helps us avoid duplication and
-produces an identical chart.
-
-```{r dist-exercise3, exercise=TRUE}
-burglary %>%
-  filter(district == "Kettering") %>%
-  ggplot(aes(x = count)) +
-  geom_dotplot(binwidth = 1, colour = NA, fill = "grey50") +
-  geom_density(colour = "red", size = 2) +
-  scale_y_continuous(limits = c(0, 0.25)) +
-  labs(
-    title = "Number of burglaries in Ketting neighbourhoods",
-    subtitle = "each dot represents one LSOAs",
-    x = "count of burglaries, 2020",
-    y = "proportion of LSOAs"
-  ) +
-  theme_minimal() +
-  theme(axis.text.y = element_blank())
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
 ```
 
 We can use density curves to show the distribution of a variable across multiple
@@ -868,14 +846,17 @@ do this we use the `geom_density_ridges()` function from the `ggridges` package
 to create a *ridge plot*. Although this function does not come from the 
 `ggplot2` package, it is designed to be used inside a `ggplot()` stack.
 
-```{r dist-exercise4, exercise=TRUE}
+```{r dist-exercise3, exercise=TRUE}
 library(ggridges)
 
-burglary %>% 
-  ggplot(aes(x = count, y = str_replace_all(district, "\\s", "\n"))) +
+burglary |> 
+  # Wrap the district names by replacing any space in a name with a new-line
+  mutate(district = str_replace_all(district, "\\s", "\n")) |> 
+  ggplot(aes(x = count, y = district)) +
   geom_density_ridges() +
+  scale_x_continuous(expand = c(0, 0)) +
   labs(
-    title = "Number of burglaries in Ketting neighbourhoods",
+    title = "Number of burglaries in Kettering neighbourhoods",
     x = "count of burglaries, 2020",
     y = NULL
   ) +
@@ -885,7 +866,9 @@ burglary %>%
 The ridge plot shows the distribution of burglary counts in LSOAs within each
 district, with the distributions overlapping slightly to save space. From this
 we can see that across all districts most LSOAs have few burglaries, with a 
-small number of LSOAs having more.
+small number of LSOAs having more. We can also see there are a small number of 
+LSOAs (probably, in fact, just one LSOA) in Wellingborough district with a much
+higher number of burglaries than anywhere else in Northamptonshire.
 
 ```{r include=FALSE}
 burglary_district_counts <- count(burglary, district, sort = TRUE)
@@ -904,7 +887,7 @@ each district is quite different: there are
 To make this clearer we can instead produce several dot plots, one for each
 district -- what are called *small-multiple* charts.
 
-We could create small-multiple charts by producing a separate dot plot for each
+We could create small-multiple charts by producing a separate histogram for each
 district and then combine them with the `patchwork` package, but that would
 involve a lot of repeated code. Fortunately, we can use a feature of the 
 `ggplot2` package called *faceting* to split our single dot plot into multiple
@@ -922,24 +905,22 @@ should be based on the `district` column in the data by specifying
 want to use as the basis of the small multiples in the `vars()` function, but we
 do not need to go into why).
 
-```{r dist-exercise5, exercise=TRUE, exercise.lines=20, fig.asp=1}
-burglary %>%
-  ggplot(aes(x = count, colour = district, fill = district)) +
+```{r dist-exercise5, exercise=TRUE, exercise.lines=18, fig.asp=1}
+burglary |> 
+  ggplot(aes(x = count, fill = district)) +
   geom_hline(yintercept = 0, colour = "grey80") +
-  geom_dotplot(binwidth = 1, dotsize = 0.7) +
+  geom_histogram(binwidth = 1) +
   facet_grid(rows = vars(district), labeller = label_wrap_gen(width = 10)) +
   labs(
     title = "Number of burglaries in Northamptonshire neighbourhoods",
-    subtitle = "each dot represents one LSOA",
     x = "count of burglaries, 2020",
-    y = NULL
+    y = "number of LSOAs"
   ) +
   theme_minimal() +
   theme(
-    axis.text.y = element_blank(),
     legend.position = "none",
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
     strip.text.y = element_text(angle = 0, hjust = 0)
   )
 ```
@@ -947,20 +928,14 @@ burglary %>%
 You might have noticed we made some other changes to our code for this chart to 
 make it clearer:
 
-  * Set the dot `colour` and `fill` to be based on the `district` column in the
-    data, so the dots in each small multiple will be a different colour. We then 
-    remove the legend that is automatically generated by adding the `colour` and 
-    `fill` aesthetics using the `legend.position = "none"` attribute to 
-    `theme()`, since the legend is redundant (the same information is shown in 
-    the facet labels).
-  * Made the dots slightly smaller with `dotsize = 0.7` because there are so 
-    many LSOAs in Northampton that otherwise some of the stacks would be too
-    tall to fit on the plot.
+  * Set the dot `fill` to be based on the `district` column in the data, so the 
+    bars in each small multiple will be a different colour. We then remove the 
+    legend that is automatically generated by adding the `fill` aesthetic using 
+    the `legend.position = "none"` attribute to `theme()`, since the legend is 
+    redundant (the same information is shown in the facet labels).
   * Removed the values and the title on the *y* axis, since it is clear from the
     rest of the chart that the vertical axis shows the count of dots in each
     stack.
-  * Removed the grid lines for the *y* axis by setting the `theme()` attributes
-    `panel.grid.major.y` and `panel.grid.minor.y` to `element_blank()`.
   * Added a horizontal line at zero on the *y* axis using `geom_hline()` to make 
     it easier to compare the height of each stack of dots to zero.
   * Wrapped the facet labels using the `label_wrap_gen()` helper function so 
@@ -972,9 +947,15 @@ make it clearer:
     rotation of the text (or in this case, specifies that there should be no
     rotation) and `hjust = 0` specifies that the text should be left aligned.
 
+
+::: {.tutorial}
+
 If you want to play around with each of these parts of the code to understand
 what they do in more detail, remove one part at a time and re-run the code to
 see how the appearance of the plot changes.
+
+:::
+
 
 There are many more-technical ways to show distributions, such as box plots or
 violin plots. However, these can be difficult to interpret for people who are
@@ -987,7 +968,7 @@ be avoided for communicating with general audiences.
 
 So far we have used bar charts to communicate a single number (in our example,
 a number of murders) for each value of a categorical variable (the name of each 
-Malaysian state or territory), and dot plots to show multiple numbers (burglary
+Malaysian state or territory), and histograms to show multiple numbers (burglary
 counts for each neighbourhood) for each value of a categorical variable 
 (districts in Northamptonshire). 
 
@@ -1000,23 +981,23 @@ Africa. Since thefts *of* vehicle and thefts *from* vehicles are different but
 related crimes, we might want to see if there is a relationship between counts 
 of each type.
 
-To create a `ggplot()` scatter plot we use `geom_point()`, the same function we
-previously used to create point maps. This makes sense, since point maps are a
-specialised type of scatter plot in which the *x* and *y* axes of the chart show
-the latitude and longitude or easting and northing of each crime location.
-
 ```{r}
-vehicle_theft %>% 
-  head() %>% 
-  gt() %>% 
+vehicle_theft |> 
+  head() |> 
+  gt() |> 
   tab_header(
     title = "Vehicle thefts in South African municipalities",
     subtitle = "a sample of the data"
-  ) %>% 
+  )  |>  
   tab_options(
     heading.align = "left"
   )
 ```
+
+To create a `ggplot()` scatter plot we use `geom_point()`, the same function we
+previously used to create point maps. This makes sense, since point maps are a
+specialised type of scatter plot in which the *x* and *y* axes of the chart show
+the latitude and longitude or easting and northing of each crime location.
 
 The data in the `vehicle_theft` object are in long format, with each row
 representing a count of crime in a particular category for a particular 
@@ -1029,12 +1010,14 @@ containing only lower-case letters, numbers and underscores) using `recode()` to
 make the column names easier to work with. 
 
 ```{r scatter-exercise1, exercise=TRUE}
-vehicle_theft_wider <- vehicle_theft %>% 
-  mutate(crime_category = recode(
-    crime_category,
-    "Theft of motor vehicle" = "theft_of",
-    "Theft out of or from motor vehicle" = "theft_from"
-  )) %>% 
+vehicle_theft_wider <- vehicle_theft |> 
+  mutate(
+    crime_category = recode(
+      crime_category,
+      "Theft of motor vehicle" = "theft_of",
+      "Theft out of or from motor vehicle" = "theft_from"
+    )
+  ) |> 
   pivot_wider(names_from = crime_category, values_from = theft_rate)
 ```
 
@@ -1088,19 +1071,19 @@ ggplot(vehicle_theft_wider, aes(x = theft_of, y = theft_from)) +
     yintercept = median(pull(vehicle_theft_wider, "theft_from")),
     linetype = "22"
   ) +
-  geom_point(alpha = 0.2) +
+  geom_point(alpha = 0.5) +
   annotate(
     geom = "text", 
-    x = 15, 
-    y = 10, 
+    x = 20, 
+    y = 0, 
     label = "high rate of thefts of vehicles\nlow rate of thefts from vehicles", 
     hjust = 1,
     lineheight = 1
   ) +
   annotate(
     geom = "text", 
-    x = 1.5, 
-    y = 70, 
+    x = 1, 
+    y = 75, 
     label = "low rate of thefts of vehicles\nhigh rate of thefts from vehicles", 
     hjust = 0,
     lineheight = 1
@@ -1136,8 +1119,10 @@ data to use for the labels.
 ```{r scatter-exercise4, exercise=TRUE, exercise.lines=28, fig.asp=1}
 library(ggrepel)
 
-vehicle_theft_wider %>% 
-  mutate(label = ifelse(theft_of > 5 | theft_from > 22, municipality, NA)) %>% 
+vehicle_theft_wider |> 
+  mutate(
+    label = if_else(theft_of > 17 | theft_from > 65, municipality, NA_character_)
+  ) |> 
   ggplot(aes(x = theft_of, y = theft_from, label = label)) +
   geom_vline(
     xintercept = median(pull(vehicle_theft_wider, "theft_of")),
@@ -1171,9 +1156,11 @@ trend line by setting `method = "lm"`. We will also specify `formula = y ~ x`
 formula it used to calculate the trend.
 
 ```{r scatter-exercise5, exercise=TRUE, exercise.lines=27, fig.asp=1}
-vehicle_theft_wider %>% 
-  mutate(label = ifelse(theft_of > 5 | theft_from > 22, municipality, NA)) %>% 
-  ggplot(aes(x = theft_of, y = theft_from, label = label)) +
+vehicle_theft_wider |> 
+  mutate(
+    label = if_else(theft_of > 17 | theft_from > 65, municipality, NA_character_)
+  ) |> 
+  ggplot(aes(x = theft_of, y = theft_from)) +
   geom_vline(
     xintercept = median(pull(vehicle_theft_wider, "theft_of")),
     linetype = "22"
@@ -1184,7 +1171,12 @@ vehicle_theft_wider %>%
   ) +
   geom_smooth(method = "lm", formula = y ~ x, colour = "grey20") +
   geom_point(alpha = 0.2) +
-  geom_label_repel(na.rm = TRUE, label.size = 0, lineheight = 1) +
+  geom_label_repel(
+    aes(label = label), 
+    na.rm = TRUE, 
+    label.size = 0, 
+    lineheight = 1
+  ) +
   scale_x_continuous(labels = scales::comma_format()) +
   scale_y_continuous(labels = scales::comma_format()) +
   labs(
@@ -1201,15 +1193,72 @@ vehicle_theft_wider %>%
 
 From this chart, we can see which municipalities have particularly unusual 
 vehicle theft rates. For example, we might well want to explore the rates of
-theft from vehicles in Laingsburg and Knysna municipalities to see what makes
-them so different from the others, and similarly for the rate of theft of 
-vehicles in Mthonjaneni.
+theft from vehicles in Beaufort West or Stellenbosch municipalities to see what 
+makes them so different from the others, and similarly for the rate of theft of 
+vehicles in Ethekwini.
 
+One note of caution when using `geom_smooth()`: this function will show the
+_direction_ of the relationship between two variables regardless of the 
+_strength_ of that relationship. In extreme cases, that could mean that a chart
+would show a trend line between two variables even if the variables had almost
+no relationship to one another.
+
+For example, `geom_smooth()` produces a line showing the direction of the 
+relationship between the two variables in each of these three charts, even 
+though the relationship on the right is much stronger than the one on the left.
+
+```{r geom-smooth-relationships, out.width="100%"}
+tibble(
+  group = factor(
+    c("weak relationship", "moderate relationship", "strong relationship"), 
+    levels = c("weak relationship", "moderate relationship", "strong relationship")
+  ),
+  x = list(1:10, 1:10, 1:10)
+) |> 
+  mutate(
+    sd = case_match(
+      group, 
+      "weak relationship" ~ 10, 
+      "moderate relationship" ~ 4, 
+      "strong relationship" ~ 0.5
+    )
+  ) |> 
+  group_by(sd) |> 
+  mutate(y = list(rnorm(10, sd = sd))) |> 
+  unnest(c(x, y)) |> 
+  mutate(y = scales::rescale(x + y, to = c(0, 10))) |> 
+  ungroup() |> 
+  ggplot(aes(x = x, y = y, colour = group)) + 
+  geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, na.rm = TRUE) +
+  geom_point() +
+  scale_x_continuous(limits = c(0, 10)) +
+  scale_y_continuous(limits = c(0, 10)) +
+  labs(x = NULL, y = NULL) +
+  coord_fixed() +
+  facet_grid(cols = vars(group)) +
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "none"
+  )
+```
+
+
+::: {.box .notewell}
+
+Be very careful about trying to interpret the strength of relationships between
+two variables by plotting them on a chart. It is much better to measure the
+strength of the relationship using a statistical test such as a correlation 
+test, but statistical tests are outside the scope of this course.
+
+:::
 
 
 ## In summary
 
-<div class="box welldone">
+
+::: {.box .welldone}
 
 In this tutorial we have learned how to present data about crime at places 
 without using maps. These techniques give us more flexibility about how to best 
@@ -1220,7 +1269,8 @@ design decisions for you to make. When you make these decisions, always remember
 that what is most important is that your audience understands your message. This
 makes it very important that you understand your audience.
 
-</div>
+:::
+
 
 Visualising data with charts is a very large topic and there are lots of 
 resources available to help you learn more. To get started, you might want to
@@ -1230,5 +1280,5 @@ look at:
     University of Cincinnati Business Analytics team.
   * The [ggplot2 cheat sheet](https://github.com/rstudio/cheatsheets/blob/master/data-visualization-2.1.pdf)
     by the team that develops the `ggplot2 package.
-  * The [R Graph Gallery](https://www.r-graph-gallery.com) for examples of many
+  * The [R Graph Gallery](https://www.r-graph-gallery.com/) for examples of many
     other types of chart that you can produce in R.
