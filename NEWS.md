@@ -1,3 +1,9 @@
+# crimemapping 1.7.1
+
+* Remove `case_match()` function from Tutorial 15, since it is only available in
+  the latest version of `dplyr`.
+
+
 # crimemapping 1.7.0
 
 * Update content for 2023 Week 8 (tutorials 14 and 15).

@@ -1216,11 +1216,11 @@ tibble(
   x = list(1:10, 1:10, 1:10)
 ) |> 
   mutate(
-    sd = case_match(
+    sd = recode(
       group, 
-      "weak relationship" ~ 10, 
-      "moderate relationship" ~ 4, 
-      "strong relationship" ~ 0.5
+      "weak relationship" = 10, 
+      "moderate relationship" = 4, 
+      "strong relationship" = 0.5
     )
   ) |> 
   group_by(sd) |> 
