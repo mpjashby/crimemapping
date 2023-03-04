@@ -1,3 +1,8 @@
+# crimemapping 1.7.0
+
+* Update content for 2023 Week 8 (tutorials 14 and 15).
+
+
 # crimemapping 1.6.0
 
 * Update content for 2023 Week 7 (tutorials 12 and 13).

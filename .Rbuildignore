@@ -13,7 +13,5 @@
 ^assessment_specimen_answers/*$
 ^.*/rosm.cache
 ^rosm.cache
-^inst/tutorials/14_writing_reports
-^inst/tutorials/15_no_maps
 ^inst/tutorials/16_mapping_time
 ^data-raw$

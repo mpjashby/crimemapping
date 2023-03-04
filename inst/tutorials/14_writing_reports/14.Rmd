@@ -1,10 +1,10 @@
 ---
 title: "Crime Mapping: Writing reports in R"
-description: "Learn how to write reports directly in RStudio that integrate text, data, tables and charts using Rmarkdown."
+description: "Learn how to write reports directly in RStudio that integrate text, data, tables and charts using Quarto."
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -49,9 +49,12 @@ in your report. But if you then realise later on that there is a problem with
 your data and re-run your code, it would be very easy (especially in a long 
 report) to forget that you needed to update the mean value presented in the
 report. The risk of making errors like this is particularly high if you are 
-asked to update an existing report based on new data.
+asked to update an existing report based on new data. Perhaps the worst aspect
+of this problem is that you will never know if the numbers in your final report
+are correct, unless you go back and check every one of them in whatever program
+you used to generate the numbers in the first place.
 
-We can describe this risk of our report containing obsolete charts or incorrect
+We can describe this risk of a report containing obsolete charts or incorrect
 statistics by saying that is is not *reproducible* -- if we were asked to go 
 back and demonstrate each stage in producing the report to prove that we had
 done everything correctly, it would be very hard to do so. This is important 
@@ -61,17 +64,13 @@ number from R or Excel into Word could lead to police officers being deployed to
 the wrong place, or the wrong local council being given funding to install
 crime-prevention measures.
 
-In this tutorial we will learn to use a tool called *Rmarkdown* to write reports
+In this tutorial we will learn to use a tool called *Quarto* to write reports
 directly in RStudio, integrating data, maps and statistics directly into reports
-so that they are always up-to-date. Rmarkdown can be used to produce complicated
-and polished reports in a way that makes sure they are always up to date. For
+so that they are always up-to-date. Quarto can be used to produce detailed and 
+polished reports in a way that makes sure they are always up to date. For
 example, the report 
 [*Stop and Search in London*](https://discovery.ucl.ac.uk/id/eprint/10115766/1/2020-Q3.pdf)
-was created entirely in Rmarkdown.
-
-<p class="full-width-image"><img src="images/reproducibility_court.jpg" alt="Cartoon of a court room with a judge and lawyer agreeing no further questions are needed because a witness has produced an Rmarkdown document as proof of what they are saying"></p>
-
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
+was created entirely in Quarto.
 
 
 
@@ -89,36 +88,39 @@ italic text and so on. For example, the Markdown text:
 ```lang-md
 # Introduction
 
-In this tutorial we will learn to use a tool called *Rmarkdown* to write reports
-directly in RStudio.
+In this tutorial we will learn to use a tool called *Quarto* to write reports directly in RStudio.
 ```
 
 produces the output:
 
-<div class="faux-markdown">
+
+::: {.faux-markdown}
 
 <h1>Introduction</h1>
 
-<p>In this tutorial we will learn to use a tool called <em>Rmarkdown</em> to 
+<p>In this tutorial we will learn to use a tool called <em>Quarto</em> to 
 write reports directly in RStudio.</p>
 
-</div>
+:::
+
 
 In this example, the character `#` followed by a space at the start of a line 
 mean that line should be shown as a first-level heading and the asterisks (`*` 
 -- we could also have used the underscore character `_`) around the word 
-`Rmarkdown` indicate that it should be emphasised (typically with *italic* 
+`Quarto` indicate that it should be emphasised (typically with *italic* 
 text).
 
-<div class="box notewell">
 
-In markdown we use the hash character `#` followed by a space to indicate that a 
+::: {.box .notewell}
+
+In Markdown we use the hash character `#` followed by a space to indicate that a 
 line should be formatted as a top-level heading. The space after the `#` is
 important – if you write `#Introduction` instead of `# Introduction` then R will
 not recognise that line as representing a heading and it will not be formatted
 properly.
 
-</div>
+:::
+
 
 Markdown is designed to be easy to read and easy to write. It is perfectly 
 possible, for example, to read the unformatted Markdown text in the example 
@@ -149,45 +151,44 @@ To create paragraphs in Markdown, you simply split text with a blank line. So
 this Markdown text:
 
 ```lang-md
-In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports
-directly in RStudio.
-Markdown is a way of formatting plain text so that a computer can convert it
-into different file formats.
+In this tutorial we will learn to use a tool called _Quarto_ to write reports directly in RStudio.
+Markdown is a way of formatting plain text so that a computer can convert it into different file formats.
 ```
 
 produces the output:
 
-<div class="faux-markdown">
 
-In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports
+::: {.faux-markdown}
+
+In this tutorial we will learn to use a tool called _Quarto_ to write reports
 directly in RStudio.
 Markdown is a way of formatting plain text so that a computer can convert it
 into different file formats.
 
-</div>
+:::
+
 
 because there is no blank line between the first and second sentences. We can
 split this into two paragraphs just by adding a blank line:
 
 ```lang-md
-In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports
-directly in RStudio.
+In this tutorial we will learn to use a tool called _Quarto_ to write reports directly in RStudio.
 
-Markdown is a way of formatting plain text so that a computer can convert it
-into different file formats.
+Markdown is a way of formatting plain text so that a computer can convert it into different file formats.
 ```
 
 which produces the output:
 
-<div class="faux-markdown">
 
-In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports
+::: {.faux-markdown}
+
+In this tutorial we will learn to use a tool called _Quarto_ to write reports
 directly in RStudio.
 
 Markdown is a way of formatting plain text so that a computer can convert it
 into different file formats.
 
-</div>
+:::
 
 
 #### Headings
@@ -206,7 +207,8 @@ or more `#` characters to the start of the line, followed by a space:
 
 produces:
 
-<div class="faux-markdown">
+
+::: {.faux-markdown}
 
 <h1>First-level heading</h1>
 
@@ -214,9 +216,16 @@ produces:
 
 <h3>Third-level heading</h3>
 
-</div>
+:::
 
-<div class="box notewell">
+
+Headings should have at least one blank line above and below them, so that they
+stand out from the surrounding code. I usually leave three blank lines before a
+second-level heading and two blank lines before other headings, with exactly one
+blank line after every type of heading.
+
+
+::: {.box .notewell}
 
 Remember that Markdown describes the *structure* of a document, not its 
 appearance, so you should not choose a heading level based on what size of text
@@ -225,7 +234,7 @@ first-level heading for your document title, so break the document up into
 sections by specifying second-level headings and then break those sections up
 into sub-sections with third-level headings etc.
 
-</div>
+:::
 
 
 #### Lists
@@ -247,7 +256,8 @@ the same way, but starting each line with an asterisk:
 
 produces:
 
-<div class="faux-markdown">
+
+::: {.faux-markdown}
 
 1. A list of items
 2. for which the ordering
@@ -257,7 +267,7 @@ produces:
 * for which the ordering
 * of items is *not* important
 
-</div>
+:::
 
 
 #### Quotes
@@ -267,20 +277,20 @@ putting a greater-than (`>`) symbol followed by a space at the start of each
 line of the quote:
 
 ```lang-md
-> In this tutorial we will learn to use a tool called _Rmarkdown_ to write 
-> reports directly in RStudio.
+> In this tutorial we will learn to use a tool called _Quarto_ to write reports directly in RStudio.
 ```
 
 produces 
 
-<div class="faux-markdown">
+
+::: {.faux-markdown}
 
 <blockquote>
-In this tutorial we will learn to use a tool called _Rmarkdown_ to write reports 
+In this tutorial we will learn to use a tool called _Quarto_ to write reports 
 directly in RStudio.
 </blockquote>
 
-</div>
+:::
 
 
 ### Inline elements
@@ -289,9 +299,11 @@ As well as using Markdown to describe the structure of a document, you can use
 it to mark up particular text within a paragraph. We've already seen how to do 
 this using `_to emphasise text_` (usually displayed in _italics_). We can also 
 `**strongly emphasise**` text, which will usually appear in **bold**. Note that
-the `_`, `*` or `**` characters must be touching a word on at least one side --
-if you type ` _ ` with spaces on each side you will get an underscore character
-in the output, not emphasised text.
+the `_`, `*` or `**` characters must be touching a word on exactly one side:
+
+  * `some _emphasised_ text` produces some _emphasised_ text
+  * `some_emphasised_text` does not produce emphasised text
+  * `some _ emphasised _ text` does not produce emphasised text
 
 We can add links to a document using the format `[link text](URL)`. For example,
 the text:
@@ -302,16 +314,18 @@ the text:
 
 produces the link:
 
-<div class="faux-markdown">
+
+::: {.faux-markdown}
 
 [learn about the tidyverse](https://www.tidyverse.org/)
 
-</div>
+:::
+
 
 There are several other Markdown codes for describing different elements within
 a document, including images, videos and segments of code. You can find out more
-about what's possible with Markdown in the 
-[Markdown Syntax chapter of the book *R Markdown: The Definitive Guide*](https://bookdown.org/yihui/rmarkdown/markdown-syntax.html).
+about what's possible with Markdown on the 
+[Markdown Basics page of the Quarto website](https://quarto.org/docs/authoring/markdown-basics.html).
 
 
 ### Processing Markdown in RStudio
@@ -339,7 +353,7 @@ other word-processing software) to view the file.
 To create PDF files from Markdown in RStudio, your computer has to have a 
 version of software called TeX installed. If you've never heard of TeX, you can
 install it automatically using the `tinytex` R package. To install TeX, just run
-this R code once:
+this R code _once_ on your computer:
 
 ```r
 install.packages("tinytex")
@@ -349,29 +363,67 @@ tinytex::install_tinytex()
 TeX should now be installed on your computer. After you have restarted RStudio
 you will be able to create PDFs from within RStudio.
 
+::: {.box .notewell}
+
+Note that you only have to install TeX once on each computer you use, so you
+should not include `tinytex::install_tinytex()` in any Quarto scripts that
+you write.
+
+:::
 
 
-## Rmarkdown
+
+## Quarto
 
 Markdown allows you to create static documents in RStudio. We can add all types
 of R output -- including maps, tables, charts and the results of calculations --
-to Markdown documents using *Rmarkdown*, which is built into RStudio.
+to Markdown documents using *Quarto*, which is built into RStudio.
 
-![](https://vimeo.com/178485416)
+Quarto is a system that converts Markdown documents that contain chunks of code
+written in R or Python, runs the code and then integrates the Markdown text and
+the code results into one or more output files. Quarto can produce web pages,
+Word documents, PDF files, presentations, websites, e-books and other formats.
 
-An Rmarkdown file is just like a Markdown document except that it has the file
-extension `.Rmd` rather than the extension `.md`. The `.Rmd` extension tells 
+<p class="full-width-image"><img src="images/quarto-process.png" alt="A schematic representing the multi-language input (e.g. Python, R, Observable, Julia) and multi-format output (e.g. PDF, html, Word documents, and more) versatility of Quarto."></p>
+
+A Quarto file is just like a Markdown document except that it has the file
+extension `.qmd` rather than the extension `.md`. The `.qmd` extension tells 
 RStudio that a file will contain a mixture of text formatted with Markdown and
-R code that produces tables, charts and so on.
+code that produces tables, charts and so on.
 
-Rmarkdown documents start with a *header* that provides some basic information 
-about the document, such as the title. A simple Rmarkdown header looks like 
-this:
+Since Quarto can produce many types of document, RStudio has a dialogue box in
+which you can select from all the installed Quarto templates. Click on the 
+'new file' button in the top-left corner of the RStudio window and then on
+`Quarto Document…`
 
+<p class="centered-image"><img src="images/rstudio-quarto-menu.png" alt="Screen shot of RStudio's menu for creating a new documents."></p>
+
+This will open a box containing all the Quarto templates that are installed
+on your computer. Some of these are installed by default and some may have been
+added by packages that you have installed.
+
+<p class="centered-image"><img src="images/rstudio-new-quarto.png" alt="Screen shot of RStudio's dialogue box for creating a new Quarto document."></p>
+
+You can edit Quarto documents in two ways in RStudio. When you create a new
+Quarto document, RStudio will open it in the _Visual editor_. This allows you to
+write the text content of your document as you would in word-processing software
+such as Word. For example, you can make text bold using buttons on the tool bar
+at the top of the document, or using standard keyboard short-cuts such as 
+`Ctrl+B` on Windows or `Command+B` on Mac. There is also a _Source editor_, 
+which allows you to edit the underlying Markdown formatted text directly. 
+
+In this tutorial we will use the Visual editor, but you can choose to use the
+Source editor if you prefer. To switch between the two editors, slick the 
+`Source` or `Visual` buttons at the left-hand end of the formatting tool bar at
+the top of the Quarto document window.
+
+Whichever editor you use, Quarto documents start with a *header* that provides 
+some basic information about the document, such as the title. A simple Quarto 
+header looks like this:
 
 ```yaml
 ---
-title:  "An Rmarkdown document"
+title:  "An Quarto document"
 author: "Joe Bloggs"
 date:   "3 March 2021"
 ---
@@ -379,65 +431,48 @@ date:   "3 March 2021"
 
 The header is written in yet another programming language called 
 [YAML](https://en.wikipedia.org/wiki/YAML). You don't need to know the details 
-of YAML to write headers for Rmarkdown documents. Two things you do need to 
-know, though: 
+of YAML to write headers for Quarto documents. Two things you do need to know, 
+though: 
 
   * The three dashes (`---`) are important, because they tell RStudio that the 
     content inside the dashes is the document header. The dashes must appear at
     the start of a line on their own.
-  * Indentation matters in YAML, so if you have long titles or need to write
-    more-complicated headers for Rmarkdown documents, read 
-    [this tutorial](https://bookdown.org/yihui/bookdown/r-markdown.html) first.
-
-Since Rmarkdown can produce many types of document, RStudio has a dialogue box in
-which you can select from all the installed Rmarkdown templates. Click on the 
-'new file' button in the top-left corner of the RStudio window and then on
-`R Markdown…`
-
-<p class="centered-image"><img src="images/rstudio-markdown-menu.png" alt="Screen shot of RStudio's dialogue box for creating a new Rmarkdown document."></p>
-
-This will open a box containing all the Rmarkdown templates that are installed
-on your computer. Some of these are installed by default and some may have been
-added by packages that you have installed. For example, you can create a resume
-in Rmarkdown with the [`vitae` package](https://pkg.mitchelloharawild.com/vitae/),
-so if that packages is installed on your computer then you will see a resume
-template as one of the options available in this dialogue box..
-Rmarkdown can produce a wide range of document types -- this tutorial is written
-in Rmarkdown using a template provided by a package called 
-[`learnr`](https://rstudio.github.io/learnr/), which is designed to produce
-interactive tutorials for learning R.
-
-<p class="centered-image"><img src="images/rstudio-new-markdown.png" alt="Screen shot of RStudio's dialogue box for creating a new Rmarkdown document."></p>
+  * Indentation matters in YAML. Every line takes the form `key: value` and in 
+    most cases the key must be at the very start of the line. Lines in YAML are
+    not limited to 80 characters, so you should not break a single value (such
+    as the document title) over multiple lines.
 
 
-### R code in Rmarkdown
+### R code in Quarto
 
-RStudio will process everything in an Rmarkdown document after the header 
+Quarto will process everything in an Quarto document after the header 
 (marked with `---`) as Markdown text. The only exception to this is when you
-include sections of R code in an Rmarkdown document.
+include sections of code in an Quarto document.
 
-You can include R code inside a line of Markdown text (known as *inline* code). 
-To do this, start your R code with `` `r `` and end it with `` ` ``. For 
-example, you could add the current date in your document:
+You can include R code inside a line of Markdown text (known as *inline* code)
+and the result of that code will be included in the document output. To do this 
+in the visual editor, you type a lower-case `r` followed by a space, then the 
+code you want to run. You then select the text from the letter `r` to the end of
+the code, open the `Format` menu in the Quarto tool bar and select `Code`
+(alternatively you can select the text and use the keyboard short-cut 
+`Command+D` on Mac or `Ctrl+D` on Windows).
 
-<p class="centered-image"><img src="images/rstudio-inline-rmarkdown.png" alt="Screen shot of inline R code in an Rmarkdown document."></p>
+For example, if you wanted to insert today's date into a Quarto document, you
+can type:
+
+<p class="centered-image"><img src="images/quarto-inline-code.gif" alt="Animated screen shot of adding inline code to a Quarto document"></p>
 
 Which would produce the output:
 
-<div class="faux-markdown">
-
-This report was prepared on `r str_squish(format(Sys.Date(), "%e %B %Y"))`
-
-</div>
+<p class="centered-image"><img src="images/quarto-inline-code.png" alt="Screen shot of a Quarto document with the text 'This document was written on 3 March 2023'."></p>
 
 Putting R code inline is fine for simple pieces of code, but longer pieces of
 code included inline would become difficult to read (and therefore difficult to
 debug). Fortunately, we can put as much code as we like in a *code block*. To
-add a block of R code to an Rmarkdown document, we add a new line and start it
-with the characters ```` ```{r} ```` without spaces. To end a code chunk, 
-include the characters ```` ``` ```` on a line on their own. There must not be
-any spaces or other characters on the line before ```` ```{r} ```` or 
-```` ``` ````.
+add a block of R code to an Quarto document, we open the `Insert` menu on the
+Quarto tool bar, click `Code Chunk` and then `R`. You will then see a grey box
+appear at the point in your document where you had placed the cursor, with the
+text `{r}` at the start of the box.
 
 We can use code chunks to run longer pieces of code that would be difficult to
 read if the code were inline. For example, if you wanted to load a data file of
@@ -445,144 +480,135 @@ crime data, filter it for crimes occurring in a particular month and then count
 the number of rows, you could do the calculation in a code chunk and then 
 include the result inline:
 
-<p class="centered-image"><img src="images/rstudio-code-chunk.png" alt="Screen shot of an R code chunk in an Rmarkdown document."></p>
+<p class="centered-image"><img src="images/quarto-code-chunk.png" alt="Screen shot of an R code chunk in an Quarto document."></p>
 
-Note that to make the Rmarkdown document more readable, RStudio has given the
+Note that to make the Quarto document more readable, RStudio has given the
 R code chunk a grey background, in contrast to the white background of the rest
 of the document. If a code chunk does not have a grey background, this is a good
 sign that there is something wrong: maybe you haven't saved the file with a 
-`.Rmd` file extension, or maybe there are blank spaces before the ```` ``` ````
-characters that start and end the code block.
+`.qmd` file extension, or maybe you have not inserted the code block correctly.
 
 Code chunks can also be used to insert tables and charts (including maps) into
-an Rmarkdown document. To add a nicely formatted table, use the `kable()`
+a Quarto document. To add a nicely formatted table of data, use the `kable()` 
 function from the `knitr` library. For example:
 
 ```r
 # Print table of crime counts in each police division
-crimes %>% 
-  filter(year == 2021, month == "February") %>% 
-  count(division) %>% 
+crimes |> 
+  filter(year == 2021, month == "February") |> 
+  count(division) |> 
   # We haven't loaded the `knitr` package, so we need to refer to the `kable()`
   # function using the `::` operator
   knitr::kable()
 ```
 
 We can also use code chunks to produce graphics. In this case, you just include
-the code to produce your map or chart in a code chunk as you normally would --
-when you create a new Rmarkdown document in RStudio, there is an example plot
-already included to show you how it's done.
+the code to produce your map or chart in a code chunk as you normally would.
 
 To help keep track of code chunks, we can name them. To name a code chunk, put a
 single space after the letter `r` in the line that begins the chunk and then 
 give the chunk name. Names can include letters, numbers and dashes (`-`). For
 example, if we wanted to call the chunk above `count-all-crimes` we would start
-the code chunk with the code ```` ```{r count-all-crimes} ````.
+the code chunk with the code `{r count-all-crimes}`.
 
-The package that converts Rmarkdown documents into other formats is called 
-`knitr` -- actually, it's a bit more complicated than that, but one of the nice
-things about Rmarkdown is you don't need to worry about what's happening behind
+The package that converts Quarto documents into other formats is called `knitr` 
+-- actually, it's a bit more complicated than that, but one of the nice
+things about Quarto is you don't need to worry about what's happening behind
 the scenes.
 
-The default Rmarkdown template is set up so that the final document that is
-produced from your Rmarkdown file will include both the code that you include in
-any code chunks *and* the output that the code produces. For example, this 
-Rmarkdown document:
+<p class="full-width-image"><img src="images/knitr-process.png" alt="A schematic representing rendering of Quarto documents from .qmd, to knitr or jupyter, to plain text markdown, then converted by pandoc into any number of output types including html, PDF, or Word document."></p>
 
-<p class="centered-image"><img src="images/rmarkdown-example-doc.png" alt="Screen shot of an example Rmarkdown document containing a code chunk."></p>
+The default Quarto template is set up so that the final document that is
+produced from your Quarto file will include both the code that you include in
+any code chunks *and* the output that the code produces. For example, this 
+Quarto document:
+
+<p class="centered-image"><img src="images/quarto-example-doc.png" alt="Screen shot of an example Quarto document containing a code chunk."></p>
 
 Produces this output, which is probably not what you want:
 
-<p class="centered-image image-border"><img src="images/rmarkdown-example-output.png" alt="Screen shot of the output from an example Rmarkdown document showing code and chunk output."></p>
+<p class="centered-image image-border"><img src="images/quarto-example-output.png" alt="Screen shot of the output from an example Quarto document showing code and chunk output."></p>
 
 We can control the results of code chunks using *chunk options*, sometimes 
-called *knitr options*. We put these on the first line of each code chunk, 
-inside the braces (`{}`) after the letter `r`. If the chunk has a name (which is
-good practice), separate the options from the name with a comma and a space.
+called *knitr options*. We put these on the first line of each code chunk, with
+each option on a separate line and each line starting with the characters `#| `
+(referred to as a _hash-pipe_). Note that the `#|` _must_ be followed by a space
+for Quarto to recognise it as a chunk option.
 
 To specify that the code in our R code chunks should not be printed in the final
-document, we can set the chunk option `echo=FALSE`. To specify that the R 
-_output_ produced by the code in each code chunk (e.g. and messages or warnings) 
-should not be shown, we can set the chunk option `include=FALSE`. So if we 
-wanted our code chunk to produce no output at all, we could change the first 
-line of the code chunk to read
-```` ```{r count-all-crimes, echo=FALSE, include=FALSE} ````.
+document, we can set the chunk option `#| echo: false`. To specify that both the 
+R code and the _output_ produced by that code in each code chunk (e.g. and 
+messages or warnings) should not be shown, we can set the chunk option 
+`#| include: false`. 
 
 If we change the code in our previous example to include this line, the output
 becomes much more like the report we want:
 
-<p class="centered-image image-border"><img src="images/rmarkdown-example-output-better.png" alt="Screen shot of the output from an example Rmarkdown document with code and chunk output suppressed."></p>
-
+<p class="centered-image image-border"><img src="images/quarto-example-output-better.png" alt="Screen shot of the output from an example Quarto document with code and chunk output suppressed."></p>
 
 If a code chunk produces a chart or map then we *do* want to show the output 
-(although not the code), so in that case we should not set `include=FALSE` -- we
-do not need to set `include=TRUE` because it is the default.
+(although not the code), so in that case we should not set `#| include: false` 
+-- we do not need to set `#| include: true` because it is the default.
 
 Since we probably don't want any chunks in our code to include the code in our
-final document, we could end up setting the chunk option `echo=FALSE` for every
-code chunk. In a long or complicated document, this would get tedious. 
+final document, we could end up setting the chunk option `#| echo: false` for 
+every code chunk. In a long or complicated document, this would get tedious. 
 Fortunately, we can set chunk options *globally* (i.e. for all chunks in a 
-document) by giving our *first* code chunk the name `setup` and then inside that
-chunk calling the code `knitr::opts_chunk$set(echo = FALSE)`. The function name
-`opts_chunk$set` might look a little strange, but fortunately this line of code
-is included in the default Rmarkdown template, so we rarely need to remember it.
-All we need to do in most cases is change the default `echo = TRUE` to 
-`echo = FALSE`. We can also use the `setup` chunk to load any packages we need 
-for our code, since it is easy to look at this first chunk in any document to 
-see which packages are needed.
+document) by setting them in the YAML document header. To do this, we add a key
+called `execute` to the header. Instead of giving the `execute` key a value such
+as `true` or `false`, we instead indent the _next_ line of the header by exactly
+two spaces and then set the chunk option `echo: false`. If we wanted to set 
+multiple global chunk options here, we would put each one on a new line, all of
+the lines indented by two spaces from the start of each document. 
 
-There a few other chunk options that are useful. If you know your code will
-produce some messages or warnings *and you are happy that you have understood
-those messages/warnings and don't need to take any action* then you can hide
-the message/warning text by setting the options `message=FALSE` and/or
-`warning=FALSE`. However, this is risky -- if your code produces some messages
-or warnings you weren't expecting then you will not see them. This can lead to
-you spending a long time trying to find out why your code isn't producing the
-results you expect when there is a warning that explains the problem but which
-you can't see because you've set `warning=FALSE`. So if you set either of these 
-options, make sure you take them out again if you run into any problems. Even 
-better, only set these options when you've already run your complete document 
-successfully so that you know there are no problems.
+```yaml
+---
+title:  "An Quarto document"
+author: "Joe Bloggs"
+date:   "3 March 2021"
+execute:
+  echo: false
+---
+```
 
-Charts and maps based on `ggplot()` or `ggmap()` stacks can include built-in
-titles. To add a title to a table, we can use the `fig.cap` chunk option, e.g.
-`fig.cap="Number of crimes in each division, February 2021"`. We can control the 
-size of graphics produced by code chunks using the `fig.width` and `fig.height`
-options, e.g. `fig.width=10` to get a graphic that is 10 inches wide. There is
-a complete list of available chunk options in the 
-[Rmarkdown Reference Guide](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf).
-**I recommend you print out or keep a copy of this guide so that you can refer
-to it while you are writing Rmarkdown documents**.
+Some of the R code we write produces messages or warnings that we will not want
+to include in our Quarto documents. For example, readers of a report based on
+crime data are unlikely to want to see the warning produced by the 
+`st_intersection()` function, and will probably be quite surprised if this 
+appears in their code. To hide these messages, we can split the code needed to
+produce a map into two code chunks: one to do the pre-processing that often
+creates messages or warnings, and a second chunk to create the map itself.
+
+<p class="centered-image"><img src="images/quarto-multiple-chunks.png" alt="Screen shot of the a Quarto document including multiple code chunks with different chunk options."></p>
 
 
-## Knitting Rmarkdown
+<p class="credits">Artwork from "<a href="https://allisonhorst.com/cetinkaya-rundel-lowndes-quarto-keynote">Hello, Quarto</a>" keynote by Julia Lowndes and Mine Çetinkaya-Rundel, presented at RStudio Conference 2022. Illustrated by Allison Horst.</p>
+
+
+
+## Rendering Quarto
 
 Once you've written the text for your document and added the code needed to
-produce statistics, tables and figures, it's time to convert your Rmarkdown file
-to a document in the format you need. this process is called *knitting* because 
-it knits together text, code and output to produce the final product.
+produce statistics, tables and figures, it's time to convert your Quarto file
+to a document in the format you need. This process is called *rendering*.
 
-In RStudio you can knit an Rmarkdown document by clicking the `Knit` button (if
-you can't see the `Knit` button at the top of your Rmarkdown document, that is a
-sign you haven't saved the file as a `.Rmd` file). By default, RStudio will 
+In RStudio you can render a Quarto document by clicking the `Render` button (if
+you can't see the `Render` button at the top of your Quarto document, that is a
+sign you haven't saved the file as a `.qmd` file). By default, RStudio will 
 produce an HTML file (a web page) and open it in the HTML viewer built into 
 RStudio. You can produce other formats instead of a web page by clicking on the 
-downward-pointing arrow next to the `Knit` button and then choosing the format
+downward-pointing arrow next to the `Render` button and then choosing the format
 you want.
 
-<p class="centered-image"><img src="images/rmarkdown-knit-button.png" alt="Screen shot of the Knit button in RStudio."></p>
-
-If you choose a different format from the default, RStudio will add a line to
-the header of your Rmarkdown document so that the next time you click the `Knit`
-button your document will be produced in the same format as you specified the
-previous time. For example, if you choose `Knit to PDF` from the drop-down menu,
-RStudio will add `output: pdf_document` to your document header and the next
-time you click the `Knit` button a PDF will be produced. If you want to produce
-a different format, just click the triangle next to the `Knit` button again and
-choose the format you want.
+You can control the output format that RStudio will produce by changing the
+`format:` value in the YAML header of your Quarto document. The default is
+`format: html`, but you can also use `format: pdf` to produce a PDF file,
+`format: docx` to produce a Word document, `format: epub` to produce an e-book,
+`format: pptx` to produce a PowerPoint presentation. There are 
+[many other ouput formats available](https://quarto.org/docs/output-formats/all-formats.html).
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 If you have a choice of which format to produce a report in, I would suggest you
 choose HTML because it can do things (like include interactive maps made with
@@ -592,21 +618,43 @@ PDF format since it is readable on almost all computers, even those that do not
 have Word installed on them. Only produce reports in Word format if you are 
 specifically required to submit something in that format.
 
-</div>
+:::
 
 
 Whatever format you choose, the output file will be saved in the same folder on
-your computer that you saved your `.Rmd` file in, and will have the same file
+your computer that you saved your `.qmd` file in, and will have the same file
 name but with a different file extension (`.html`, `.pdf`, `.docx`, etc.). If 
-you knit the document again, RStudio will overwrite the previous output file.
+you render the document again, RStudio will overwrite the previous output file.
+
+When you render a Quarto document, RStudio will run all the code in the file so
+that it can knit the results together with the document text. This is similar to
+running the code in a `.R` file using the `Source` button, except that when
+RStudio runs the code in a Quarto document, RStudio can only access functions
+from the packages that are loaded in the Quarto document itself, and only make 
+use of objects created inside the Quarto document. This means that nothing you
+do in the console or in any other files you have open in RStudio (e.g. loading a 
+package or creating an object) affects the results that will be produced when
+you render a Quarto document.
+
+Since rendering a Quarto document involves running all the code contained in it,
+it is possible that the code will cause errors at the time when the Quarto
+document is rendered. When this happens, the R error message will appear in the
+RStudio Render panel. When you run a `.R` file that produces an error, the error
+message typically tells you which line of code the error occurred on. But when
+an error occurs while rendering a Quarto file, the error message only specifies 
+the first and last lines of the _part_ of the document in which the error
+occurred. If the error occurred inside a code chunk, the error message will
+refer to the first and last lines of that chunk, but the error itself could have
+occurred anywhere inside that chunk. If the error occurs _outside_ a code chunk,
+the error message will report that the error occurred somewhere between the last
+line of the previous code chunk and the first line of the next code chunk. It is
+up to you to find the exact location of the error.
 
 
 
 ## In summary
 
-<p class="full-width-image"><img src="images/rmarkdown_wizards.jpg" alt="Cartoon showing two wizards using Rmarkdown to combine text and code into a complete document"></p>
-
-<div class="box welldone">
+::: {.box .welldone}
 
 In this tutorial we have learned how to use Markdown to create structured 
 text using simple formatting codes and how to integrate that text with our code
@@ -615,36 +663,28 @@ means we can make our work *reproducible* so that we can avoid all the mistakes
 that can happen if we have to copy and paste statistics and graphics into 
 reports written in software like Word. 
 
-It also means we can produce periodic
-reports with updated data very easily, since we can just choose the data we want
-the report to be based on using `filter()` at the start of our file and knit the
-document. This can save a huge amount of time in producing reports such as 
-performance bulletins or monthly summaries of crime in an area.
+It also means we can produce periodic reports with updated data very easily, 
+since we can just choose the data we want the report to be based on using 
+`filter()` at the start of our file and render the document. This can save a 
+huge amount of time in producing reports such as performance bulletins or 
+monthly summaries of crime in an area.
 
-</div>
+:::
 
 
-To get used to working with Rmarkdown files, download 
-[this example report](https://github.com/mpjashby/crimemapping/raw/main/inst/example_rmarkdown_report.Rmd)
+To get used to working with Quarto files, download 
+[this example report](https://github.com/mpjashby/crimemapping/raw/main/inst/example_quarto_report.qmd)
 to your computer and open it in RStudio. Now make the following changes:
 
-  1. Change the chunk options of the code chunk `divisional-table` so that the
-     table has a caption.
-  2. Change the global chunk options so that the code used in each code chunk is
+  1. Change the global chunk options so that the code used in each code chunk is
      not shown in the final document.
-  3. Knit the file into documents of at least two different formats (e.g. HTML
+  3. Render the file into documents of at least two different formats (e.g. HTML
      and Word). If you have installed `tinytex` on your computer so that you can
      create PDF documents, look at how different the document appears in PDF
      format compared to HTML format because of the different templates used.
 
-There is a lot more you can do with Rmarkdown. To find out more, refer to these
+There is a lot more you can do with Quarto. To find out more, refer to these
 resources.
 
-  * The [Rmarkdown Reference Guide](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf) written by RStudio.
-  * A [gallery of different documents, websites and presentations written with Rmarkdown](https://rmarkdown.rstudio.com/gallery.html).
-  * [Rmarkdown: the definitive guide](https://bookdown.org/yihui/rmarkdown/) by
-    Yihui Xie, J. J. Allaire and Garrett Grolemund -- a book-length explanation
-    of everything that Rmarkdown can do.
-
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
-
+  * [R for Data Science chapter on Quarto](https://r4ds.hadley.nz/quarto.html).
+  * A [gallery of different documents, websites and presentations written with Quarto](https://quarto.org/docs/gallery/).
