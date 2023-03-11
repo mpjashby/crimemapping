@@ -45,6 +45,9 @@ rosm.cache
 # Old versions of tutorials no longer needed
 inst/tutorials/*-old/
 
+# Resit datasets that may or may not be needed in future
+inst/extdata/
+
 # Marking
 marking/
 assessment_specimen_answers/
