@@ -1,3 +1,8 @@
+# crimemaping 1.8.0
+
+* Update content for 2023 Week 9 (tutorial 16).
+
+
 # crimemapping 1.7.1
 
 * Remove `case_match()` function from Tutorial 15, since it is only available in

@@ -4,7 +4,7 @@ description: "Learn to show change over time on crime maps and charts"
 output: 
   learnr::tutorial:
     progressive: true
-    css: "css/tutorial_style.css"
+    css: ["css/tutorial_style.css", "css/2023.css"]
 runtime: shiny_prerendered
 ---
 
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = FALSE, fig.align='center')
 # loaded here to force `learnr` to prompt the user to install them the first
 # time they load this tutorial
 library(gganimate)
-library(ggmap)
+library(ggspatial)
 library(gifski)
 library(lubridate)
 library(sf)
@@ -38,91 +38,112 @@ walk(
 # Load data --------------------------------------------------------------------
 
 # Crime data for demonstrating date manipulation
-crimes <- read_csv("../../extdata/bronx_shootings.csv") %>% 
+crimes <- read_csv("https://mpjashby.github.io/crimemappingdata/bronx_shootings.csv") |> 
+  # Change dates so they can be filtered using recent dates
   mutate(occur_date = as_date(runif(
     n(), 
     min = as.numeric(today() - days(28 + 7)), 
     max = as.numeric(today())
   )))
 
-thefts <- read_csv("../../extdata/vancouver_thefts.csv.gz") %>% 
-  janitor::clean_names() %>% 
-  select(year, month_of_year = month, day_of_month = day, hour, minute, x, y) %>% 
+# Crime data for demonstrating date creation
+thefts <- read_csv("https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz") |> 
+  janitor::clean_names() |> 
+  select(year, month_of_year = month, day_of_month = day, hour, minute, x, y) |> 
   filter(month_of_year == 9)
 
-# Assaults data for animated map
-assaults <- read_csv("../../extdata/chicago_aggravated_assaults.csv.gz")
-assault_weekly_counts <- assaults %>% 
-  mutate(week_date = floor_date(as_date(date), unit = "week")) %>%
-  count(week_date, name = "count") %>%
+
+## Assaults data for animated map ----
+
+# Load data 
+assaults <- read_csv("https://mpjashby.github.io/crimemappingdata/chicago_aggravated_assaults.csv.gz")
+cpd_districts <- read_sf("https://mpjashby.github.io/crimemappingdata/chicago_police_districts.kml") |> 
+  st_transform("EPSG:26916") |> 
+  select(district_no = Name, geometry) |> 
+  mutate(district_no = as.numeric(district_no))
+cpd_central <- filter(cpd_districts, district_no %in% c(1, 12, 18))
+
+# Weekly counts
+assault_weekly_counts <- assaults |> 
+  mutate(week_date = floor_date(as_date(date), unit = "week")) |> 
+  count(week_date, name = "count") |> 
   slice(2:(n() - 1))
-assault_hourly_counts <- assaults %>% 
-  mutate(wday = wday(date, label = TRUE), hour = hour(date)) %>%
-  count(wday, hour, name = "count") %>% 
+
+# Hourly counts
+assault_hourly_counts <- assaults |> 
+  mutate(wday = wday(date, label = TRUE), hour = hour(date)) |> 
+  count(wday, hour, name = "count") |> 
   mutate(pseudo_date = make_datetime(year = 2010, hour = hour))
-assaults_by_shift <- assaults %>% 
-  filter(district %in% c(1, 12, 18)) %>% 
-  mutate(shift = case_when(
-    between(hour(date), 6, 13) ~ "06:00 to 13:59",
-    between(hour(date), 14, 21) ~ "14:00 to 21:59",
-    hour(date) >= 22 | hour(date) < 6 ~ "22:00 to 05:59",
-    TRUE ~ NA_character_
-  )) %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-  st_transform(26916)
-nested_assaults <- assaults_by_shift %>% 
+
+# Counts by shift 
+assaults_by_shift <- assaults |> 
+  filter(district %in% c(1, 12, 18)) |> 
+  mutate(
+    shift = case_when(
+      between(hour(date), 6, 13) ~ "06:00 to 13:59",
+      between(hour(date), 14, 21) ~ "14:00 to 21:59",
+      hour(date) >= 22 | hour(date) < 6 ~ "22:00 to 05:59",
+      TRUE ~ NA_character_
+    )
+  ) |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
+  st_transform("EPSG:26916")
+
+# Assaults by shift nested
+nested_assaults <- assaults_by_shift |> 
   # Remove all the columns except the ones we want
-  select(shift, geometry) %>% 
+  select(shift, geometry) |> 
   # Nest the `geometry` column
   nest(data = geometry)
 
-# Map data
-kde_layers <- assaults_by_shift %>% 
-  group_by(shift) %>% 
-  group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
-  ungroup() %>% 
-  st_as_sf() %>% 
-  st_transform(4326)
-base_map <- kde_layers %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>%
-  get_stamenmap(zoom = 13, maptype = "toner-lite")
 
+## KDE layers ----
+
+# KDE layers for assaults by shift small multiples
+kde_by_shift <- assaults_by_shift |> 
+  group_by(shift) |> 
+  group_modify(~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75)) |> 
+  ungroup() |> 
+  st_as_sf() |> 
+  st_intersection(cpd_central)
+
+# KDE layers for assaults by hour animation
 if (file.exists("www/chicago_hourly_kde.rds")) {
   
   hour_layers <- read_rds("www/chicago_hourly_kde.rds")
   
 } else {
   
-  assaults_by_hour <- assaults %>% 
-    filter(district %in% c(1, 18)) %>% 
+  assaults_by_hour <- assaults |> 
+    filter(district %in% c(1, 12, 18)) |> 
     mutate(
       # Create nicely formatted labels for each hour
       hour_name = str_pad(hour(date), width = 2, pad = "0"),
       hour_name = str_glue("{hour_name}:00 to {hour_name}:59")
-    ) %>% 
-    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+    ) |> 
+    st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326")  |>  
     # Convert the data to a suitable co-ordinate system for Chicago
-    st_transform(26916)
+    st_transform("EPSG:26916")
   
-  hour_layers <- assaults_by_hour %>% 
-    group_by(hour_name) %>% 
-    group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
-    ungroup() %>% 
-    st_as_sf() %>% 
-    st_transform(4326)
+  hour_layers <- assaults_by_hour |> 
+    group_by(hour_name) |> 
+    group_modify(~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75)) |> 
+    ungroup() |> 
+    st_as_sf() |> 
+    # Clip the result to the boundary of Chicago, which is already stored in the 
+    # `cpd_districts` object
+    st_intersection(cpd_central)
   
+  # If run manually, this path will need to be prefixed with
+  # "inst/tutorials/16_mapping_time/"
   write_rds(hour_layers, "www/chicago_hourly_kde.rds")
   
 }
 
-hour_highest <- hour_layers %>% 
-  group_by(hour_name) %>%
+# KDE cells with highest density by hour
+hour_highest <- hour_layers |> 
+  group_by(hour_name) |> 
   slice_max(order_by = kde, n = 10)
-clipped_base_map <- hour_highest %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>%
-  get_stamenmap(zoom = 14, maptype = "toner-lite")
 ```
 
 
@@ -165,7 +186,9 @@ happen or completely useless if the officers were deployed at the wrong day or
 the wrong time.
 
 In this tutorial we will learn how to incorporate variation over time into our
-analysis of where crime happens.
+analysis of where crime happens, including making animated maps like this one:
+
+<p class="centered-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/16_mapping_time/images/chicago_downtown_agg_assaults.gif" alt="Animated map showing how the density of aggravated assaults in Chicago varies throughout the hours of the day."></p>
 
 
 
@@ -176,12 +199,13 @@ analysis of where crime happens.
 At a very basic level, computers can store data in two days: they can store 
 numbers and they can store text. This makes storing dates slightly complicated, 
 because dates aren't completely like numbers and they aren't completely like 
-text either. Dates aren't like numbers because you can't do normal maths with dates (e.g. what date is the 29th of 
-January plus one month?) and aren't like text because you can do some maths with 
-them (e.g. it is easy to calculate three days from today). Dates are especially 
-complicated because they can be written as text in so many different ways. For 
-example 17 January can be represented in all of these ways, all of them equally
-valid (although some are specific to particular countries):
+text either. Dates aren't like numbers because you can't do normal maths with 
+dates (e.g. what date is the 29th of January plus one month?) and aren't like 
+text because you can do some maths with them (e.g. it is easy to calculate three 
+days from today). Dates are especially complicated because they can be written 
+as text in so many different ways. For example 17 January can be represented in 
+all of these ways, all of them equally valid (although some are specific to 
+particular countries):
 
   * 17/01/`r format(Sys.Date(), "%Y")`
   * 17.01.`r format(Sys.Date(), "%y")`
@@ -195,12 +219,12 @@ valid (although some are specific to particular countries):
 <a href="https://lubridate.tidyverse.org/" title="lubridate website"><img src="images/lubridate.png" class="right-side-image"></a>
 
 R deals with this problem by _storing_ dates internally as if they were numbers 
-and _displaying_ them (e.g. in the console or in an Rmarkdown document) as if
-they were text, by default in the format ``r Sys.Date()``. Fortunately, we don't 
-have to worry about how dates and times are stored internally in R because we 
-can use the [`lubridate` package](https://lubridate.tidyverse.org/) to work with 
-them. `lubridate` contains functions for working with dates, including 
-extracting parts of a date with functions such as `month()` and converting text 
+and _displaying_ them (e.g. in the console or in a Quarto document) as if they 
+were text, by default in the format ``r Sys.Date()``. Fortunately, we don't have 
+to worry about how dates and times are stored internally in R because we can use 
+the [`lubridate` package](https://lubridate.tidyverse.org/) to work with them. 
+`lubridate` contains functions for working with dates, including extracting 
+parts of a date with functions such as `month()` and converting text 
 to date values with functions like `ymd()`.
 
 Because of the special nature of dates, if we want to work with a date variable
@@ -230,10 +254,10 @@ example, if we have a dataset of crimes called `thefts`:
 ```{r dates-exercise1, exercise=TRUE}
 library(lubridate)
 
-thefts %>% 
+thefts |>  
   mutate(
     date = make_date(year = year, month = month_of_year, day = day_of_month)
-  ) %>% 
+  ) |>  
   select(day_of_month, month_of_year, year, date)
 ```
 
@@ -266,12 +290,13 @@ dmy("Sat 17 January 1981") == mdy("01/17/81")
 When analysing dates and times, it is often useful to be able to extract 
 date or time portions. We can do this with the `lubridate` functions `year()`, 
 `month()`, `wday()` (for day of the week), `mday()` (for day of the month), 
-`yday()` (for day of the year), `hour()`, `minute()` and `second()`, each of 
-which extracts the relevant portion of a date or time as a number. The `month()` 
-and `wday()` functions are slightly different, because they can also return the 
-day or month name as text by specifying the argument `label = TRUE`. We can see
-this by extracting the different portions of the current date and time, which we 
-can retrieve with the `now()` function from `lubridate`.
+`yday()` (for day of the year, counting from 1 January), `hour()`, `minute()` 
+and `second()`, each of which extracts the relevant portion of a date or time as 
+a number. The `month()` and `wday()` functions are slightly different, because 
+they can also return the day or month name as text by specifying the argument 
+`label = TRUE`. We can see this by extracting the different portions of the 
+current date and time, which we can retrieve with the `now()` function from 
+`lubridate`.
 
 ```{r dates-exercise3, exercise=TRUE}
 message("Current year: ", year(now()))
@@ -296,7 +321,7 @@ can then add to or subtract from an existing date. These functions are
 `seconds()`. 
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 In the `lubridate` package, functions that are used to _extract_ parts of a date
 are _singular_, e.g. `day()`, `month()`, `year()`. Functions that are used to
@@ -306,7 +331,8 @@ _manipulate_ dates by adding or subtracting from them are _plural_, e.g.
 current date but the code `now() + months(1)` to find out what the date and time
 will be one month from now.
 
-</div>
+:::
+
 
 To subtract 28 days from today's date (which we can retrieve with the `today()` 
 function), we would use `today() - days(28)`.
@@ -340,9 +366,13 @@ end_date_formatted <- str_squish(format(end_date, "%e %B %Y"))
 If we wanted to extract crimes that occurred between two dates, we can use the
 `between()` function from `dplyr`, which returns either `TRUE` or `FALSE` 
 depending on whether each item in the first argument is between the values given
-in the second and third arguments (inclusive). For example, complete the 
-following code by replacing the text `[start]` and `[end]` with `ymd()` 
-functions to extract only crimes occurring between 
+in the second and third arguments (inclusive).
+
+
+::: {.tutorial}
+
+For example, complete the following code by replacing the text `[start]` and 
+`[end]` with `ymd()` functions to extract only crimes occurring between 
 `r start_date_formatted` and `r end_date_formatted` inclusive.
 
 ```{r dates-exercise6, exercise=TRUE}
@@ -355,8 +385,11 @@ filter(crimes, between(occur_date, [start], [end]))
 filter(crimes, between(occur_date, ymd(""), ymd("")))
 ```
 
+:::
+
+
 When filtering based on dates or times, it is important to understand that R can
-store dates in two ways: as a *date* variable or as a *date-time* object (shown 
+store dates in two ways: as a *date* object or as a *date-time* object (shown 
 as `<dttm>` when we print a tibble). Date variables store only a date with no 
 time, while date-time variables always include a time component, even if the 
 data doesn't contain any information about time. If we store a variable that 
@@ -417,8 +450,8 @@ illustrate this process, we will use an object called `assaults` that contains
 records of aggravated assaults in Chicago from 2010 to 2019.
 
 ```{r}
-assaults %>% 
-  head() %>% 
+assaults |> 
+  head() |>  
   gt::gt()
 ```
 
@@ -430,7 +463,7 @@ weeks are the same length and because many human activities have a weekly cycle
 which days count as weekdays differs across cultures). 
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 Months are much less useful than weeks as a temporal unit of analysis because 
 months differ in length, so monthly counts of crime will look like they show
@@ -451,7 +484,7 @@ crimes are typically concentrated on particular days of the week (more on that
 later). **Avoid using monthly counts of crime** unless you have no choice 
 because the only data you have available is monthly counts.
 
-</div>
+:::
 
 
 To count the number of crimes occurring each week we can use the `count()`
@@ -465,7 +498,7 @@ rounded down to the date of the previous Sunday.
 
 `floor_date()` works on date variables, so if we want to use it on a date-time
 variable we should first convert it to a date variable using the `as_date()`
-function from `lubridate`. So to convert a date stored in a variable called
+function from `lubridate`. So to convert a date-time stored in a variable called
 `date` into the date of the first day of that week, we would use the code
 `floor_date(as_date(date), unit = "week")`.
 
@@ -480,11 +513,12 @@ counting the crimes by week we will remove the first and last row of the data
 using the `slice()` function from the `dplyr` package.
 
 ```{r change-exercise1, exercise=TRUE}
-assault_weekly_counts <- assaults %>% 
-  mutate(week_date = floor_date(as_date(date), unit = "week")) %>%
-  count(week_date, name = "count") %>%
+assault_weekly_counts <- assaults |> 
+  mutate(week_date = floor_date(as_date(date), unit = "week")) |> 
+  count(week_date, name = "count") |> 
   # The code `(n() - 1)` gives us the row number of the second-to-last row in 
-  # the data because `n()` returns the number of rows in the data
+  # the data because `n()` returns the number of rows in the data. Note the
+  # parentheses!
   slice(2:(n() - 1))
 
 head(assault_weekly_counts)
@@ -548,8 +582,8 @@ much short-term variation there is in the data.
 ```{r change-exercise3, exercise=TRUE, exercise.lines=27}
 library(slider)
 
-assault_weekly_counts %>% 
-  mutate(moving_avg = slide_dbl(count, mean, .before = 3, .complete = TRUE)) %>% 
+assault_weekly_counts |> 
+  mutate(moving_avg = slide_dbl(count, mean, .before = 3, .complete = TRUE)) |> 
   ggplot() +
   geom_point(aes(x = week_date, y = count), colour = "grey75", size = 0.75) +
   geom_line(
@@ -648,11 +682,11 @@ specify that we want our chart to have a separate line for each year by setting
 on the chart, making each year a different colour using `colour = year`.
 
 ```{r change-exercise4, exercise=TRUE, exercise.lines=20}
-assault_weekly_counts %>% 
+assault_weekly_counts |> 
   mutate(
     moving_avg = slide_dbl(count, mean, .before = 3, .complete = TRUE),
     year = year(week_date)
-  ) %>% 
+  ) |> 
   ggplot(aes(x = week_date, y = moving_avg, colour = year, group = year)) +
   geom_line(na.rm = TRUE, key_glyph = "timeseries") +
   scale_x_date(date_breaks = "1 year", date_labels = "%b\n%Y") +
@@ -687,7 +721,7 @@ date-formatting code `%e\n%b` -- `%e` means the day of the month and `%b` means
 the abbreviated name of the month.
 
 ```{r change-exercise5, exercise=TRUE, exercise.lines=24}
-assault_weekly_counts %>% 
+assault_weekly_counts |> 
   mutate(
     moving_avg = slide_dbl(count, mean, .before = 3, .complete = TRUE),
     year = year(week_date),
@@ -695,7 +729,7 @@ assault_weekly_counts %>%
     # will create a date in 1970 (the year that R uses by default), but that 
     # doesn't matter because we are not going to show the year on the chart
     pseudo_date = make_date(month = month(week_date), day = mday(week_date))
-  ) %>% 
+  ) |> 
   ggplot(aes(x = pseudo_date, y = moving_avg, colour = year, group = year)) +
   geom_line(na.rm = TRUE, key_glyph = "timeseries") +
   scale_x_date(date_breaks = "1 month", date_labels = "%e\n%b") +
@@ -737,9 +771,9 @@ To do this, we:
 We can do this in a single piece of code.     
 
 ```{r change-exercise6, exercise=TRUE, exercise.lines=23}
-assault_hourly_counts <- assaults %>% 
-  mutate(wday = wday(date, label = TRUE), hour = hour(date)) %>%
-  count(wday, hour, name = "count") %>% 
+assault_hourly_counts <- assaults |> 
+  mutate(wday = wday(date, label = TRUE), hour = hour(date)) |> 
+  count(wday, hour, name = "count") |> 
   # By only setting the `hour` argument to `make_datetime()` we will create a
   # date-time on 1 January 1970, but that doesn't matter because we will not 
   # show the date on the chart
@@ -776,18 +810,13 @@ the colours in the legend. When you find that there are too many colours on a
 chart, this is a good sign that you should consider using small-multiple charts
 instead. Fortunately, we can do this by adding a column to the data specifying
 whether each day is a weekday or on a weekend, then adding `facet_grid()` to our
-`ggplot()` stack. At the same time, we'll change `geom_line()` to `geom_area()`,
-which shows the magnitude of the values more effectively. We should also specify 
-`position = position_identity()` to stop `geom_area()` from stacking the area
-corresponding to each day on top of the previous day, which is the default.
+`ggplot()` stack. 
 
 ```{r change-exercise7, exercise=TRUE, exercise.lines=19, fig.asp=1}
-assault_hourly_counts %>% 
-  mutate(weekend = ifelse(wday %in% c("Sat", "Sun"), "Sat–Sun", "Mon–Fri")) %>% 
-  ggplot(
-  aes(x = pseudo_date, y = count, fill = wday)
-) +
-  geom_area(position = position_identity(), alpha = 0.5) +
+assault_hourly_counts |> 
+  mutate(weekend = ifelse(wday %in% c("Sat", "Sun"), "Sat–Sun", "Mon–Fri")) |> 
+  ggplot(aes(x = pseudo_date, y = count, colour = wday)) +
+  geom_line(linewidth = 1) +
   # Assign the facets to rows so that we can compare the same time on different
   # days more easily (change `rows` to `cols` to see the alternative)
   facet_grid(rows = vars(weekend)) +
@@ -836,7 +865,8 @@ standard definition of a day. As we saw in the previous section, the peaks of
 many types of crime like assaults cross over the boundaries between days because
 the peak frequency is late in the evening. For this reason it may be better to, 
 for example, define a day as a period from 05:00 to 04:59 and count the number 
-of crimes within each day according to that definition.
+of crimes within each day according to that definition. This takes advantage of
+the fact that very few crimes concentrate in the early hours of the morning.
 
 Sometimes, it will be easy to choose periods because they will be dictated by
 the purpose for which you're creating the map. In this section we will create
@@ -859,18 +889,20 @@ that row (the label is separated from the test by a tilde character `~`).
 more-complicated things than just whether a variable has a particular value. 
 
 ```{r map-exercise1, exercise=TRUE}
-assaults_by_shift <- assaults %>% 
-  filter(district %in% c(1, 18)) %>% 
-  mutate(shift = case_when(
-    between(hour(date), 6, 13) ~ "06:00 to 13:59",
-    between(hour(date), 14, 21) ~ "14:00 to 21:59",
-    hour(date) >= 22 | hour(date) < 6 ~ "22:00 to 05:59",
-    TRUE ~ NA_character_
-  )) %>% 
+assaults_by_shift <- assaults |> 
+  filter(district %in% c(1, 12, 18)) |> 
+  mutate(
+    shift = case_when(
+      between(hour(date), 6, 13) ~ "06:00 to 13:59",
+      between(hour(date), 14, 21) ~ "14:00 to 21:59",
+      hour(date) >= 22 | hour(date) < 6 ~ "22:00 to 05:59",
+      TRUE ~ NA_character_
+    )
+  )|> 
   # Convert the data to an SF object
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
   # Transform it to a co-ordinate reference system based on metres
-  st_transform(26916)
+  st_transform("EPSG:26916")
 
 head(assaults_by_shift)
 ```
@@ -942,8 +974,8 @@ two things:
 So this code:
 
 ```r
-some_data %>% 
-  group_by(some_variable) %>% 
+some_data |> 
+  group_by(some_variable) |> 
   group_modify(~ hotspot_kde(.x))
 ```
 
@@ -958,14 +990,16 @@ reference system from the `geometry` column of the data automatically.
 ```{r map-exercise2, exercise=TRUE}
 library(sfhotspot)
 
-kde_layers <- assaults_by_shift %>% 
-  group_by(shift) %>% 
-  group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
-  ungroup() %>% 
-  st_as_sf() %>% 
-  st_transform(4326)
+kde_by_shift <- assaults_by_shift |> 
+  group_by(shift) |> 
+  group_modify(~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75)) |> 
+  ungroup() |> 
+  st_as_sf() |> 
+  # Clip the result to the boundary of Chicago, which is already stored in the 
+  # `cpd_central` object
+  st_intersection(cpd_central)
 
-head(kde_layers)
+head(kde_by_shift)
 ```
 
 
@@ -1047,29 +1081,28 @@ you are interested, you might want to [work through this lesson on Creating Func
 $("#map-box2-title").click(function () { $("#section-map-box2").toggle("slow") })
 </script>
 
-Now we have a KDE layer for each shift, we can download a base map as in 
-previous tutorials and then create three maps for the three shifts by adding 
-`facet_wrap()` to a `ggplot()` stack.
+Now we have a KDE layer for each shift, we can create three maps for the three 
+shifts by adding `facet_wrap()` to a `ggplot()` stack.
 
 ```{r map-exercise3, exercise=TRUE, exercise.lines=30, message=FALSE}
-library(ggmap)
+library(ggspatial)
 
-base_map <- kde_layers %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>%
-  get_stamenmap(zoom = 13, maptype = "toner-lite")
-
-ggmap(base_map) +
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(
     aes(fill = kde), 
-    data = kde_layers, 
-    inherit.aes = FALSE, 
+    data = kde_by_shift, 
     alpha = 0.75, 
     colour = NA
   ) +
+  geom_sf(
+    data = filter(cpd_districts, district_no %in% c(1, 12, 18)), 
+    colour = "grey33", 
+    fill = NA
+  ) +
   facet_wrap(vars(shift)) +
   scale_fill_distiller(
-    breaks = range(pull(kde_layers, kde)),
+    breaks = range(pull(kde_by_shift, kde)),
     labels = c("lower", "higher"),
     direction = 1
   ) +
@@ -1094,18 +1127,23 @@ highest values _separately for each shift_ rather than those with the highest
 values across all three shifts combined.
 
 ```{r map-exercise4, exercise=TRUE}
-kde_highest <- kde_layers %>% 
-  group_by(shift) %>% 
+kde_shift_highest <- kde_by_shift |> 
+  group_by(shift) |> 
   slice_max(order_by = kde, n = 10)
 
-ggmap(base_map) +
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(
     aes(fill = kde), 
-    data = kde_highest, 
-    inherit.aes = FALSE, 
+    data = kde_shift_highest, 
     alpha = 0.75, 
     colour = NA,
     fill = "red2"
+  ) +
+  geom_sf(
+    data = filter(cpd_districts, district_no %in% c(1, 12, 18)), 
+    colour = "grey33", 
+    fill = NA
   ) +
   facet_wrap(vars(shift)) +
   theme_void()
@@ -1148,85 +1186,89 @@ of the day needs 24 KDE layers, in this case it is particularly useful to use
 `group_modify()` to avoid having to create 24 different objects and then binding 
 them together.
 
-```{r animated-exercise1, exercise=TRUE, exercise.lines=27}
+```{r animated-exercise1, exercise=TRUE, exercise.lines=25}
 library(gganimate)
 
-assaults_by_hour <- assaults %>% 
-  filter(district %in% c(1, 18)) %>% 
+assaults_by_hour <- assaults |> 
+  filter(district %in% c(1, 12, 18)) |> 
   mutate(
     # Create nicely formatted labels for each hour
     hour_name = str_pad(hour(date), width = 2, pad = "0"),
     hour_name = str_glue("{hour_name}:00 to {hour_name}:59")
-  ) %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  ) |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
   # Convert the data to a suitable co-ordinate system for Chicago
-  st_transform(26916)
+  st_transform("EPSG:26916")
 
-hour_layers <- assaults_by_hour %>% 
-  group_by(hour_name) %>% 
-  group_modify(~ hotspot_kde(.x, cell_size = 250, bandwidth = 1000)) %>% 
-  ungroup() %>% 
-  st_as_sf() %>% 
-  st_transform(4326)
+hour_layers <- assaults_by_hour |> 
+  group_by(hour_name) |> 
+  group_modify(
+    ~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75, quiet = TRUE)
+  ) |> 
+  ungroup() |> 
+  st_as_sf() |> 
+  st_intersection(cpd_central)
 
 # Extract only the 10 cells with the highest density in each hour
-hour_highest <- hour_layers %>% 
-  group_by(hour_name) %>%
+hour_highest <- hour_layers |> 
+  group_by(hour_name) |> 
   slice_max(order_by = kde, n = 10)
 ```
 
 
-<div class="box notewell">
+::: {.box .notewell .tutorial}
 
 It is possible that this code will time out and give an error saying 
 `Your code ran longer than the permitted timelimit for this exercise.` -- if 
 that happens then just continue with the rest of the tutorial as normal.
 
-</div>
+:::
+
+
+::: {.box .notewell .book}
+
+This code is likely to take a while to run, because it calculates KDE values
+separately for every grid cell for each of 24 hours.
+
+:::
 
 
 We can now use the `hour_highest` object as the basis for a new base map that
 only includes the areas of the highest density (so they appear larger on the
 animated map).
 
-```{r animated-exercise2, exercise=TRUE}
-clipped_base_map <- hour_highest %>% 
-  st_bbox() %>% 
-  set_names(c("left", "bottom", "right", "top")) %>%
-  get_stamenmap(zoom = 14, maptype = "toner-lite")
-```
-
 To create an animated map we use the `transition_states()` function from the
 `gganimate` package. `transition_states()` works in a similar way to 
-`facet_wrap()`, in that when added to a `ggplot()` or `ggmap()` stack it splits
-the chart or map up into a separate map for each value of one of the variables
-in the data (in this case, the hour of the day). The only difference is that
-while `facet_wrap()` arranges those separate maps next to one another,
+`facet_wrap()`, in that when added to a `ggplot()` stack it splits the chart or 
+map up into a separate map for each value of one of the variables in the data 
+(in this case, the hour of the day). The only difference is that while 
+`facet_wrap()` arranges those separate maps next to one another, 
 `transition_states()` arranges them into an animation.
 
-```{r animated-exercise3, exercise=TRUE, exercise.lines=16}
-ggmap(clipped_base_map) +
+```{r animated-exercise3, exercise=TRUE, exercise.lines=18, fig.asp=1}
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(
     aes(fill = kde),
     data = hour_highest, 
-    inherit.aes = FALSE, 
     alpha = 0.75, 
     colour = NA,
     fill = "red2"
   ) +
+  geom_sf(data = cpd_central, colour = "grey33", fill = NA) +
   transition_states(states = hour_name) +
   labs(
     title = "Aggravated assaults in downtown Chicago, 2010-2019",
-    subtitle = "Areas with highest density of aggravated assaults:\n{closest_state}",
+    subtitle = "Areas with most aggravated assaults:\n{closest_state}",
     caption = "Data from Chicago Police"
   ) +
   theme_void()
 ```
 
 
-<div class="box extra-detail">
+<div class="box extra-detail tutorial">
 
-<h5 id="animated-box1-title" class="box-title">I got an error saying `Your code ran longer than the permitted timelimit for this exercise`</h5>
+<h5 id="animated-box1-title" class="box-title">I got an error starting `Your code ran longer than`</h5>
 
 <div id="animated-box1" class="box-content">
 
@@ -1234,7 +1276,7 @@ This code may take longer to run than is allowed for code inside an interactive
 tutorial. In which case, you may see the error 
 `Your code ran longer than the permitted timelimit for this exercise`. If that 
 happens, you can
-[download the Chicago assaults data](https://github.com/mpjashby/crimemapping/raw/main/inst/extdata/chicago_aggravated_assaults.csv.gz) 
+[download the Chicago assaults data](https://mpjashby.github.io/crimemappingdata/chicago_aggravated_assaults.csv.gz) 
 and create an animated map in an R script of your own using the code in the 
 chunks above. For reference, this code should produce a map looking like this:
 
@@ -1263,15 +1305,11 @@ different if we had chosen a different number. To show the density of crime in
 all of downtown Chicago, we can combine the base map and KDE layers we 
 have already created to produce another animated map.
 
-```{r animated-exercise4, exercise=TRUE, exercise.lines=22}
-ggmap(base_map) +
-  geom_sf(
-    aes(fill = kde), 
-    data = hour_layers, 
-    inherit.aes = FALSE, 
-    alpha = 0.75, 
-    colour = NA
-  ) +
+```{r animated-exercise4, exercise=TRUE, exercise.lines=18, fig.asp=1}
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  geom_sf(aes(fill = kde), data = hour_layers, alpha = 0.75, colour = NA) +
+  geom_sf(data = cpd_central, colour = "grey33", fill = NA) +
   transition_states(states = hour_name) +
   scale_fill_distiller(
     breaks = range(pull(hour_layers, kde)),
@@ -1287,13 +1325,19 @@ ggmap(base_map) +
   theme_void()
 ```
 
+
+::: {.tutorial}
+
 This code typically takes a minute or so to finish running because it has to
 generate 24 maps and then stitch them together. It is unlikely that the code
 will finish running before the maximum time that a chunk of code in an R 
 tutorial is allowed to run for before automatically stopping. If you were to
 run this code in RStudio, the map it would produce would look like this:
 
-<p class="centered-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/16_mapping_time/images/chicago_animated_kde.gif" alt="Animated map showing how the density of aggravated assaults in Chicago varies throughout the hours of the day."></p>
+<p class="centered-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/16_mapping_time/images/chicago_downtown_agg_assaults.gif" alt="Animated map showing how the density of aggravated assaults in Chicago varies throughout the hours of the day."></p>
+
+:::
+
 
 We can save an animated map to a file using the `animate()` and `anim_save()` 
 functions. `animate()` controls the type of file the animation will be saved in
@@ -1318,7 +1362,7 @@ anim_save(
 
 ## In summary
 
-<div class="box welldone">
+::: {.box .welldone}
 
 In this tutorial we have learned how to incorporate change over time into our 
 analysis of where crime happens. This is important because the distribution of
@@ -1328,8 +1372,90 @@ small-multiple or animated maps for different time periods, which we could use
 to make sure that scarce crime-prevention resources are used at the right time
 as well as in the right place.
 
-</div>
+:::
 
+
+This is the complete code we need to create an animated map of aggravated 
+assaults in Chicago. Think about how you could change it, or what extra
+information you could add, to make this map as useful as possible to different
+groups of practitioners and policy makers.
+
+```{r complete-map, exercise=TRUE, exercise.lines=72}
+# Load packages
+library(gganimate)
+library(ggspatial)
+library(lubridate)
+library(sf)
+library(sfhotspot)
+library(tidyverse)
+
+
+# Load data --------------------------------------------------------------------
+
+# Aggravated assaults, Chicago, 2010 to 2019
+assaults <- read_csv("https://mpjashby.github.io/crimemappingdata/chicago_aggravated_assaults.csv.gz")
+
+# Chicago Police districts 1, 12 and 18
+cpd_central <- read_sf("https://mpjashby.github.io/crimemappingdata/chicago_police_districts.kml") |> 
+  st_transform("EPSG:26916") |> 
+  mutate(district_no = as.numeric(Name)) |> 
+  filter(district_no %in% c(1, 12, 18))
+
+
+# Wrangle data -----------------------------------------------------------------
+
+# Calculate number of assaults each hour
+hour_layers <- assaults |> 
+  filter(district %in% c(1, 12, 18)) |> 
+  mutate(
+    hour_name = str_pad(hour(date), width = 2, pad = "0"),
+    hour_name = str_glue("{hour_name}:00 to {hour_name}:59")
+  ) |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
+  st_transform("EPSG:26916") |> 
+  group_by(hour_name) |> 
+  group_modify(
+    ~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75, quiet = TRUE)
+  ) |> 
+  ungroup() |> 
+  st_as_sf() |> 
+  st_intersection(cpd_central)
+
+
+# Create map ---------------------------------------------------------------------
+chicago_downtown_kde_map <- ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  geom_sf(aes(fill = kde), data = hour_layers, alpha = 0.75, colour = NA) +
+  geom_sf(data = cpd_central, colour = "grey33", fill = NA) +
+  transition_states(states = hour_name) +
+  scale_fill_distiller(
+    breaks = range(pull(hour_layers, kde)),
+    labels = c("lower", "higher"),
+    direction = 1
+  ) +
+  labs(
+    title = "Aggravated assaults in downtown Chicago, 2010-2019",
+    subtitle = "Density of aggravated assaults: {closest_state}",
+    caption = "Data from Chicago Police",
+    fill = "density of\naggravated\nassaults"
+  ) +
+  theme_void()
+
+
+# Save map ---------------------------------------------------------------------
+anim_save(
+  filename = "chicago_downtown_agg_assaults.gif", 
+  animation = animate(
+    plot = chicago_downtown_kde_map,
+    height = 800, 
+    width = 800, 
+    units = "px"
+  )
+)
+```
+
+
+::: {.reading}
 
 You can learn more about:
 
@@ -1338,3 +1464,4 @@ You can learn more about:
   * animating different types of map and chart in different ways in
     [Getting Started with `gganimate`](https://gganimate.com/articles/gganimate.html).
 
+:::
