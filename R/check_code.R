@@ -119,8 +119,8 @@ check_code <- function(
       cli::cli_h2("No errors were found in your code")
       cli::cli_text(
         "There may still be issues in your code that could not be detected by ",
-        "this check. Click the link below and look for any unexpected output.",
-        "Make sure you may any changes in your original code file."
+        "this check. Click the link below and look for any unexpected output. ",
+        "Make sure you make any changes in your original code file."
       )
 
     }
