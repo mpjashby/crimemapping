@@ -10,14 +10,11 @@ assignees: mpjashby
 - [ ] Add walk-through videos
 - [ ] Add questions
 - [ ] Add further reading
-- [ ] Add concluding message with thumbs up emoji
 - [ ] Make sure tutorial (or section) starts with the final map that we'll create
 - [ ] Make sure tutorial finishes with a complete script
-- [ ] Check that comments have initial caps
-- [ ] Check only native pipe (`|>`) is used -- `Ctrl+F` for the magrittr pipe `%>%`
 - [ ] Reduce image sizes using `harmonise_image_sizes()`
 - [ ] Spell check
-- [ ] Add `css: ["css/tutorial_style.css", "css/2023.css"]`
+- [ ] Add `css: ["css/tutorial_style.css", "css/2024.css"]`
 - [ ] Check tutorial is not included in `.Rbuildignore`
 - [ ] Increment package version number
 - [ ] Add description of update to `NEWS.md`
