@@ -349,35 +349,36 @@ now run without a problem.
 
 
 Sometimes it will not be as clear as this where to start in looking for the
-problem. For example, if you run this code:
+problem. In particular, some errors can be _caused_ by a problem on one line of
+code, but only actually have a negative _effect_ on a subsequent line of code. 
+For example, if you run this code:
 
 ```{r finding-exercise2, exercise=TRUE}
 frauds |> 
   select(offense_code, longitude, latitude) |> 
-  filter(offense_code == "26G") |> 
+  filter(offense_code == "26E") |> 
   arrange(date)
 ```
 
 The error message produced suggests the problem is with the `arrange()` 
 function, but everything is correct with that function since `arrange()` is a
-correct function name and `date` is a column in the tibble named `frauds`. So
-the problem must lie elsewhere. In cases like this, it can be helpful to comment
-out all the lines of code except the first one and then uncomment one line at a
-time until you find the one that causes the problem. 
+correct function name and we already know that `date` is a column in the tibble 
+named `frauds`. So the problem must lie elsewhere. In cases like this, it can be 
+helpful to comment out all the lines of code except the first one and then 
+uncomment one line at a time until you find the one that causes the problem. 
 
 
 ::: {.tutorial}
 
-With the following code,
-uncomment one line at a time starting on line 2, re-run the code and then 
-uncomment another line. After you run the code each time, look at the output
-produced until an error occurs or you find that the output is not what you 
-expected.
+With the following code, uncomment one line at a time starting on line 2, re-run 
+the code and then uncomment another line. After you run the code each time, look 
+at the output produced until an error occurs or you find that the output is not 
+what you expected.
 
 ```{r finding-exercise3, exercise=TRUE, exercise.lines=5}
 frauds |> 
 #  select(offense_code, longitude, latitude) |> 
-#  filter(offense_code == "26G") |> 
+#  filter(offense_code == "26E") |> 
 #  arrange(date)
 ```
 
@@ -409,12 +410,9 @@ $("#finding-box1-title").click(function () { $("#section-finding-box1").toggle("
 
 
 If you uncommented all but the last line and run the code, you would see that 
-the line `filter(offense_code == "26G")` results in zero rows of data -- all the 
-rows have been removed by the `filter()` function. This is because `26G` is not 
-a valid offence code in this dataset. This means that no rows are kept in the 
-dataset by `filter()` because there are no rows for which 
-`offense_code == "26G"`. In turn, this means there are no rows for 
-`arrange()` to sort, so running `arrange(date)` produces an error.
+the line `select(offense_code, longitude, latitude)` removes the column `date`
+from the dataset, so it's not possible to use `date` as an argument to the 
+`arrange()` function later on.
 
 Uncommenting one line at a time until you find an error or output that is not 
 what you expected is a useful way to isolate problems, but it will not always
