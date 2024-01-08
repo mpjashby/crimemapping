@@ -4,7 +4,7 @@ description: "Get started with crime mapping by learning about why putting crime
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -23,13 +23,31 @@ walk(
 
 
 
-## Welcome to this course
+## Welcome
+
+
+::: {.tutorial}
 
 Welcome to this course on crime mapping! This course uses interactive tutorials like this one to help you learn about using maps and spatial analysis techniques to understand crime. Watch this video to learn more about the course.
 
-![](https://youtu.be/7JKWUamnBaE)
+:::
+
+
+::: {.book}
+
+Welcome to _Learn Crime Mapping with R_. This book will help you learn about using maps and spatial analysis techniques to understand crime. Watch this video to learn more.
+
+:::
+
+
+![](https://youtu.be/zT78IBRsIBk)
+
+
+::: {.tutorial}
 
 Now click `Next Topic` below to start this tutorial.
+
+:::
 
 
 
@@ -37,10 +55,12 @@ Now click `Next Topic` below to start this tutorial.
 
 This course is about how we can use maps and other spatial analysis tools to help understand, prevent and respond to crime. Watch this video to understand why spatial analysis is a useful tool for understanding crime.
 
-![](https://youtu.be/qoC46-oQtv8)
+![](https://youtu.be/-FQwFQ8e-O0)
 
 
 ```{r why-maps-quiz}
+#| echo: false
+
 quiz(
   caption = "",
   question("Which *one* of these statements is true?",
@@ -57,7 +77,7 @@ quiz(
 ```
 
 
-<div class="box reading">
+::: {.box .reading}
 
 Weisburd, D. (2015). [The law of crime concentration and the criminology of place](https://doi.org/10.1111/1745-9125.12070). *Criminology*, 53(2), 133-157.
 
@@ -65,7 +85,7 @@ Johnson, S. (2010). [A brief history of the analysis of crime concentration](htt
 
 Farrell, G. (2015). [Crime concentration theory](https://doi.org/10.1057/cpcs.2015.17). *Crime Prevention and Community Safety*, 17(4), 233-248.
 
-</div>
+:::
 
 
 
@@ -73,14 +93,16 @@ Farrell, G. (2015). [Crime concentration theory](https://doi.org/10.1057/cpcs.20
 
 Why is crime concentrated in space? Watch this video to find out more about how our environment influences opportunities for crime and how that causes clusters of different crimes.
 
-![](https://youtu.be/tKCpodQz8aU)
+![](https://youtu.be/SvfPGslMrcs)
 
 
 ```{r why-concentrated-quiz}
+#| echo: false
+
 quiz(
   caption = "",
   question(
-    "What are the three 'almost always' elements of an opportunity for a crime to occur that are outlined in the routine activities apporach?",
+    "What are the three elements of an opportunity for a crime to occur that are outlined in the routine activities apporach?",
     answer("offender, target, place", correct = TRUE),
     answer("means, motive, opportunity", message = "It looks like you've watched lots of police dramas, but maybe not the video here! Try watching the video again and think about the elements of the routine activities approach."),
     answer("offender, victim, place", message = "While many crimes have a victim, the routine activities apporach focuses on the interaction between the offender and the *target*. Sometimes (e.g. in an assault) the target will be the victim, but in others (e.g. a burglary) the target that the offender is interested in might be separte from the victim."),
@@ -93,13 +115,13 @@ quiz(
 ```
 
 
-<div class="box reading">
+::: {.box .reading}
 
 Santos, R. B. (2015). [Routine Activity Theory: A Cornerstone of Police Crime Analyst Work](https://ebookcentral.proquest.com/lib/ucl/reader.action?docID=1952969&ppg=130). In _The Criminal Act: _
 
 Cohen, L. E., and Felson, M. (1979). [Social Change and Crime Rate Trends: A Routine Activity Approach](https://doi.org/10.2307/2094589). *American Sociological Review*, 44(4), 588–608.
 
-</div>
+:::
 
 
 
@@ -107,7 +129,7 @@ Cohen, L. E., and Felson, M. (1979). [Social Change and Crime Rate Trends: A Rou
 
 We will use RStudio for almost all of this course. Watch this video to find your way around the different panels in the RStudio window.
 
-![](https://youtu.be/6bonySXb2_g)
+![](https://youtu.be/QhmPrfleCx4)
 
 
 ### Slightly adjusting how RStudio works
@@ -119,16 +141,16 @@ Before we start using RStudio, we should make a few changes to how it is set up 
 In the "Workspace" section of the right-hand panel, find an option that says "Restore .RData into workspace at startup" and make sure the check box to the left of that option is **not checked**. On the next line down, click the drop-down menu labelled "Save workspace to .RData on exit:" and choose the option **Never**. Click `Apply` and then `OK` to close the dialogue box.
 
 
-<div class="box reading">
+::: {.box .reading}
 
 The [RStudio IDE Cheat Sheet](https://github.com/rstudio/cheatsheets/blob/master/rstudio-ide.pdf) highlights some of the features available in RStudio and gives a list of available keyboard short-cuts.
 
 [Writing Code in RStudio](https://rstudio.com/resources/webinars/programming-part-1-writing-code-in-rstudio/) is a webinar that talks you through RStudio in more detail.
 
-</div>
+:::
 
 
-## Navigating these tutorials
+## Navigating these tutorials {.tutorial}
 
 The tutorials that make up this course include short chunks of R code that you 
 can run directly in this window. To run the code in each chunk, just click the 
@@ -148,14 +170,16 @@ message 'Hello, world!' printed below the box.
 message("Hello, world!")
 ```
 
-<div class="box notewell">
+
+::: {.box .notewell}
 
 Some of the tutorials include boxes like this one that contain information that
 it is particularly important for you to know to avoid common mistakes in writing
 code. Pay special attention to these points and remember to ask questions if
 anything isn't clear.
 
-</div>
+:::
+
 
 <div class="box extra-detail">
 
@@ -192,7 +216,3 @@ If you're not feeling too confident at this point in the course, don't worry –
 <p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/01_getting_started/images/r_rollercoaster.png" alt="Cartoon line chart showing how you become more confident in using R over time, then less confident and then more confident again."></p>
 
 <p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
-
-
-
-

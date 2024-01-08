@@ -3,8 +3,8 @@ title: "Crime Mapping: Wrangling data"
 description: "Learn the building blocks of data analysis: loading, filtering, manipulating and saving data for crime mapping."
 output: 
   learnr::tutorial:
-    progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    # progressive: true
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -64,12 +64,20 @@ in R because the name will always have parentheses after it.
 
 One basic R function is `sqrt()`, which calculates the square root of a number.
 The `sqrt()` function has only one argument: the number that we want to find the 
-square root of. Type `sqrt(2)` in the box below and click `Run Code` to 
-calculate the square root of 2.
+square root of. 
+
+
+::: {.tutorial}
+
+Type `sqrt(2)` in the box below and click `Run Code` to calculate the square 
+root of 2.
 
 ```{r exercise2, exercise=TRUE}
 
 ```
+
+:::
+
 
 ```{r exercise2-solution}
 sqrt(2)
@@ -84,6 +92,8 @@ the number `[1]` in square brackets).
 ### Packages
 
 ```{r count-cran-packages}
+#| echo: false
+
 package_count <- available.packages(repos = "https://cran.rstudio.com/") |> 
   nrow() |> 
   scales::comma(accuracy = 100)
@@ -158,6 +168,8 @@ rows. For example, crime data might have columns for the type of crime, date and
 address at which the crime occurred.
 
 ```{r tabular-data}
+#| echo: false
+
 tibble::tribble(
   ~type, ~date, ~address,
   "homicide", as_date(now(tzone = "UTC") - years(1) + days(10)), "274 Main St",
@@ -173,6 +185,8 @@ tibble::tribble(
 ### Loading CSV data
 
 ```{r read-load-robbery-data}
+#| echo: false
+
 san_fran_rob <- read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv")
 ```
 
@@ -209,7 +223,7 @@ be tedious, so in RStudio we can use the keyboard short cut `Option+-` (on Mac)
 or `Alt+-` (on Windows or Linux) to insert the complete operator.
 
 
-<div class="box notewell">
+::: {.box .notewell}
 
 When choosing object names, it is important to remember that if you assign a
 value (such as the number `1` or the result of the function `read_csv()`) to an 
@@ -228,7 +242,7 @@ an object, so once you have run the code `one_to_ten <- sqrt(2)` it is not
 possible to recover any previous value that was assigned to the object 
 `one_to_ten`.
 
-</div>
+:::
 
 
 Objects come in several different types, with tabular data typically being 
@@ -240,12 +254,20 @@ set 20 years ago. Tibbles behave just like data frames almost all of the time
 for a few occasions where they behave in a more-convenient way.
 
 We can use `read_csv()` to load data from `https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv` 
-and store it in an object called `san_fran_rob`. Use the code above to help you, 
-or click the `Solution` button to reveal the answer.
+and store it in an object called `san_fran_rob`. 
+
+
+::: {.tutorial}
+
+Use the code above to help you, or click the `Solution` button to reveal the 
+answer.
 
 ```{r read-exercise1, exercise=TRUE}
 
 ```
+
+:::
+
 
 ```{r read-exercise1-solution}
 san_fran_rob <- read_csv("https://mpjashby.github.io/crimemappingdata/san_francisco_robbery.csv")
@@ -293,12 +315,20 @@ $("#read-box1-title").click(function () { $("#section-read-box1").toggle("slow")
 
 
 To see the first few rows of data currently stored in an object, we can use the 
-`head()` function. Type the code needed to view the first few rows of the 
-`san_fran_rob` object and click the `Run Code` button.
+`head()` function. 
+
+
+::: {.tutorial}
+
+Type the code needed to view the first few rows of the `san_fran_rob` object and 
+click the `Run Code` button.
 
 ```{r read-exercise2, exercise=TRUE, exercise.setup="read-load-robbery-data"}
 
 ```
+
+:::
+
 
 ```{r read-exercise2-solution}
 head(san_fran_rob)
@@ -320,7 +350,7 @@ load files from a URL, instead only loading files that are present on your
 computer. To get round this, we will first download an Excel file and store it 
 in a temporary directory (to avoid cluttering up our computers).
 
-<div class="box notewell">
+::: {.box .notewell}
 
 **Using `download.file()` on Windows**
 
@@ -344,7 +374,8 @@ download.file(
 If you are using a Mac or a Linux computer then you do not need to worry about
 this.
 
-</div>
+:::
+
 
 ```{r read-exercise3, exercise=TRUE, exercise.lines=12}
 # Specify the name of and location of our temporary file: it does not matter
@@ -369,6 +400,8 @@ into a tibble. We can use the `excel_sheets()` function to get a list of sheets
 in an Excel file:
 
 ```{r read-exercise4-setup}
+#| echo: false
+
 # Load the readxl package
 library(readxl)
 
@@ -405,7 +438,20 @@ head(agg_assault_data)
 Now we have learned how to load our data into an object, we can use other R 
 functions to work with that data in many different ways.
 
-<div class="box reading">
+
+::: {.box .notewell}
+
+Different types of data are loaded into R with different functions, e.g. CSV 
+files are loaded with the `read_csv()` function from the `readr` package and 
+Microsoft Excel files are loaded with the `read_excel()` function from the 
+`readxl` package. You can download a 
+[table of functions for reading data into R](http://books.lesscrime.info/learncrimemapping/appendices/read_functions.html) 
+to remind you of which function to use to load each type of file.
+
+:::
+
+
+::: {.box .reading}
 
 [Learn more about how to read data into R](https://r4ds.had.co.nz/data-import.html) 
 by reading this chapter of the free online book [R for Data Science](https://r4ds.had.co.nz/).
@@ -414,7 +460,7 @@ Excel data can often be messy and the `readxl` package contains various other
 functions that can be used to deal with this. You can [learn more about how to
 handle messy Excel data in this online tutorial](http://lesscrime.info/post/cleaning-ons-data/).
 
-</div>
+:::
 
 
 ### Check your understanding
@@ -424,6 +470,8 @@ so far in this tutorial. If you get a question wrong, you can keep trying until
 you get the right answer.
 
 ```{r read-quiz}
+#| echo: false
+
 quiz(
   caption = "",
   
@@ -528,12 +576,20 @@ the remaining arguments (here, `date` and `location_type`) are the names of the
 columns we want to select from the data. 
 
 We can select as many columns as we want, by just adding the names of the 
-columns separated by commas. Write the code necessary to select the `longitude`
-and `latitude` columns from the `agg_assault_data` object:
+columns separated by commas. 
+
+
+::: {.tutorial}
+
+Write the code necessary to select the `longitude` and `latitude` columns from 
+the `agg_assault_data` object:
 
 ```{r select-exercise2, exercise=TRUE}
 
 ```
+
+:::
+
 
 ```{r select-exercise2-solution}
 select(agg_assault_data, longitude, latitude)
@@ -568,17 +624,20 @@ agg_assault_locations <- select(agg_assault_data, lon = longitude, lat = latitud
 head(agg_assault_locations)
 ```
 
-<div class="box reading">
+
+::: {.box .reading}
 
 You can learn more about selecting, filtering and arranging data using the
 functions in the `dplyr` package by reading this [Introduction to `dplyr` tutorial](https://dplyr.tidyverse.org/articles/dplyr.html).
 
-</div>
+:::
 
 
 ### Check your understanding
 
 ```{r select-quiz}
+#| echo: false
+
 quiz(
   caption = "",
   
@@ -639,14 +698,14 @@ Note that:
     another meaning in R.
 
 We can filter using the values of more than one column simultaneously. To filter
-offences in which the `location_category` is 'leisure' and the `location_type`
-is 'bar/club':
+offences in which the `location_category` is 'retail' and the `location_type`
+is 'convenience store':
 
 ```{r filter-exercise2, exercise=TRUE}
 filter(
   agg_assault_data, 
-  location_category == "leisure", 
-  location_type == "bar/club"
+  location_category == "retail", 
+  location_type == "convenience store"
 )
 ```
 
@@ -720,6 +779,8 @@ We will see lots more examples of how to use `filter()` in future tutorials.
 ### Check your understanding
 
 ```{r filter-quiz}
+#| echo: false
+
 quiz(
   caption = "",
   
@@ -835,6 +896,8 @@ variable (which may sometimes be useful, as shown in the next section) using the
 create the weekday variable:
 
 ```{r mutate-exercise3-setup}
+#| echo: false
+
 library(lubridate)
 ```
 
@@ -944,74 +1007,65 @@ $("#summarise-box1-title").click(function () { $("#section-summarise-box1").togg
 
 
 `summarise()` becomes more useful if we first divide our data into groups, since
-we then get a summary for each group separately. We can use the `group_by()`
-function to specify which columns denote which group each row is in. So if we
-wanted to repeat the calculation above, but separately for each value of
-`location_category`:
+we then get a summary for each group separately. We can use the `.by` argument
+of the `summarise()` function to specify that we want separate summaries for
+each unique value of one or more columns in the data. For example, to produce a
+separate summary for each unique value of `location_category`, we can use this
+code:
 
 ```{r summarise-exercise2, exercise=TRUE}
 summarise(
-  group_by(agg_assault_data, location_category),
+  agg_assault_data,
   mean_lng = mean(longitude, na.rm = TRUE),
-  mean_lat = mean(latitude, na.rm = TRUE)
+  mean_lat = mean(latitude, na.rm = TRUE),
+  .by = location_category
 )
 ```
 
-This code might be slightly difficult to read, since the `group_by()` function
-is called inside `summarise()`, but we will learn a way of writing this code 
-that might be easier to read in the final section of this tutorial.
-
-You can add multiple grouping variables if you want to generate summary values
-for groups within groups:
+You can add multiple grouping variables using the `c()` (_combine_) function if 
+you want to generate summary values for groups within groups:
 
 ```{r summarise-exercise3, exercise=TRUE}
 summarise(
-  group_by(agg_assault_data, location_category, location_type),
+  agg_assault_data,
   mean_lng = mean(longitude, na.rm = TRUE),
-  mean_lat = mean(latitude, na.rm = TRUE)
+  mean_lat = mean(latitude, na.rm = TRUE),
+  .by = c(location_category, location_type)
 )
 ```
 
-<div class="box extra-detail">
-
-<h5 id="summarise-box2-title" class="box-title">Did you see a message saying 
-`` `summarise()` has grouped output by 'location_category'``?</h5>
-
-<div id="summarise-box2" class="box-content">
-
-You might have noticed the that code above produced a message specifying how
-groups have been handled by `summarise()`. This message reminds you that by
-default the `summarise()` functions strips the final level of grouping added by 
-`group_by()`. This allows us to summarise data using a detailed set of groups 
-and then summarise those summaries using more-general groups. In practice, this
-ability has been a source of some confusion, so R now prints a message to remind
-you that the data are still grouped after you run `summarise()`. If you want to
-hide this message then you can add `.groups = "drop"` to the `summarise()` 
-function to remove all the groups in the data.
-
-</div>
-
-</div>
-
-<script>
-$("#summarise-box2-title").click(function () { $("#section-summarise-box2").toggle("slow") })
-</script>
 
 
 ### Counting rows
 
-One form of summarising grouped data is so common that it gets its own function:
-`count()`. This simply counts the number of rows of data in each group. So if
-you wanted to know how many aggravated assaults had occurred in each location
-category and type:
+One very common way of summarising data is to count the number of rows in a 
+dataset that have each unique value of one or more columns. For example, if we
+have a dataset of crimes in which each row represents a single crime, we might
+want to count how many crimes happened on each day of the week, or how many
+crimes of each type are in the dataset. We can use `summarise()` to do that,
+together with the `n()` function (from the same `dplyr` package as 
+`summarise()`). For example, if we wanted to count how many rows in the
+`agg_assault_data` dataset had each unique combination of `location_category` 
+and `location_type`:
 
 ```{r summarise-exercise4, exercise=TRUE}
-count(group_by(agg_assault_data, location_category, location_type), sort = TRUE)
+summarise(agg_assault_data, n = n(), .by = c(location_category, location_type))
 ```
 
-The `sort = TRUE` argument sorts the counts in descending order. You can do
-more-sophisticated sorting using the `arrange()` function, which we will learn
-about in the next section.
+In this code, the `n()` function simply returns the number of rows of data in
+each group, i.e. the number of rows with each unique combination of values of
+`location_category` and `location_type`.
+
+Since counting the number of rows in each group a dataset is a very common task,
+`dplyr` includes another function called `count()` that allows you to do the
+same thing as in the code above, but with slightly less typing:
+
+So if you wanted to know how many aggravated assaults had occurred in each 
+location category and type:
+
+```{r summarise-exercise5, exercise=TRUE}
+count(agg_assault_data, location_category, location_type)
+```
 
 
 
@@ -1043,6 +1097,8 @@ arrange(agg_assault_data, date, desc(location_type), location_category)
 ```
 
 
+::: {.tutorial}
+
 ### Check your understanding
 
 **Type the code necessary to arrange `agg_assault_data` in order of latitude,
@@ -1059,6 +1115,8 @@ do, click the `Solution` button to check.
 ```{r arrange-exercise4-solution}
 arrange(agg_assault_data, desc(latitude))
 ```
+
+:::
 
 
 
@@ -1155,7 +1213,8 @@ q1_weekday_counts <- count(
       as.Date(date_time) <= as.Date("2019-03-31")
     ),
     weekday = wday(date_time, label = TRUE)
-  )
+  ),
+  weekday
 )
 
 head(q1_weekday_counts, n = 7)
@@ -1164,20 +1223,20 @@ head(q1_weekday_counts, n = 7)
 This code works and takes up less space, but it's quite difficult to read –
 which can be a problem for finding and fixing problems with your code. For
 example, it's quite hard (without counting pairs of parentheses) to work out 
-that the reference to the column `weekday` on line 13 of this code belongs to 
-the `group_by()` function on line 2.
+that the reference to the column `weekday` on line 12 of this code belongs to 
+the `count()` function on line 1.
 
 It's possible to write this code so that it is readable and does not require us
 to create multiple different objects to store the result of each step in our
 code. This method uses the `|>` (or _pipe_) operator. The pipe operator works by 
 using the result of the code on the left-hand side of the pipe as the first 
-argument to a function on the right-hand side. So the code `x  |> fun1()
- |> fun2(y)` is the same as the code `fun2(fun1(x), y)`, but it is much easier
-to see that `fun1()` is run before `fun2()`. It may be useful to read the pipe
-operator as 'and then', since piped code does the first thing *and then* the
-second thing with the result *and then* the third thing with the result of that,
-and so on. Piped code (sometimes called a *pipeline*) is a lot like the series
-of steps in a recipe.
+argument to a function on the right-hand side. So the code 
+`x  |> fun1() |> fun2(y)` is the same as the code `fun2(fun1(x), y)`, but it is 
+much easier to see that `fun1()` is run before `fun2()`. It may be useful to 
+read the pipe operator as 'and then', since piped code does the first thing 
+*and then* the second thing with the result *and then* the third thing with the 
+result of that, and so on. Piped code (sometimes called a *pipeline*) is a lot 
+like the series of steps in a recipe.
 
 Since each function we are using returns the new data, and the first argument to 
 all of those functions is the name of the input data object, the pipe means we 
@@ -1227,27 +1286,27 @@ $("#pipe-box1-title").click(function () { $("#section-pipe-box1").toggle("slow")
 </script>
 
 
-<div class="box reading">
+::: {.box .reading}
 
 You can find out more about how to use the pipe operator in the [Introducing `magrittr`](https://cran.r-project.org/web/packages/magrittr/vignettes/magrittr.html) online tutorial.
 
-</div>
+:::
 
 
 ## In summary
 
 
-<div class="box welldone">
+::: {.box .welldone}
 
 In this tutorial, you have learned how to wrangle data in R using functions from
 packages in the `tidyverse` suite of packages. You can now construct a complete
 pipeline of R code to take raw data and transform it into the format(s) we need
 to effectively map crimes.
 
-</div>
+:::
 
 
-<div class="box reading">
+::: {.box .reading}
 
 Developing your data wrangling skills will help you to produce better, faster
 analysis of crime (and other) data. If you would like to develop your skills
@@ -1268,4 +1327,4 @@ further, you might be interested in:
   * [R for Data Science](https://r4ds.had.co.nz/) by Hadley Wickham and Garrett 
     Grolemund, a free online book that is the bible for wrangling data in R.
     
-</div>
+:::

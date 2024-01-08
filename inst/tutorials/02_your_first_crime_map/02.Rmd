@@ -4,7 +4,7 @@ description: "Quickly walk (or jog) through the process of creating a complete c
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -60,7 +60,7 @@ if (!file.exists(here::here("inst/tutorials/02_your_first_crime_map/images/atlan
     st_transform("EPSG:26967")
 
   downtown_homicides_map <- ggplot(downtown_homicides) + 
-    annotation_map_tile(type = "osm", zoom = 15) + 
+    annotation_map_tile(type = "osm", zoom = 15, progress = "none") + 
     geom_sf_label(
       aes(label = label), 
       lineheight = 1, 
@@ -92,6 +92,8 @@ The map we're going to create shows the locations of four homicides in downtown
 Atlanta in 2019:
 
 ```{r show-final-map, fig.align="center", out.width="80%"}
+#| echo: false
+
 knitr::include_graphics("images/atlanta_downtown_homicides.jpg")
 ```
 
@@ -101,6 +103,8 @@ this map. Don't worry if there are things in the video that you don't understand
 
 ![](https://youtu.be/ipyKc7-ReTs)
 
+
+::: {.tutorial}
 
 ### Running code in this tutorial
 
@@ -128,6 +132,8 @@ screen.
 
 Now click `Continue` below to start this tutorial.
 
+:::
+
 
 
 ## Loading crime data
@@ -135,10 +141,23 @@ Now click `Continue` below to start this tutorial.
 
 ### Loading packages
 
+
+::: {.tutorial}
+
 Before we can work with our data, we first load packages of functions for use in
 the analysis. To load these packages, click `Run Code`. This will produce
 various messages, all of which you can safely ignore for now.
 
+:::
+
+
+::: {.book}
+
+Before we can work with our data, we first load packages of functions for use in
+the analysis. Loading packages will produce various messages, all of which you 
+can safely ignore for now.
+
+:::
 
 
 ```{r exercise1, exercise=TRUE, exercise.lines=5}
@@ -196,7 +215,15 @@ automatically when it draws the final map).
 
 The data we will use will be records of homicides in the Downtown neighbourhood
 of Atlanta, Georgia, in 2019. We can load the homicide data using the
-`read_csv()` function. Click the `Run Code` button to load the data.
+`read_csv()` function. 
+
+
+::: {.tutorial}
+
+Click the `Run Code` button to load the data.
+
+:::
+
 
 ```{r exercise2-setup, include=FALSE}
 # Load the R packages we need to analyse this data
@@ -212,6 +239,20 @@ The `read_csv()` function loads data from a file and prints a message showing
 the name of each column in the data and the type of data (number, text etc.) in 
 each column. Again, you can ignore this message for now.
 
+
+::: {.box .notewell}
+
+Sometimes R has several functions that have similar names but do different 
+things. That means it is very important to pay attention to which function you
+need in any particular set of circumstances. In this case we are using the
+`read_csv()` function, which does a slightly different thing from the similarly
+named `read.csv()` function (note the `.` instead of the `_`). Since 
+`read.csv()` has several limitations that `read_csv()` does not have, we will
+always use `read_csv()` in this course.
+
+:::
+
+
 We have stored the results of the `read_csv()` function in an R *object* called
 `homicides`. An object in R is anything that stores any type of data. There are
 many types of objects, but for this tutorial we don't need to explore these in
@@ -224,8 +265,14 @@ functions do things.
 
 To check the data has been loaded correctly, we can view the loaded data using
 the `head()` function. By default, `head()` prints the first six rows of the 
-data stored in an object. Click `Run Code` to view the data.
+data stored in an object.
 
+
+::: {.tutorial}
+
+Click `Run Code` to view the data.
+
+:::
 
 
 ```{r exercise3-setup, message=FALSE, warning=FALSE, include=FALSE}
@@ -257,7 +304,7 @@ of the homicide location. Depending on the width of your screen, you may need to
 click on the '▸' symbol to view all the columns in the data. We can use this 
 data to plot the homicides on a map.
 
-<div class="box notewell">
+::: {.box .notewell}
 
 **In the code `head(homicides)`, there are no quote marks around the word
 `homicides`.**
@@ -273,7 +320,7 @@ few elements of the literal text 'homicides'. Since the text 'homicides'
 contains only one element (more about that later), `head("homicides")` will just 
 print the word 'homicides'.
 
-</div>
+:::
 
 
 ## Processing the data
@@ -292,8 +339,14 @@ Two data-processing tasks are needed to produce this map. The first is to
 convert the data into a *simple features* or SF object, which is a special type 
 of R object that can be used by functions that process spatial data. We will 
 cover the details of the `st_as_sf()` function that converts our data into into 
-an SF object later on. Click `Run Code` to convert the data into SF format.
+an SF object later on. 
 
+
+::: {.tutorial}
+
+Click `Run Code` to convert the data into SF format.
+
+:::
 
 
 ```{r exercise4-setup, message=FALSE, warning=FALSE, include=FALSE}
@@ -326,10 +379,17 @@ homicides_sf <- st_as_sf(
 
 When you clicked `Run Code` above, it looked like nothing happened. This is
 because the results of the code are stored in the `homicides_sf` object. Do you 
-remember what R code to use to view the first few rows of this object? Type that 
-code into the box below and click `Run Code` to view the data.
+remember what R code to use to view the first few rows of this object?
 
-<div class="box notewell">
+
+::: {.tutorial}
+
+Type that code into the box below and click `Run Code` to view the data.
+
+:::
+
+
+::: {.box .notewell}
 
 **If you cannot remember how to view the contents of an object, you can click on
 the `Solution` button to get help.**
@@ -343,7 +403,7 @@ Don't worry about getting the answer wrong – nothing bad will happen if you ru
 the wrong code in this tutorial and you can have as many attempts as you like to
 get the answer right.
 
-</div>
+:::
 
 
 ```{r exercise5-setup, message=FALSE, warning=FALSE, include=FALSE}
@@ -427,12 +487,17 @@ go on to produce the map itself.
 We are now ready to produce our map of homicides in downtown Atlanta. So that
 people viewing the map will understand where the homicides occurred, we will
 plot the homicides on top of a base layer showing streets, parks and other 
-geographic features obtained from an online web mapping service. Click 
-`Run Code` to create the map.
+geographic features obtained from an online web mapping service. 
 
 
+::: {.tutorial}
 
-```{r exercise7-setup, message=FALSE, warning=FALSE, include=FALSE}
+Click `Run Code` to create the map.
+
+:::
+
+
+```{r exercise7-setup, exercise.lines=18, message=FALSE, warning=FALSE, include=FALSE}
 # Load the R packages we need to analyse this data
 suppressPackageStartupMessages(library("ggspatial"))
 suppressPackageStartupMessages(library("sf"))
@@ -458,7 +523,7 @@ homicides_sf_trans <- read_csv(
 
 ```{r exercise7, exercise=TRUE, exercise.lines=15, message=FALSE, fig.width=7, fig.asp=1}
 ggplot(homicides_sf_trans) + 
-  annotation_map_tile(type = "osm", zoom = 15) + 
+  annotation_map_tile(type = "osm", zoom = 15, progress = "none") + 
   geom_sf_label(
     aes(label = label), 
     lineheight = 1, 
@@ -477,14 +542,21 @@ ggplot(homicides_sf_trans) +
 ```
 
 You can change the appearance of the map by changing various parts of the code
-above and clicking `Run Code` again. For example, you can change the colour of
-the points that mark the homicides by changing the code `fill = "orangered1"` to
-`fill = "mediumblue"`, or change the base map to a different style by changing
-the code `type = "osm"` to `type = "cartolight"`. Each time you change part of 
-the code, click `Run Code` to see what changes on the map.
+above. For example, you could change the colour of the points that mark the 
+homicides by changing the code `fill = "orangered1"` to `fill = "mediumblue"`, 
+or change the base map to a different style by changing the code `type = "osm"` 
+to `type = "cartolight"`. 
+
+
+::: {.tutorial}
+
+Each time you change part of the code, click `Run Code` to see what changes on 
+the map.
 
 Once you have finished experimenting with changing the appearance of the map,
 click `Next Topic` below.
+
+:::
 
 
 
@@ -494,10 +566,10 @@ Now we have walked through the different parts of the code, we can create a map
 from scratch in a single block of code. In this example, we will map homicides
 from in Glenrose Heights neighbourhood of Atlanta, and a different style of base
 map. Since the area covered by the map is derived from the data itself, the
-extent of the map will update automatically. Click `Run Code`.
+extent of the map will update automatically.
 
 
-```{r exercise8, exercise=TRUE, exercise.lines=35, message=FALSE, fig.width=7, fig.asp=1}
+```{r exercise8, exercise=TRUE, exercise.lines=38, message=FALSE, fig.width=7, fig.asp=1}
 # Load the R packages we need to analyse this data
 library(ggspatial)
 library(sf)
@@ -519,7 +591,7 @@ homicides_sf_trans <- st_transform(homicides_sf, "EPSG:26967")
 
 # Plot the map
 ggplot(homicides_sf_trans) + 
-  annotation_map_tile(type = "osm", zoom = 15) + 
+  annotation_map_tile(type = "osm", zoom = 15, progress = "none") + 
   geom_sf_label(
     aes(label = label), 
     lineheight = 1, 
@@ -541,14 +613,16 @@ ggplot(homicides_sf_trans) +
 
 ## In summary
 
-<div class="box welldone">
+
+::: {.box .welldone}
 
 **Well done – you have finished your first mapping tutorial.** You may not have
 understood every line of code in this tutorial, but we will cover them all in
 more detail over the rest of this course. By the end of the tutorials, you will
 be able to write code like this to create many different types of crime map.
 
-</div>
+:::
+
 
 In this tutorial you have learned how to load data into R, prepare it for use in
 making a map and then used it to make your first crime map of this course. 
