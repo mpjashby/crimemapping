@@ -14,3 +14,16 @@
 ^.*/rosm.cache
 ^rosm.cache
 ^data-raw$
+^inst/tutorials/04_code_with_style
+^inst/tutorials/05_your_second_crime_map
+^inst/tutorials/06_map_context
+^inst/tutorials/07_handling_bugs
+^inst/tutorials/08_projects
+^inst/tutorials/09_mapping_areas
+^inst/tutorials/10_place_data
+^inst/tutorials/11_mapping_hotspots
+^inst/tutorials/12_messy_data
+^inst/tutorials/13_crime_series
+^inst/tutorials/14_writing_reports
+^inst/tutorials/15_no_maps
+^inst/tutorials/16_mapping_time
