@@ -1,0 +1,66 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+
+# User-specific files
+.Ruserdata
+
+# Example code in package build process
+*-Ex.R
+
+# Output files from R CMD build
+/*.tar.gz
+
+# Output files from R CMD check
+/*.Rcheck/
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+inst/*.html
+
+# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
+.httr-oauth
+
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
+*_files/
+
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+inst/tutorials/*.html
+rosm.cache
+
+# R Environment Variables
+.Renviron
+
+# Old versions of tutorials no longer needed
+inst/tutorials/*-old/
+
+# Resit datasets that may or may not be needed in future
+inst/extdata/
+
+# Marking
+marking/
+assessment_specimen_answers/
+
+# Raw data files that are too large for GitHub
+inst/tutorials/prep/code/NYPD_Shooting_Incident_Data__Historic_.csv
+inst/tutorials/prep/code/london_crime_data_raw.zip
+inst/tutorials/prep/code/northamptonshire_crimes_2020.zip
+inst/tutorials/prep/code/northumbria_asb_2020.zip
+inst/tutorials/prep/code/nottinghamshire_crimes_2020.zip
+inst/tutorials/prep/code/qld_police_district_pop_raw.tab
+inst/tutorials/prep/code/sa_municipality_vehicles.tsv
+.Rproj.user
+.Rdata
+.DS_Store
+.quarto

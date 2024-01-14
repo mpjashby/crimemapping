@@ -1,0 +1,27 @@
+Package: crimemapping
+Type: Package
+Title: Crime Mapping with R
+Version: 2.1.0
+Date: 2024-01-14
+Author: Matt Ashby
+Maintainer: Matt Ashby <matthew.ashby@ucl.ac.uk>
+Description: Learn how to effectively map crimes in R using a series of 
+    interactive tutorials.
+URL: https://github.com/mpjashby/crimemapping/
+BugReports: https://github.com/mpjashby/crimemapping/issues
+License: CC BY 4.0
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    httr,
+    learnr,
+    remotes,
+    rlang
+RoxygenNote: 7.2.3
+Suggests: 
+    cli,
+    dplyr,
+    lintr,
+    reprex
+Depends: 
+    R (>= 2.10)

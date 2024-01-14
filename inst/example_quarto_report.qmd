@@ -1,0 +1,66 @@
+---
+title: "Homicides in Medellin, Colombia, 2010--2019"
+author: "Joe Bloggs"
+date: "`r format(Sys.Date(), '%e %B %Y')`"
+format: html
+---
+
+```{r setup}
+#| include: false
+
+library(sf)
+library(tidyverse)
+```
+
+```{r load-data}
+#| cache: true
+#| include: false
+
+# Load homicide data
+homicides <- read_csv2("https://mpjashby.github.io/crimemappingdata/medellin_homicides.csv") |>
+  janitor::clean_names() |> 
+  remove_missing(vars = c("longitud", "latitud"), na.rm = TRUE) |> 
+  st_as_sf(coords = c("longitud", "latitud"), crs = "EPSG:4326") |> 
+  st_transform("EPSG:3115")
+
+# Neighbourhoods
+medellin_comunas <- read_sf("https://mpjashby.github.io/crimemappingdata/medellin_comunas.gpkg") |> 
+  janitor::clean_names() |> 
+  st_transform("EPSG:3115") |> 
+  select(nombre, geom) |> 
+  mutate(nombre = str_to_title(nombre))
+```
+
+```{r wrangle-data}
+#| include: false
+
+# Count number of homicides in each neighbourhood
+homicide_count <- homicides |> 
+  mutate(year = lubridate::year(fecha_hecho)) |> 
+  st_join(medellin_comunas) |> 
+  st_drop_geometry() |> 
+  count(nombre, year)
+
+# Convert that data into a format that is suitable for displaying in a table
+homicide_table <- homicide_count |> 
+  # Calculate the mean number of homicides in each neighbourhood per year
+  group_by(nombre) |> 
+  mutate(mean_count = mean(n)) |> 
+  # Arrange the neighbourhoods by mean count of homicides in descending order
+  arrange(desc(mean_count)) |> 
+  ungroup() |> 
+  # Convert the data to wide format for easier display
+  pivot_wider(names_from = year, values_from = n, values_fill = 0)
+```
+
+This table shows the number of robberies in each neighbourhood of Medellin in each year from `r min(pull(homicide_count, "year"))` to `r max(pull(homicide_count, "year"))`. During that time, on average the `r pluck(homicide_table, "nombre", 1)` neighbourhood had the highest number of homicides (`r scales::comma(pluck(homicide_table, "mean_count", 1), accuracy = 1)` per year).
+
+```{r neighbourhood-table}
+homicide_table |> 
+  # Remove columns we don't want to include in the table
+  select(-mean_count) |> 
+  # Remove count of offences with co-ordinates outside the city boundary
+  filter(!is.na(nombre)) |> 
+  # Format the table for nicer display
+  knitr::kable()
+```

@@ -1,0 +1,218 @@
+---
+title: "Crime Mapping: Getting started"
+description: "Get started with crime mapping by learning about why putting crime on maps is useful, and get a tour of the RStudio software we will use throughout this course."
+output: 
+  learnr::tutorial:
+    progressive: true
+    css: ["css/tutorial_style.css", "css/2024.css"]
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE)
+
+# Copy files
+if (!dir.exists("css")) dir.create("css")
+walk(
+  dir("../css/"), 
+  ~ file.copy(str_glue("../css/{.}"), str_glue("css/{.}"), overwrite = TRUE)
+)
+```
+
+
+
+## Welcome
+
+
+::: {.tutorial}
+
+Welcome to this course on crime mapping! This course uses interactive tutorials like this one to help you learn about using maps and spatial analysis techniques to understand crime. Watch this video to learn more about the course.
+
+:::
+
+
+::: {.book}
+
+Welcome to _Learn Crime Mapping with R_. This book will help you learn about using maps and spatial analysis techniques to understand crime. Watch this video to learn more.
+
+:::
+
+
+![](https://youtu.be/zT78IBRsIBk)
+
+
+::: {.tutorial}
+
+Now click `Next Topic` below to start this tutorial.
+
+:::
+
+
+
+## Why put crimes on maps?
+
+This course is about how we can use maps and other spatial analysis tools to help understand, prevent and respond to crime. Watch this video to understand why spatial analysis is a useful tool for understanding crime.
+
+![](https://youtu.be/-FQwFQ8e-O0)
+
+
+```{r why-maps-quiz}
+#| echo: false
+
+quiz(
+  caption = "",
+  question("Which *one* of these statements is true?",
+    answer("Crime is usually not geographically concentrated at micro places"),
+    answer("Crime is very geographically concentrated – we can expect half of crime to be concentrated in about 5% of micro places", correct = TRUE),
+    answer("Crime is slightly geographically concentrated – we can expect half of crime to be concentrated in about one quarter of micro places"),
+    answer("Crime is extremely geographically concentrated – we can expect half of crime to be concentrated in about 1% of micro places"),
+    correct = "That's correct – based on previous studies, we can expect half of crime to be concentrated in about 5% of micro places",
+    incorrect = "That's not correct – try re-watching the video and then try the question again.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+
+::: {.box .reading}
+
+Weisburd, D. (2015). [The law of crime concentration and the criminology of place](https://doi.org/10.1111/1745-9125.12070). *Criminology*, 53(2), 133-157.
+
+Johnson, S. (2010). [A brief history of the analysis of crime concentration](https://doi.org/10.1017/S0956792510000082). *European Journal of Applied Mathematics*, 21(4-5), 349.
+
+Farrell, G. (2015). [Crime concentration theory](https://doi.org/10.1057/cpcs.2015.17). *Crime Prevention and Community Safety*, 17(4), 233-248.
+
+:::
+
+
+
+## Why is crime concentrated in space?
+
+Why is crime concentrated in space? Watch this video to find out more about how our environment influences opportunities for crime and how that causes clusters of different crimes.
+
+![](https://youtu.be/SvfPGslMrcs)
+
+
+```{r why-concentrated-quiz}
+#| echo: false
+
+quiz(
+  caption = "",
+  question(
+    "What are the three elements of an opportunity for a crime to occur that are outlined in the routine activities apporach?",
+    answer("offender, target, place", correct = TRUE),
+    answer("means, motive, opportunity", message = "It looks like you've watched lots of police dramas, but maybe not the video here! Try watching the video again and think about the elements of the routine activities approach."),
+    answer("offender, victim, place", message = "While many crimes have a victim, the routine activities apporach focuses on the interaction between the offender and the *target*. Sometimes (e.g. in an assault) the target will be the victim, but in others (e.g. a burglary) the target that the offender is interested in might be separte from the victim."),
+    answer("offender, target, opportunity", message = "The three 'almost always' elements make up an opportunity for crime, but opportunity is not one of the three elements."),
+    correct = random_praise(),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+
+::: {.box .reading}
+
+Santos, R. B. (2015). [Routine Activity Theory: A Cornerstone of Police Crime Analyst Work](https://ebookcentral.proquest.com/lib/ucl/reader.action?docID=1952969&ppg=130). In _The Criminal Act: _
+
+Cohen, L. E., and Felson, M. (1979). [Social Change and Crime Rate Trends: A Routine Activity Approach](https://doi.org/10.2307/2094589). *American Sociological Review*, 44(4), 588–608.
+
+:::
+
+
+
+## Finding your way around RStudio
+
+We will use RStudio for almost all of this course. Watch this video to find your way around the different panels in the RStudio window.
+
+![](https://youtu.be/QhmPrfleCx4)
+
+
+### Slightly adjusting how RStudio works
+
+Before we start using RStudio, we should make a few changes to how it is set up that will make it easier to fix any mistakes we make while coding. To do this, click on the `Tools` menu in RStudio and then on `Global Options…`. In the dialogue box that opens, click on `General` in the left-hand panel if `General` is not selected already.
+
+<p class="centered-image"><img src="images/workspace_options.png" alt="A screen shot of the RStudio Global Options dialogue box, showing which options should be selected."></p>
+
+In the "Workspace" section of the right-hand panel, find an option that says "Restore .RData into workspace at startup" and make sure the check box to the left of that option is **not checked**. On the next line down, click the drop-down menu labelled "Save workspace to .RData on exit:" and choose the option **Never**. Click `Apply` and then `OK` to close the dialogue box.
+
+
+::: {.box .reading}
+
+The [RStudio IDE Cheat Sheet](https://github.com/rstudio/cheatsheets/blob/master/rstudio-ide.pdf) highlights some of the features available in RStudio and gives a list of available keyboard short-cuts.
+
+[Writing Code in RStudio](https://rstudio.com/resources/webinars/programming-part-1-writing-code-in-rstudio/) is a webinar that talks you through RStudio in more detail.
+
+:::
+
+
+## Navigating these tutorials {.tutorial}
+
+The tutorials that make up this course include short chunks of R code that you 
+can run directly in this window. To run the code in each chunk, just click the 
+`Run Code` button in the top-right corner of each chunk. If you want to re-run a 
+chunk of code, you can click the `Start Over` button in the top-left corner of 
+each chunk. Some of the chunks will have pre-filled code for you to run, while
+for others you will be asked to type the code needed to complete a task based on
+what you have already learned.
+
+When you click `Run Code`, the output of the chunk will appear below it (there
+may be a delay of a few seconds for more-complicated chunks).
+
+To try out using a code chunk, click `Run Code` below – you should see the
+message 'Hello, world!' printed below the box.
+
+```{r exercise0, exercise=TRUE}
+message("Hello, world!")
+```
+
+
+::: {.box .notewell}
+
+Some of the tutorials include boxes like this one that contain information that
+it is particularly important for you to know to avoid common mistakes in writing
+code. Pay special attention to these points and remember to ask questions if
+anything isn't clear.
+
+:::
+
+
+<div class="box extra-detail">
+
+<h5 id="intro-box1-title" class="box-title">More information you might like 
+to know <- **click here**</h5>
+
+<div id="intro-box1" class="box-content">
+
+In these tutorials you will also see lines marked 'Extra detail' that you can
+click on to find out more information about a particular issue. This is 
+generally information that you do not need to know to complete the tutorial, but
+which might be useful in other circumstances or which might answer some 
+questions that you have. You can skip these boxes if you want to, or come back
+to them later if you have a question.
+
+</div>
+
+</div>
+
+<script>
+$("#intro-box1-title").click(function () { $("#section-intro-box1").toggle("slow") })
+</script>
+
+
+
+
+
+## In summary
+
+Now that you know why crime mapping is useful for understanding crime, why crime is typically concentrated in space and how to find your way around RStudio, in the next tutorial we will produce our first crime map in R.
+
+If you're not feeling too confident at this point in the course, don't worry – learning something new is always a bit of a roller coaster and there is lots of help available in subsequent tutorials.
+
+<p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/01_getting_started/images/r_rollercoaster.png" alt="Cartoon line chart showing how you become more confident in using R over time, then less confident and then more confident again."></p>
+
+<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>

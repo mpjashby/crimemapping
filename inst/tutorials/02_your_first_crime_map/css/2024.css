@@ -1,0 +1,5 @@
+.tutorialTitle::after {
+  content: "2024";
+  color: #000000;
+  background-color: #0097A9;
+}
