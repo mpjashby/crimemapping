@@ -20,7 +20,7 @@ rlang::inform(
 # when loading the tutorial because {learnr} only installs Imported packages.
 # By installing {raster} explicitly, we avoid the code in the tutorials failing.
 invisible(install.packages(
-  c("tidyverse", "learnr", "remotes", "raster"),
+  c("tidyverse", "learnr", "remotes", "raster", "terra", "prettymapr"),
   verbose = FALSE
 ))
 remotes::install_github("mpjashby/crimemapping", upgrade = "always")

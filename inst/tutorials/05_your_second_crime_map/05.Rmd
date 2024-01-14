@@ -117,9 +117,6 @@ each row in the data is associated with some geographic feature such as a
 building, a street or the boundary of a neighbourhood. This adds some quirks 
 that we have to understand to work with spatial data successfully.
 
-
-### Spatial layers
-
 Maps are made up of multiple layers of spatial data that are styled to represent
 features of interest and then stacked on top of one another to make the finished
 map. Watch this video to learn more about spatial layers and the different types 
@@ -140,7 +137,6 @@ is located. Watch this video to find out about the different co-ordinate
 systems we can use to do this.
 
 ![](https://youtu.be/8L6EXiuckLo)
-
 
 
 ## Spatial data in R
@@ -187,7 +183,6 @@ The file is located at:
 ```r
 https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz
 ```
-
 
 ::: {.tutorial}
 
@@ -406,7 +401,6 @@ for the UTM zone covering that part of the planet. It is therefore similar to
 the British National Grid that we have already learned about, but for any part
 of the globe. The 'N' at the end of the zone name refers to the northern
 hemisphere.
-
 
 ::: {.box .notewell}
 
@@ -654,6 +648,8 @@ bike_thefts <- read_csv("https://mpjashby.github.io/crimemappingdata/vancouver_t
 ```
 
 
+=======
+>>>>>>> c847f851a9ff3a85ea7ecd4bb7dfbf98c73bd619
 <p class="credits">
 [Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
 </p>
@@ -684,7 +680,7 @@ head(bike_thefts)
 
 ::: {.book}
 
-```r
+```{r}
 head(bike_thefts)
 ```
 
@@ -1282,6 +1278,7 @@ three-quarters of the default bandwidth.
 
 ::: {.tutorial}
 
+
 Change the code below so that the bandwidth is half of the default
 bandwidth.
 
@@ -1494,7 +1491,6 @@ quiz(
 )
 ```
 
-
 You now have the skills to make a density map of bike theft in Vancouver. Using
 your notes and the code in this section, complete the code needed to 
 generate a map with: 
@@ -1522,7 +1518,6 @@ ggplot() +
 ```
 
 :::
-
 
 
 ## Clipping map layers
@@ -2078,6 +2073,7 @@ In the next tutorial, we will learn how to improve this map further.
 
 
 ::: {.box .reading}
+
 You can find out more about some of the things we have covered in this tutorial
 using these resources:
 
@@ -2088,5 +2084,6 @@ using these resources:
     by Hadley Wickham and Garrett Grolemund.
   * Learn more about making maps using simple features in [Chapter 1 of *Spatial Data Science*](https://r-spatial.org/book/01-hello.html)
     by Edzer Pebesma and Roger Bivand.
+
 :::
 
