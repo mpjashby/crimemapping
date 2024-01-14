@@ -14,8 +14,6 @@
 ^.*/rosm.cache
 ^rosm.cache
 ^data-raw$
-^inst/tutorials/04_code_with_style
-^inst/tutorials/05_your_second_crime_map
 ^inst/tutorials/06_map_context
 ^inst/tutorials/07_handling_bugs
 ^inst/tutorials/08_projects
