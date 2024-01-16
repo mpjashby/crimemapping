@@ -66,7 +66,7 @@ bike_theft_density_bw_half_clipped <- bike_thefts |>
   st_intersection(nbhds)
 
 vancouver_bike_thefts_map <- ggplot() +
-  annotation_map_tile(type = "cartolight", zoom = 13, progress = FALSE) +
+  annotation_map_tile(type = "cartolight", zoom = 13, progress = "none") +
   geom_sf(
     aes(fill = kde), 
     data = bike_theft_density_bw_half_clipped, 
@@ -1774,7 +1774,7 @@ add `geom_*()` functions.
 ggplot() +
   # We add the base map to the `ggplot()` stack *before* the density layer 
   # because we want the base map to appear below the density layer
-  annotation_map_tile(zoomin = 0, progress = FALSE) +
+  annotation_map_tile(zoomin = 0, progress = "none") +
   # When adding a base map, it is useful to make any filled layers (such as the
   # density layer) semi-transparent so that readers can see the base map
   geom_sf(
@@ -1811,7 +1811,7 @@ jdi <- c(-0.12979747256628416, 51.52501948280652) |>
 
 zoom_map <- map(8:16, function(zoom_level) {
   ggplot() + 
-    annotation_map_tile(zoom = zoom_level, progress = FALSE) +
+    annotation_map_tile(zoom = zoom_level, progress = "none") +
     geom_sf(data = jdi, colour = NA, fill = NA) +
     labs(subtitle = str_glue("zoom level {zoom_level}")) +
     theme_void() +
@@ -1859,7 +1859,7 @@ basemaps_map <- c(
 ) |> 
   map(function (x) {
     ggplot() +
-      annotation_map_tile(type = x, zoom = 12, progress = FALSE) +
+      annotation_map_tile(type = x, zoom = 12, progress = "none") +
       geom_sf(data = jdi, colour = NA, fill = NA) +
       labs(subtitle = if_else(x == "osm", "osm (default)", x)) +
       theme_void() +
@@ -1886,16 +1886,16 @@ knitr::include_graphics("images/basemaps.jpg")
 
 You may want to experiment with different base map styles by using the `type`
 argument to `annotation_map_tile()` in the map above, e.g. using 
-`annotation_map_tile(type = "cartolight", zoomin = 0, progress = FALSE)`.
+`annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none")`.
 
 One final note about the `annotation_map_tile()` function: you might have 
 noticed that when we have used it above we have always set the argument 
-`progress = FALSE`. This stops the function from printing a progress bar while
+`progress = "none"`. This stops the function from printing a progress bar while
 it is downloading the map tiles. The progress bar can sometimes be useful, but
 when you include the output from an R function in a report (as you will learn to
 do in a future tutorial), the output from the progress bar is likely to 
 interfere with the formatting of the report. To prevent that, we use the
-`progress = FALSE` argument.
+`progress = "none"` argument.
 
 
 
@@ -1982,7 +1982,7 @@ bike_theft_density_clip <- bike_thefts |>
 # Plot map
 ggplot() +
   # Add base map
-  annotation_map_tile(type = "cartolight", zoomin = 0, progress = FALSE) +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   # Add density layer
   geom_sf(
     aes(fill = kde), 
