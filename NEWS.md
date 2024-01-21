@@ -1,3 +1,8 @@
+# crimemapping 2.2.0
+
+* Update content for 2024 Week 3 (tutorials 6 and 7).
+
+
 # crimemapping 2.1.1
 
 * Fix bug in which the `progress` argument to `annotation_map_tile()` was 

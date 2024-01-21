@@ -4,7 +4,7 @@ description: "Add titles, sources, legends, scale bars and other contextual info
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -31,7 +31,7 @@ shootings <- read_csv("https://mpjashby.github.io/crimemappingdata/bronx_shootin
   st_transform("EPSG:6538")
 
 # Load NYC police precincts data
-precincts <- st_read("https://mpjashby.github.io/crimemappingdata/nyc_precincts.gpkg") |> 
+precincts <- read_sf("https://mpjashby.github.io/crimemappingdata/nyc_precincts.gpkg") |> 
   janitor::clean_names() |> 
   # Filter just those precincts that are in the Bronx (40th to 52nd)
   filter(precinct %in% 40:52) |> 
@@ -127,20 +127,11 @@ repeatedly shown that "[the nature of the task or function to be performed by th
 
 As explained in the video, when you create a crime map you should ask yourself:
 
-  * *How much does my audience know about this topic?* so that you know how much
-    information you should provide to help them understand it.
-  * *How well does my audience know this geographic area?* so that you know what
-    information to include to help people orient themselves, e.g. landmarks,
-    main roads of natural features such as rivers.
-  * *What will my audience use this map for?* so that you can make sure 
-    everything on your map is relevant to that goal.
-  * *In what context will they be using this map?* so that you can make the
-    format of the map suitable to that context (e.g. if the map is going to be
-    viewed by a large audience in a lecture hall, or by a police officer on 
-    their phone at night).
-  * *What biases or opinions about this topic might my audience have?* so that
-    you can consider how the information (and your presentation of it) might
-    influence those opinions or biases one way or another.
+  * *What will readers be using this map for?* .
+  * *What information do readers need?*
+  * *What do readers already know?*
+  * *In what context are people going to use this map?*
+  * *How could this map lead the audience to a wrong conclusion?*
     
 Maps are powerful communication tools, which can sometimes knowingly or 
 unknowingly mislead the reader. Watch this video to learn more about how maps
@@ -153,7 +144,7 @@ topic likely to influence the results of your analysis? One way to test your
 own assumptions about a topic is to test them against other potential
 assumptions using an approach to crime analysis called hypothesis testing. To
 find out more about the hypothesis testing approach, read the paper 
-[*Improving the explanatory content of analysis products using hypothesis testing*](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1012.6309&rep=rep1&type=pdf)
+[*Improving the explanatory content of analysis products using hypothesis testing*](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1012.6309&rep=rep1&type=pdf).
 
 
 
@@ -184,9 +175,9 @@ quiz(
   
   question(
     "Which one of these is not a visual element that we can use to establish the visual hierarchy of different elements on our map?",
-    answer("Font", correct = TRUE),
+    answer("Brand", correct = TRUE),
     answer("Colour"),
-    answer("Location"),
+    answer("Size"),
     answer("Isolation"),
     correct = random_praise(),
     allow_retry = TRUE,
@@ -194,9 +185,9 @@ quiz(
   ),
   
   question(
-    "Which types of shapes are more likely to move an element up the visual hierarchy?",
-    answer("Shapes that are simpler", correct = TRUE),
-    answer("Shapes that are more complicated"),
+    "Which types of colour are more likely to move an element up the visual hierarchy?",
+    answer("Colours that are more saturated", correct = TRUE),
+    answer("Colours that are less saturated"),
     correct = random_praise(),
     allow_retry = TRUE,
     random_answer_order = TRUE
@@ -309,12 +300,15 @@ library(sfhotspot)
 library(tidyverse)
 
 # Load shootings data
-shootings <- read_csv("https://mpjashby.github.io/crimemappingdata/bronx_shootings.csv") |> 
+shootings <- read_csv(
+  "https://mpjashby.github.io/crimemappingdata/bronx_shootings.csv", 
+  show_col_types = FALSE
+) |> 
   st_as_sf(coords = c("longitude", "latitude"), crs = "EPSG:4326") |> 
   st_transform("EPSG:6538")
 
 # Load NYC police precincts data
-precincts <- st_read("https://mpjashby.github.io/crimemappingdata/nyc_precincts.gpkg") |> 
+precincts <- read_sf("https://mpjashby.github.io/crimemappingdata/nyc_precincts.gpkg") |> 
   janitor::clean_names() |> 
   # Filter just those precincts that are in the Bronx (40th to 52nd)
   filter(precinct %in% 40:52) |> 
@@ -324,7 +318,8 @@ precincts <- st_read("https://mpjashby.github.io/crimemappingdata/nyc_precincts.
 shootings_kde <- shootings |> 
   hotspot_kde(
     grid = hotspot_grid(precincts, cell_size = 100), 
-    bandwidth_adjust = 0.33
+    bandwidth_adjust = 0.33,
+    quiet = TRUE
   ) |> 
   st_intersection(precincts)
 
@@ -724,6 +719,19 @@ shootings_map_titled <- shootings_map +
 ```
 
 
+::: {.box .notewell}
+
+In this tutorial we will store the map we are creating in an object several 
+times as we go through the process of explaining how to add context to a map.
+When you write your own code, you should not do this. Instead, you should create
+the map from start to finish in a single block of code. Doing that will make 
+sure your code is easy to read and that you don't have to keep track of more
+objects than necessary. For an example of this, see the final page of this
+tutorial.
+
+:::
+
+
 
 ## Legends
 
@@ -1068,7 +1076,7 @@ legends and scale bars to maps in R.
 You can find out more about the topics we have covered in this tutorial:
 
   * For a short summary of research into how people read maps and what that 
-    tells us about how to design a map, see [Cartography, visual perception and cognitive psychology](https://doi.org/10.4324/9781315736822.ch3)
+    tells us about how to design a map, see [Cartography, visual perception and cognitive psychology](https://doi.org/10.4324/9781315736822-5)
     by Amy Griffin.
   * For a more-detailed explanation of how visual hierarchy can be applied to
     maps, see [Visual Hierarchy and Layout](https://gistbok.ucgis.org/bok-topics/visual-hierarchy-and-layout).
@@ -1082,3 +1090,4 @@ You can find out more about the topics we have covered in this tutorial:
 <p class="credits">
 [XKCD.com comic 'Geography'](https://xkcd.com/1459/) licensed under the [Creative Commons Attribution-NonCommercial license](https://xkcd.com/license.html).
 </p>
+

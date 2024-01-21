@@ -14,8 +14,6 @@
 ^.*/rosm.cache
 ^rosm.cache
 ^data-raw$
-^inst/tutorials/06_map_context
-^inst/tutorials/07_handling_bugs
 ^inst/tutorials/08_projects
 ^inst/tutorials/09_mapping_areas
 ^inst/tutorials/10_place_data

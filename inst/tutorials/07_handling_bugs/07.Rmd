@@ -4,7 +4,7 @@ description: "Learn how to deal with error messages and other problems with the 
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -103,10 +103,6 @@ if you approach errors in a systematic way.
 
 <p class="full-width-image"><img src="images/debugging.jpg" alt="Cartoon showing 10 furry monsters showing different stages of learning to debug code. The monsters are marked '1. I got this', '2. Huh, really though that was it', '3. (...)', '4. Fine. Restarting.', '5. OH WTF', '6. Zombie meltdown', '7. [crying]', '8. A NEW HOPE!', '9. [insert awesome theme song]' and '10. I LOVE CODING!'"></p>
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
-
 
 
 ## Errors, warnings and messages
@@ -187,8 +183,8 @@ because they don't stop your code running.
 
 
 Warnings are displayed in the same font as messages, but with the text 
-`Warning message:` at the start. You can generate your own warning messages
-using the `warning()` function:
+`Warning:` at the start. You can generate your own warning messages using the 
+`warning()` function:
 
 ```{r intro-exercise6, exercise=TRUE}
 warning("Something might be wrong. Check to make sure.")
@@ -233,18 +229,18 @@ checked for syntax errors before any code is actually run, a syntax error
 anywhere in your code will stop all of your code running. Syntax errors are 
 typically fairly easy to fix, because they are usually caused by typos.
 
-The second type of error is a logical error. This happens when R is able to
-interpret what you have written, but something is wrong with what you have asked
-it to do. These are called logical errors because there is usually some problem
-with the logic of what you are asking R to do. Like syntax errors, logical 
-errors can be caused by typos, but logical errors can also have many other
-causes.
+The second type of error that can happen is a logical error. This happens when R 
+is able to interpret what you have written, but something is wrong with what you 
+have asked it to do. These are called logical errors because there is usually 
+some problem with the logic of what you are asking R to do. Like syntax errors, 
+logical errors can be caused by typos, but logical errors can also have many 
+other causes.
 
 There is a saying in programming that a computer will do exactly what you tell 
 it to do, which may not be the same thing as what you _wanted_ it do. Logical 
 errors happen when you have told R to do something that it cannot do. For 
 example, you might be asking R to multiply together a numeric value and a 
-character value, which is illogical.
+character value (e.g. `3 * "A"`), which is illogical.
 
 Since every step in your code depends on the steps that went before it, it is
 only possible to identify a logical error during the process of running the
@@ -608,7 +604,7 @@ common_errors <- tribble(
   '`unexpected numeric constant in "blah"`, `unexpected string constant in "blah"` or `unexpected symbol in "blah"`', "You have a typo somewhere in your code. Check the line of code producing the error to make sure it is formatted correctly. The most common typos that cause this error are a missing comma or closing parenthesis, but there are [several other typos that can cause similar errors](https://stackoverflow.com/a/25889235/8222654).",
   '`unused argument (var = "blah")`', "You have used an argument name in a function that does not understand it. Check the manual page for that function.",
   '`argument "blah" is missing,` `with no default`', "You have used a function without providing all the necessary arguments. Check the manual page for that function.",
-  "`The pipe operator requires` `a function call as RHS`", "There is a pipe operator at the end of the final line of a code pipeline (or what R thinks should be the final line)."
+  "`The pipe operator requires` `a function call as RHS`", "There is a pipe operator at the end of the final line of a code pipeline (or what R thinks should be the final line), or you have omitted the parentheses at the end of a function name."
 )
 
 # If the PDF version of this table does not already exist, create it
@@ -802,21 +798,22 @@ It is actually possible to remove a lot of the original code and still produce
 the same error. You can remove:
 
   1. All the lines of code that fine-tune the appearance of the chart 
-     (lines 23--38 above). 
-  2. The line creating the trend line (line 22).
+     (lines 22--37 above). 
+  2. The line creating the trend line (line 21).
   3. The code that wrangles our data in ways that don't affect the error 
-     (lines 9--15).
+     (lines 8--14).
   4. The line that loads the `dplyr` package (line 2), since we are no-longer 
      using the data wrangling functions from that package.
 
-We cannot remove the code that loads necessary packages (lines 3 and 5), loads 
-the data (line 8) or produces the basic unformatted chart (lines 19--21), 
-because if we remove any of those then the error message changes or disappears.
+We cannot remove the code that loads necessary packages (lines 3 and 4), loads 
+the data (line 7) or produces the basic unformatted chart (lines 18--20), 
+because if we remove any of those then the error message either changes or 
+disappears.
 
 This leaves us with the following code, which produces the same error message
 but is much easier for someone to check for errors because it is much shorter.
 Because we have removed the data-wrangling code, we have had to change the name
-of the argument on line 20 of the code above from `y = ksi_driver_rate` to
+of the argument on line 19 of the code above from `y = ksi_driver_rate` to
 `y = drivers`, since the column `ksi_driver_rate` is no longer in the data.
 
 
@@ -983,10 +980,6 @@ that we started this section with, we would get an error message
 Once your reprex produces _the same error_ as the code you originally had the
 issue with, you're ready to share it to get help.
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
-
 
 
 ## Sources of help
@@ -1052,9 +1045,123 @@ help you get to the final stage of the emotional roller coaster of debugging:
 
 <p class="full-width-image"><img src="images/debugging.jpg" alt="Cartoon showing 10 furry monsters showing different stages of learning to debug code. The monsters are marked '1. I got this', '2. Huh, really though that was it', '3. (...)', '4. Fine. Restarting.', '5. OH WTF', '6. Zombie meltdown', '7. [crying]', '8. A NEW HOPE!', '9. [insert awesome theme song]' and '10. I LOVE CODING!'"></p>
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
+
+
+## Coding with AI
+
+One topic that we haven't covered yet is using artificial intelligence (AI) to 
+help us produce R code. The type of AI that can be used to help produce code is
+called a _large language model_ (LLM), sometimes known as a _generative AI_
+model. The best known of these among the public is probably 
+[ChatGPT](https://chat.openai.com/), but there are lots of similar services 
+available (and new ones being released all the time).
+
+
+#### Coding with AI: an example
+
+Generative AI services can help you to write code, especially code that does 
+very common tasks like loading data. For example, say that I want to load the
+Vancouver thefts dataset that we used in a previous tutorial and convert the
+column names in the data to `snake_case`. As a reminder, the code we previously 
+used to do that looked like this:
+
+```r
+library(tidyverse)
+
+vancouver_thefts <- read_csv("https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz") |> 
+  janitor::clean_names()
+```
+
+I can ask ChatGPT (version 3.5) to write code for me that will do this task. If
+I ask ChatGPT "Show me the R code needed to load the CSV dataset at https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz and make the 
+column names into snake case", it will produce some R code that looks roughly 
+like this:
+
+```r
+# Install and load the required packages if not already installed
+# install.packages("readr")
+# install.packages("snakecase")
+library(readr)
+library(snakecase)
+
+# URL of the CSV file
+url <- "https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz"
+
+# Read the CSV file and convert column names to snake case
+data <- read_csv(url, col_names = TRUE) %>%
+  snakecase::to_snake_case()
+
+# Display the first few rows of the dataset
+head(data)
+```
+
+ChatGPT also produces a short explanation of what the code does:
+
+> This code uses the `read_csv()` function from the `readr` package to read the CSV file from the specified URL. The `col_names = TRUE` argument ensures that column names are read from the first row of the CSV file. The `snakecase::to_snake_case()` part applies the transformation to snake case for all column names.
+
+> Make sure to install the `readr` and `snakecase` packages before running this code if you haven't done so already. You can uncomment the `install.packages("readr")` and `install.packages("snakecase")` lines for installation.
+
+Unfortunately, if you try to run the code above you will find it produces two errors:
+
+  * `could not find function "%>%"`. The code generated by ChatGPT uses the `%>%` operator, which is an older version of the `|>` pipe operator we use in this course. But the `%>%` operator is part of the `magrittr` package, so to use it the code needs to load the `magrittr` package first.
+  * `argument is not a character vector`. The code produced by ChatGPT passes the tibble loaded by `read_csv()` to the `to_snake_case()` function from the `snakecase` package. But `to_snake_case()` expects a vector of character values (e.g. `c("aCharacterValue", "ANOTHERCHR")`), not a tibble. This is in contrast to `janitor::clean_names()`, which performs the same function and _does_ accept a tibble as input.
+  
+There are also a few of more-minor issues that won't produce errors, but might make your code harder to work with:
+
+  * The code creates an object called `url`. Storing the URL in a separate object is unnecessary (since we only need the URL once) and creates a risk that we could end up loading the wrong dataset if we later accidentally over-wrote the value of the `url` object with a different URL.
+  * The code creates an object with the generic name `data`, which might make it harder to remember later on what data is stored in that object. This is especially likely to be an issue if we come back to the code after a break, or if we need to use multiple datasets as part of our analysis.
+  * The code loads the `snakecase` package, but then also refers to the package using the `::` notation when using the function `to_snake_case()`. This is not a big deal, but makes the code slightly longer and therefore marginally harder to read.
+
+<div class="box extra-detail">
+
+<h5 id="ai-box1-title" class="box-title">Why did I get a different result when I put the same prompt into ChatGPT?</h5>
+
+<div id="ai-box1" class="box-content">
+
+If you put the text "Show me the R code needed to load the CSV dataset at https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz and make the 
+column names into snake case" into ChatGPT 3.5, it is possible that you will get
+a slightly different response to the one shown above. This is because large
+language models are _stochastic_ or _non-deterministic_ models, which means that
+there is some element of chance involved in exactly what response the model will
+produce for a particular input. In fact, if you provide exactly the same input
+to ChatGPT multiple times, it is likely you will get a slightly different answer
+each time.
+
+</div>
+
+</div>
+
+<script>
+$("#ai-box1-title").click(function () { $("#section-ai-box1").toggle("slow") })
+</script>
+
+
+#### Why did ChatGPT produce code that doesn't work?
+
+Why do these problems happen? To understand that, we need to know just a little bit about how large language models such as ChatGPT work. LLMs work by looking for patterns in very large datasets (e.g. all the pages on the world wide web) and then using those patterns to predict what the most likely answer is to questions or requests that include particular words and phrases. To give a very simple example, an LLM might be able to identify that if the first few words in a sentence are 'Today was Sunday, which meant that tomorrow …' then it is likely (but – crucially – not certain!) that the next words would be 'is Monday'. 
+
+Because they are trained on very large samples of data, LLMs can produce answers that are sophisticated enough that they almost look like magic. But behind the scenes, what models like ChatGPT are doing is predicting what the most likely combination of words a response will contain, based on the input that it is given. It is important to remember that models such as ChatGPT do not know the _correct_ answer to a question, since they do not actually understand the question in the way that humans do. This means that ChatGPT cannot give you any indication of how confident it is about the answer it has given: it will be equally confident in its answer whether it is right or wrong.
+
+
+<p class="full-width-image"><img src="images/need_a_minute.png" alt="A frustrated little monster sits on the ground with his hat next to him, saying 'I just need a minute.' Looking on empathetically is the R logo, with the word 'Error' in many different styles behind it."></p>
+
+
+
+#### Should I use AI to help me code?
+
+So given these issues, does that mean that we shouldn't use LLMs to help us write code? Not necessarily. Lots of programmers find LLMs useful for helping them write code. However, LLMs like ChatGPT are useful for _supporting_ humans to write effective code, not for replacing humans writing code. Even if you asked an LLM to write every part of your code for you, it is likely you would need to make some changes to the code it produced to make it work. 
+
+That means that to use an LLM effectively to help you write code, you need to understand the code that the LLM produces. That's why this course teaches you to understand how to write code to produce crime maps in R, rather than just how to use an LLM to write the code for you.
+
+Whether to use an LLM to help you write code is up to you. Some people find it saves them time and helps them get started on how to produce a particular bit of code, while others find that they spend just as much time fixing the code produced by an LLM as it would take them to write the code themselves. You might want to experiment with getting help from an LLM so you can see what works for you.
+
+
+#### Using AI to help map crime
+
+There are two further important points to make about using LLMs in the context of crime mapping. First, it is vital that you do not upload any sensitive data to an LLM that is hosted online, since it is likely that the company that runs the LLM will have reserved the right to use any data you submit to improve the model in future. You must make sure that sensitive data such as victim details are not posted online or shared unlawfully.
+
+The second important point is that the analysis that we use crime mapping for is usually done to answer important questions such as where crime-prevention initiatives should be focused or where a serial offender might live. It is vital that the answers we produce to these questions are accurate. Part of making sure the results of our analysis are accurate is to make sure that we understand exactly how our code produces a particular result. If you use an LLM to support your coding, it is vital that you still understand what the code does.
+
 
 
 ## In summary
@@ -1144,6 +1251,9 @@ For more information on writing reproducible examples, see:
     Jenny Bryan.
   * Read the [Reprex do’s and don’ts](https://reprex.tidyverse.org/articles/reprex-dos-and-donts.html) 
     on the `reprex` package website.
+  * Learn more about how to use  [Six tips for better coding with ChatGPT](https://doi.org/10.1038/d41586-023-01833-0)
 
 :::
 
+
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>
