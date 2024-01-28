@@ -4,7 +4,7 @@ description: "Learn how to make maps that show data for areas, as well as how to
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -84,12 +84,18 @@ Maps that show data for areas are called *thematic maps* or *choropleth maps*.
 
 ```{r make-map-types, eval=FALSE}
 cdmx_north_boroughs <- cdmx_alcaldias |> 
-  filter(nomgeo %in% c("Gustavo A. Madero", "Azcapotzalco", "Miguel Hidalgo", "Venustiano Carranza", "Cuauhtémoc"))
+  filter(nomgeo %in% c("Gustavo A. Madero", "Azcapotzalco", "Miguel Hidalgo", "Venustiano Carranza", "Cuauhtémoc")) |> 
+  st_transform("EPSG:31975")
+cdmx_north_buffer <- cdmx_north_boroughs |> 
+  st_union() |> 
+  st_centroid() |> 
+  st_buffer(4000)
 cdmx_north_car_jacking <- cdmx_car_jacking |> 
+  st_transform("EPSG:31975") |> 
   st_intersection(cdmx_north_boroughs)
 cdmx_north_car_jacking_kde <- cdmx_north_car_jacking |> 
   sfhotspot::hotspot_kde(
-    grid = sfhotspot::hotspot_grid(cdmx_north_boroughs, cell_size = 200), 
+    grid = sfhotspot::hotspot_grid(cdmx_north_boroughs, cell_size = 500), 
     bandwidth_adjust = 0.25
   ) |> 
   st_intersection(cdmx_north_boroughs)
@@ -101,23 +107,30 @@ cdmx_north_car_jacking_count <- cdmx_north_car_jacking |>
 
 cdmx_north_maps <- list()
 
-cdmx_north_maps$point <- ggplot(cdmx_north_car_jacking) +
-  annotation_map_tile(type = "cartolight", zoomin = 0) +
-  geom_sf(data = cdmx_north_boroughs, colour = "grey50", fill = NA) +
-  geom_sf(alpha = 0.25, colour = "darkred", size = 0.5) +
-  geom_sf_label(
-    aes(label = str_wrap(nomgeo, 10)), 
-    data = cdmx_north_boroughs, 
-    alpha = 0.67,
-    colour = "grey25",
-    fill = "white",
-    fontface = "bold",
-    label.size = NA,
-    lineheight = 1,
-    size = 2
+cdmx_north_maps$point <- ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  annotation_spatial(data = cdmx_north_boroughs, colour = "grey50", fill = NA) +
+  annotation_spatial(
+    data = cdmx_north_car_jacking, 
+    alpha = 0.25, 
+    colour = "darkred", 
+    size = 0.5
   ) +
+  # geom_sf_label(
+  #   aes(label = str_wrap(nomgeo, 10)), 
+  #   data = cdmx_north_boroughs, 
+  #   alpha = 0.67,
+  #   colour = "grey25",
+  #   fill = "white",
+  #   fontface = "bold",
+  #   label.size = NA,
+  #   lineheight = 1,
+  #   size = 2
+  # ) +
+  geom_sf(data = cdmx_north_buffer, colour = NA, fill = NA) +
+  fixed_plot_aspect(ratio = 3/1) +
   labs(subtitle = "Point map") +
-  coord_sf(crs = "EPSG:4326") +
+  # coord_sf(crs = "EPSG:4326") +
   theme_void() +
   theme(
     panel.border = element_rect(fill = NA),
@@ -125,21 +138,23 @@ cdmx_north_maps$point <- ggplot(cdmx_north_car_jacking) +
     plot.subtitle = element_text(margin = margin(b = 3))
   )
 
-cdmx_north_maps$density <- ggplot(cdmx_north_car_jacking_kde) +
-  annotation_map_tile(type = "cartolight", zoomin = 0) +
-  geom_sf(aes(fill = kde), colour = NA, alpha = 0.75) +
-  geom_sf(data = cdmx_north_boroughs, colour = "grey50", fill = NA) +
-  geom_sf_text(
-    aes(label = str_wrap(nomgeo, 10)), 
-    data = cdmx_north_boroughs, 
-    colour = "grey25",
-    fontface = "bold",
-    lineheight = 1,
-    size = 2
-  ) +
+cdmx_north_maps$density <- ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  annotation_spatial(cdmx_north_car_jacking_kde, aes(fill = kde), colour = NA, alpha = 0.65) +
+  annotation_spatial(data = cdmx_north_boroughs, colour = "grey50", fill = NA) +
+  # geom_sf_text(
+  #   aes(label = str_wrap(nomgeo, 10)), 
+  #   data = cdmx_north_boroughs, 
+  #   colour = "grey25",
+  #   fontface = "bold",
+  #   lineheight = 1,
+  #   size = 2
+  # ) +
+  geom_sf(data = cdmx_north_buffer, colour = NA, fill = NA) +
+  fixed_plot_aspect(ratio = 3/1) +
   scale_fill_gradient(low = "white", high = "darkred") +
   labs(subtitle = "Density map") +
-  coord_sf(crs = "EPSG:4326") +
+  # coord_sf(crs = "EPSG:4326") +
   theme_void() +
   theme(
     panel.border = element_rect(fill = NA),
@@ -148,19 +163,21 @@ cdmx_north_maps$density <- ggplot(cdmx_north_car_jacking_kde) +
     legend.position = "none"
   )
 
-cdmx_north_maps$count <- ggplot(cdmx_north_car_jacking_count) +
-  annotation_map_tile(type = "cartolight", zoomin = 0) +
-  geom_sf(aes(fill = n), colour = "grey50") +
-  geom_sf_text(
-    aes(colour = n >= quantile(n, 0.9), label = str_wrap(nomgeo, 10)), 
-    fontface = "bold",
-    lineheight = 1,
-    size = 2
-  ) +
+cdmx_north_maps$count <- ggplot() +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
+  annotation_spatial(cdmx_north_car_jacking_count, aes(fill = n), alpha = 0.65, colour = "grey50") +
+  # geom_sf_text(
+  #   aes(colour = n >= quantile(n, 0.9), label = str_wrap(nomgeo, 10)), 
+  #   fontface = "bold",
+  #   lineheight = 1,
+  #   size = 2
+  # ) +
+  geom_sf(data = cdmx_north_buffer, colour = NA, fill = NA) +
   scale_colour_manual(values = c(`TRUE` = "grey75", `FALSE` = "grey25")) +
   scale_fill_gradient(low = "white", high = "darkred") +
+  fixed_plot_aspect(ratio = 3/1) +
   labs(subtitle = "Thematic/choropleth map") +
-  coord_sf(crs = "EPSG:4326") +
+  # coord_sf(crs = "EPSG:4326") +
   theme_void() +
   theme(
     panel.border = element_rect(fill = NA),
@@ -169,18 +186,18 @@ cdmx_north_maps$count <- ggplot(cdmx_north_car_jacking_count) +
     legend.position = "none"
   )
 
-cdmx_north_map <- patchwork::wrap_plots(cdmx_north_maps, ncol = 3)
+cdmx_north_map <- patchwork::wrap_plots(cdmx_north_maps, ncol = 1)
 
 ggsave(
   here::here("inst/tutorials/09_mapping_areas/images/cdmx_north_map.jpg"), 
   cdmx_north_map,
   width = 800 / 150,
-  height = 300 / 150,
+  height = 1000 / 150,
   dpi = 150
 )
 ```
 
-<p class="full-width-image"><img src="images/cdmx_north_map.jpg" alt="Three maps: a point map, a density map and a thematic/choropleth map"></p>
+<p class="full-width-image"><img src="images/cdmx_north_map.jpg" alt="Three maps: a point map, a density map and a thematic/choropleth map" style="max-height: 1000px;"></p>
 
 
 ::: {.box .notewell}
@@ -245,7 +262,7 @@ Remember to load any packages that you need first.
 library(sf)
 library(tidyverse)
 
-cdmx_car_jacking <- st_read("https://mpjashby.github.io/crimemappingdata/cdmx_car_jacking.gpkg") 
+cdmx_car_jacking <- read_sf("https://mpjashby.github.io/crimemappingdata/cdmx_car_jacking.gpkg") 
 
 head(cdmx_car_jacking)
 ```
@@ -261,7 +278,7 @@ back to the tutorial called 'Giving a map context' to refresh your memory.
 ```
 
 ```{r count-exercise2-solution}
-cdmx_alcaldias <- st_read("https://mpjashby.github.io/crimemappingdata/cdmx_alcaldias.gpkg")
+cdmx_alcaldias <- read_sf("https://mpjashby.github.io/crimemappingdata/cdmx_alcaldias.gpkg")
 ```
 
 
@@ -306,7 +323,7 @@ car_jackings_in_alcaldias <- st_join(cdmx_car_jacking, cdmx_alcaldias)
 head(car_jackings_in_alcaldias)
 ```
 
-<!--
+
 As well as producing a joined dataset as expected, this code has produced a
 message noting that `st_join()` assumes that co-ordinates are planar even though
 they are specified as latitudes and longitudes. This message is there to remind
@@ -358,8 +375,6 @@ head(car_jackings_in_alcaldias)
 
 We can see that this time, no messages are produced because the inputs to 
 `st_join()` do not use longitude and latitude co-ordinates.
-
--->
 
 If you look at the `car_jackings_in_alcaldias` object, you will see that there 
 are columns called `municip` and `nomgeo` that show which row in the 
@@ -466,8 +481,8 @@ library(sf)
 library(tidyverse)
 
 # Load the data and transform to an appropriate co-ordinate system
-cdmx_car_jacking <- st_read("https://mpjashby.github.io/crimemappingdata/cdmx_car_jacking.gpkg")
-cdmx_alcaldias <- st_read("https://mpjashby.github.io/crimemappingdata/cdmx_alcaldias.gpkg")
+cdmx_car_jacking <- read_sf("https://mpjashby.github.io/crimemappingdata/cdmx_car_jacking.gpkg")
+cdmx_alcaldias <- read_sf("https://mpjashby.github.io/crimemappingdata/cdmx_alcaldias.gpkg")
 
 # Calculate counts of car jackings
 car_jacking_counts <- cdmx_car_jacking |> 
@@ -507,15 +522,12 @@ Remember:
 ## Mapping areas
 
 Maps showing counts of crimes, or a wide range of other data, for different 
-areas are extremely common in all types of spatial analysis. Choropleth maps can
-be produced for all sorts of areas -- watch this video to find out more about 
-the types of areas for which the statistical data used to produce maps like 
-these are often produced.
+_areas_ are extremely common in all types of spatial analysis. Watch this video
+to find out introduce yourself to some of the issues you should be aware of when 
+mapping areas.
 
-![](https://youtu.be/d2zLCSl4PF8)
+![](https://youtu.be/0gRJ_dzKTmM)
 
-
-### Two problems with area maps
 
 Because so much of the data that we might use in crime mapping is only available
 for specific areas, we often have no choice as to what types of area we use to
@@ -526,25 +538,14 @@ individual people or places within them is known as the *ecological fallacy*, a
 type of logical error that can be dangerous when we try to draw conclusions from
 choropleth maps. Watch this video to find out more about the ecological fallacy.
 
-![](https://youtu.be/xpJEBVO5AGM)
-
-There is a second potential problem when we use choropleth maps to counts crimes
-or other data that relate to specific points within an area. This is known as
-the modifiable areal unit problem, or MAUP. The MAUP describes how the apparent
-distribution of crime counts on choropleth maps is determined not just by the 
-actual locations of crimes but also the choice of areas that we use to do the
-counting. Watch this video to learn more about the MAUP.
-
-![](https://youtu.be/7NTw1v7DuAA)
-
 
 ::: {.box .notewell}
 
-Neither the ecological fallacy nor the MAUP are problems that we can solve --
-they are inherent to choropleth maps. For this reason, whenever we plan to show
-some spatial data using a choropleth map, it is worth stopping and thinking 
-about whether another type of map (such as a density map) might show the data
-more effectively and without the problems that choropleth maps have. 
+The ecological fallacy is not a problem that we can solve -- it is inherent to 
+choropleth maps. For this reason, whenever we plan to show some spatial data 
+using a choropleth map, it is worth stopping and thinking about whether another 
+type of map (such as a density map) might show the data more effectively and 
+without the problems that choropleth maps have. 
 
 Nevertheless, in some circumstances a choropleth map will be the best choice 
 either because we only have data for pre-defined areas or because we are 
@@ -563,7 +564,7 @@ the largest state in India, with more than 200 million residents.
 
 ```{r make-uttar-pradesh-map, eval=FALSE}
 district_murders_map <- ggplot(district_murders_pop) +
-  annotation_map_tile(type = "cartolight", zoomin = 0) +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(aes(fill = murder), data = district_murders, alpha = 0.75) +
   scale_fill_distiller(palette = "Oranges", direction = 1) +
   labs(
@@ -688,18 +689,17 @@ ggplot(district_murders) +
   theme(panel.border = element_rect(colour = "black", fill = NA))
 ```
 
-There are at least three problems with this map: 
+There are at least two problems with this map: 
 
   1. we cannot tell how many murders there were in each district, and
-  2. we cannot see the base map under the polygons representing the districts,
-     and.
+  2. we cannot see the base map under the polygons representing the districts.
 
 We can solve these two problems by changing the aesthetics for the 
 `geom_sf()` layer in our code. Specifically, we can make the district polygons
 semi-transparent by setting the `alpha` argument to `geom_sf()` to a value of 
 less than one, while also using `aes(fill = murder)` to specify that the fill
 colour of the polygons should depend on the number of murders in each district.
-At the same time we will use `scale_fill_brewer()` to use a colour scheme that
+At the same time we will use `scale_fill_distiller()` to use a colour scheme that
 is accessible to the widest range of users.
 
 ```{r choro-exercise4, exercise=TRUE, exercise.lines=14, message=FALSE, out.width="90%", fig.asp=1}

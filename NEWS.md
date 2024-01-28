@@ -1,3 +1,8 @@
+# crimemapping 2.3.0
+
+* Update content for 2024 Week 4 (tutorials 8 and 9).
+
+
 # crimemapping 2.2.0
 
 * Update content for 2024 Week 3 (tutorials 6 and 7).

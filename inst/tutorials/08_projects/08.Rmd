@@ -4,7 +4,7 @@ description: "Learn how to use RStudio Projects (and a little self discipline) t
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -50,9 +50,7 @@ Projects feature and a plan for organising our files. Once you've formed the
 habit of working in this way, it becomes second nature and you'll find your work 
 is both easier and produces more-reliable results.
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
+
 
 
 ## RStudio Projects
@@ -326,7 +324,7 @@ only used one zero for padding because I don't expect to have more than 100
 files).
 
 <p class="credits">
-['File Organization: Naming' by Data Carpentry](https://datacarpentry.org/rr-organization1/01-file-naming/index.html) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license). [XKCD.com comic 'Documents'](https://xkcd.com/1459/) licensed under the [Creative Commons Attribution-NonCommercial license](https://xkcd.com/license.html).
+['File Organization: Naming' by Data Carpentry](https://datacarpentry.org/rr-organization1/01-file-naming/index.html) licensed under the [Creative Commons Attribution licence](https://creativecommons.org/licenses/by/4.0/). [XKCD.com comic 'Documents'](https://xkcd.com/1459/) licensed under the [Creative Commons Attribution-NonCommercial license](https://xkcd.com/license.html).
 </p>
 
 
@@ -372,3 +370,4 @@ If you'd like more information about these topics, you might be interested in:
     is a 40-minute webinar given by Garrett Grolemund that explains how to make
     the best of RStudio Projects.
 
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>
