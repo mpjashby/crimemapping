@@ -722,6 +722,16 @@ ggplot(district_murders) +
 
 ## Making an interactive map
 
+
+::: {.box .notewell .tutorial}
+
+Due to a bug on some versions of Windows, the R code chunks in this section are
+not interactive. If you would like to run the R code here, please copy and paste
+it into the R console or a blank R script (`.R`) file.
+
+:::
+
+
 So far in this course, all the maps we have made using `ggplot()` have been 
 static images. These are useful for lots of different circumstances, and are 
 usually the only choice if we want to produce a written report as a Word 
@@ -734,7 +744,7 @@ In the example of murders in Uttar Pradesh, we might want to use an interactive
 map to zoom in to see which cities are included in each district on the map.
 To see how this works, explore this map of murder rates in Uttar Pradesh.
 
-```{r interactive-map, out.width="100%", fig.asp=1}
+```{r interactive-map, out.width="100%", fig.asp=1, eval=FALSE}
 colours_red <- colorNumeric(palette = "Reds", domain = NULL)
 
 district_labels <- district_murders_pop |> 
@@ -785,7 +795,7 @@ We can create a very basic `leaflet` map using the `leaflet()` function to
 create the stack, the `addProviderTiles()` function to add a base map and the
 `addPolygons()` function to add the district outlines.
 
-```{r leaflet-exercise1, exercise=TRUE, out.width="100%", fig.asp=1}
+```r
 library(leaflet)
 
 leaflet(district_murders) |> 
@@ -857,7 +867,7 @@ an error saying:
 Error in colours_red(murder) : object 'murder' not found
 ```
 
-```{r leaflet-exercise2, exercise=TRUE, message=FALSE, out.width="100%", fig.asp=1}
+```r
 # Create a custom colour palette function
 colours_red <- colorNumeric(palette = "Reds", domain = NULL)
 
@@ -882,7 +892,7 @@ arguments:
     again, the column name should be preceded by a `~` operator.
   * `title` specifies the legend title.
 
-```{r leaflet-exercise3, exercise=TRUE, message=FALSE, out.width="100%", fig.asp=1}
+```r
 leaflet(district_murders) |> 
   addProviderTiles("CartoDB.Voyager") |> 
   addPolygons(
@@ -902,7 +912,7 @@ We can do this by adding the `addMiniMap()` function to the `leaflet` stack.
 We will add the argument `toggleDisplay = TRUE` to add the ability to minimise
 the inset map if necessary.
 
-```{r leaflet-exercise4, exercise=TRUE, message=FALSE, out.width="100%", fig.asp=1}
+```r
 leaflet(district_murders) |> 
   addProviderTiles("CartoDB.Voyager") |> 
   addPolygons(
@@ -926,7 +936,7 @@ sections, we can specify that the labels should be based on the `district_name`
 column in the `district_murders` data using the `~` operator, by setting 
 `label = ~ district_name`.
 
-```{r leaflet-exercise5, exercise=TRUE, message=FALSE, out.width="100%", fig.asp=1}
+```r
 leaflet(district_murders) |> 
   addProviderTiles("CartoDB.Voyager") |> 
   addPolygons(

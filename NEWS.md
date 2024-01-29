@@ -1,3 +1,9 @@
+# crimemapping 2.3.1
+
+* Remove interactivity from leaflet portion of tutorial 9 due to 
+`` Couldn't normalize path in `addResourcePath` `` error.
+
+
 # crimemapping 2.3.0
 
 * Update content for 2024 Week 4 (tutorials 8 and 9).
