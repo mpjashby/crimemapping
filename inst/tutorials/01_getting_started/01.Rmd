@@ -215,4 +215,4 @@ If you're not feeling too confident at this point in the course, don't worry –
 
 <p class="full-width-image"><img src="https://github.com/mpjashby/crimemapping/raw/main/inst/tutorials/01_getting_started/images/r_rollercoaster.png" alt="Cartoon line chart showing how you become more confident in using R over time, then less confident and then more confident again."></p>
 
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>

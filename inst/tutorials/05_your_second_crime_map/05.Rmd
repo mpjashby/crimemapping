@@ -648,13 +648,6 @@ bike_thefts <- read_csv("https://mpjashby.github.io/crimemappingdata/vancouver_t
 ```
 
 
-=======
->>>>>>> c847f851a9ff3a85ea7ecd4bb7dfbf98c73bd619
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
-
-
 
 ## Producing maps in R
 

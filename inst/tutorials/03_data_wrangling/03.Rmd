@@ -149,10 +149,6 @@ you will often see `library(tidyverse)` at the top of R code in subsequent
 tutorials – that short line of code loads several packages containing hundreds
 of functions that we can use in data analysis.
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
-
 
 
 ## Loading data
@@ -463,6 +459,9 @@ handle messy Excel data in this online tutorial](http://lesscrime.info/post/clea
 :::
 
 
+
+::: {.tutorial}
+
 ### Check your understanding
 
 Answer the following questions to check your understanding of what we've learned
@@ -541,6 +540,8 @@ quiz(
   
 )
 ```
+
+:::
 
 
 
@@ -633,6 +634,9 @@ functions in the `dplyr` package by reading this [Introduction to `dplyr` tutori
 :::
 
 
+
+::: {.tutorial}
+
 ### Check your understanding
 
 ```{r select-quiz}
@@ -668,9 +672,7 @@ quiz(
 )
 ```
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
+:::
 
 
 
@@ -776,6 +778,8 @@ filter(agg_assault_data, !is.na(location_type))
 We will see lots more examples of how to use `filter()` in future tutorials.
 
 
+::: {.tutorial}
+
 ### Check your understanding
 
 ```{r filter-quiz}
@@ -847,9 +851,7 @@ quiz(
 )
 ```
 
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
+:::
 
 
 
@@ -939,10 +941,6 @@ values as there are rows in the dataset. This is true for most R functions
 cannot be used inside `mutate()` (you will see an error message if you try) but
 are instead used with the next data-wrangling function we will learn about:
 `summarise()`.
-
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
 
 
 
@@ -1328,3 +1326,5 @@ further, you might be interested in:
     Grolemund, a free online book that is the bible for wrangling data in R.
     
 :::
+
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>

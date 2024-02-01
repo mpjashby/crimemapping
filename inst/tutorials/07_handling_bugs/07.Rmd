@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Handling bugs in your code"
-description: "Learn how to deal with error messages and other problems with the code that you write"
+description: "Learn how to deal with error messages and other problems with the code that you write."
 output: 
   learnr::tutorial:
     progressive: true
@@ -584,52 +584,11 @@ from others.
 ## How to fix some common errors
 
 There are some mistakes that it is common for people to make when writing code.
-The table on this page gives some common error messages and how to fix them.
-Read through this list now but you can also refer back to it later on if you 
-need to. You can [download a PDF version of this table for future reference](www/common_errors.pdf).
-
-In these error messages, the code `blah` represents the function, object or 
-value that the error relates to. 
-
-```{r common-errors, message=FALSE, warning=FALSE}
-common_errors <- tribble(
-  ~`Error message`, ~`How to fix it`,
-  "`there is no package called 'blah'`", "You have either mis-typed the package name or the package is not installed. Check the spelling or use `install.packages()` to install the package.",
-  '`could not find function "blah"`', "You have either mis-typed the function name or the package containing that function is not loaded. Check the spelling or use `library()` to load the package.",
-  "`object 'blah' not found`", "You have either mis-typed the name of the object or the object does not exist. Check the spelling and make sure you have run the code that creates the object. This error can also occur when you have forgotten to put quotes around a character value in an argument, since R treats words without quotes around them as the names of objects. In this case, check that you have used quote marks around any character values in your code.",
-  "`'blah' does not exist` `in current working directory`", "You have either mis-typed the name of a file that R is trying to access or the file does not exist in the location you have specified. Check the spelling and make sure the file exists.",
-  "`non-numeric argument to binary operator`", "You have tried to use a mathematical operator such as `+` or `-` with a non-numeric value. For example, you might have written the code `1 + blah` thinking that `blah` holds a numeric value, but if `blah` actually holds a character value then trying to add it to `1` makes no sense. Check that any objects in your code have the values you expect them to.",
-  "`object of type 'closure'` `is not subsettable`", "You have tried to use a function as if it is an object, which can happen when you store data in an object that has the same name as an R function (most commonly, when you store some data in an object called `data`, since  there is a function called `data()`). The circumstances that produce this error are often not simple to understand, so the best way to handle this error is to avoid it by not naming objects using the names of functions.",
-  "`no applicable method for 'blah' applied` `to an object of class \"blah\"`", "Some R functions (called generic functions) work in different ways depending on what type of object you use them on. But if you use a generic function on an object that it does not know how to handle, you will see this error. Check the object(s) that you provided to the function causing the error to make sure it is the type of object you are expecting it to be.",
-  '`unexpected numeric constant in "blah"`, `unexpected string constant in "blah"` or `unexpected symbol in "blah"`', "You have a typo somewhere in your code. Check the line of code producing the error to make sure it is formatted correctly. The most common typos that cause this error are a missing comma or closing parenthesis, but there are [several other typos that can cause similar errors](https://stackoverflow.com/a/25889235/8222654).",
-  '`unused argument (var = "blah")`', "You have used an argument name in a function that does not understand it. Check the manual page for that function.",
-  '`argument "blah" is missing,` `with no default`', "You have used a function without providing all the necessary arguments. Check the manual page for that function.",
-  "`The pipe operator requires` `a function call as RHS`", "There is a pipe operator at the end of the final line of a code pipeline (or what R thinks should be the final line), or you have omitted the parentheses at the end of a function name."
-)
-
-# If the PDF version of this table does not already exist, create it
-if (!file.exists("www/common_errors.pdf")) {
-  
-  # Create markdown file
-  pander::panderOptions("knitr.auto.asis", FALSE)
-  pandoc_text <- pander::pander_return(
-    common_errors,
-    justify = "left", 
-    caption = "How to fix some common errors in R", 
-    split.tables = 80 * 2
-  )
-  readr::write_lines(pandoc_text, "www/common_errors.md")
-  
-  # Convert markdown to PDF
-  rmarkdown::render("www/common_errors.md", rmarkdown::pdf_document())
-  
-  # Remove temporary file
-  file.remove("www/common_errors.md")
-  
-}
-
-knitr::kable(common_errors)
-```
+As you get more experience in writing R code and dealing with error messages,
+you are likely to start to recognise some simple errors (especially those caused
+by typos) and know how to fix them quickly. One useful way to quickly find help
+on common errors is to check if the error (and the corresponding solution)
+appears on this [list of common R errors and how to fix them](http://books.lesscrime.info/learncrimemapping/appendices/common_errors.html).
 
 
 ::: {.tutorial}
@@ -729,6 +688,8 @@ produce the error. For example, run the following code to see what error it
 produces.
 
 ```{r reprex-exercise1-setup}
+#| echo: false
+
 # This code wrangles the data and stores it in the temporary directory created
 # by learnr to run the following exercise, which allows us to mimic loading the
 # data from a local file (which is important in the narrative, since it makes

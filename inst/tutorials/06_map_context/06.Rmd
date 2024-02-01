@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Giving a map context"
-description: "Add titles, sources, legends, scale bars and other contextual information to your maps"
+description: "Add titles, sources, legends, scale bars and other contextual information to your maps."
 output: 
   learnr::tutorial:
     progressive: true
@@ -381,68 +381,6 @@ There are many other functions in the `scales` package that format numbers in
 different ways, including `comma()` to add thousands separators to numbers and 
 `dollar()` to format numbers as values in dollars or other currencies. There is 
 a [full list of `scales` functions on the package website](https://scales.r-lib.org/reference/).
-
-
-<!--
-
-You might have noticed on the map above that the density layer does not cover
-the whole surface of the map. This is because there are some parts of the Bronx
-that did not have any shootings in 2019. Some of these areas are under water,
-for example. Since our map is about shootings, it would be better if we zoomed
-in to just the places where shootings occurred. We can restrict the map to just
-the area within the bounding box of the shootings data (i.e. the smallest
-rectangle that contains all the shooting locations) by adding the `coord_sf()`
-function to the stack of functions that we add to `ggplot()`. Since we have 
-already saved the map as an object, we will do this by adding the new function 
-to the existing object and then saving the result as a new object.
-
-```{r title-exercise2, exercise=TRUE, exercise.lines=17, warning=FALSE, message=FALSE, out.width="100%"}
-# Find the bounding box of shootings -- we have to convert the shootings data to
-# an SF object to do this
-shootings_bbox <- shootings |> 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
-  st_bbox()
-
-# Use coord_sf() to crop our map to the bounding box of shootings
-shootings_map <- first_shootings_map +
-  coord_sf(
-    xlim = shootings_bbox[c(1, 3)], 
-    ylim = shootings_bbox[c(2, 4)], 
-    expand = FALSE
-  )
-
-# Display the map
-shootings_map
-```
-
-<div class="box extra-detail">
-
-<h5 id="title-box1-title" class="box-title">What does the code 
-`shootings_bbox[c(1, 3)]` do?</h5>
-
-<div id="title-box1" class="box-content">
-
-You might be wondering what the code `shootings_bbox[c(1, 3)]` does. When an R
-object contains a sequence of values (`shootings_bbox` contains four values), we
-can usually extract one value or more values by adding square brackets to the
-end of the object name and then giving the index number of the value we want 
-(the first value has the index 1, the second value has the index 2, etc.). This
-is called *subsetting*. To subset a single value, just give the index inside
-the square brackets, e.g. `shootings_bbox[1]`. To get subset multiple values,
-give a vector (created with `c()`) of index numbers for the values you want.
-R can subset values in lots of different ways for different types of values,
-but we will discuss it in further detail if we need to later on.
-
-</div>
-
-</div>
-
-<script>
-$("#title-box1-title").click(function () { $("#section-title-box1").toggle("slow") })
-</script>
-
--->
-
 
 We now have a basic map of shootings in the Bronx. This map isn't good enough on
 its own, but we can use it to learn how to add supporting elements to a map.

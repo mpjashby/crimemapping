@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Code with style"
-description: "Learn how to format your code so that it is easier to read, both for you and for others"
+description: "Learn how to format your code so that it is easier to read, both for you and for others."
 output: 
   learnr::tutorial:
     progressive: true
@@ -120,7 +120,7 @@ crimes <- janitor::clean_names(crimes)
 burglaries <- filter(crimes, type == "burglary")
 burglaries <- mutate(burglaries, month = month(date_time))
 
-ggplot() + 
+ggplot(burglaries) + 
   geom_point(aes(x = lon, y = lat, colour = month)) +
   theme_void()
 ```
@@ -140,7 +140,7 @@ burglaries <- crimes |>
   filter(type == "burglary") |> 
   mutate(month = month(date_time))
 
-ggplot() + 
+ggplot(burglaries) + 
   geom_point(aes(x = lon, y = lat, colour = month)) +
   theme_void()
 ```
@@ -263,11 +263,6 @@ quiz(
   
 )
 ```
-
-
-<p class="credits">
-[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).
-</p>
 
 
 
@@ -503,5 +498,4 @@ read some of these articles:
 
 
 <p class="credits">
-[The tidyverse style guide](https://style.tidyverse.org/) licensed under the [Creative Commons Attribution-ShareAlike licence](https://github.com/tidyverse/style/blob/master/LICENSE.md).
-</p>
+[The tidyverse style guide](https://style.tidyverse.org/) licensed under the [Creative Commons Attribution-ShareAlike licence](https://github.com/tidyverse/style/blob/master/LICENSE.md). <a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>

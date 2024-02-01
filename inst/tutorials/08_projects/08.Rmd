@@ -81,7 +81,7 @@ and choose to create the project in a new directory on your computer:
 Choose to create a new (empty) project, rather than use any of the templates for
 specific types of projects:
 
-<p class="full-width-image"><img src="/images/new_project_2.png" alt="Screenshot of an RStudio window for choosing from different types of RStudio project"></p>
+<p class="full-width-image"><img src="images/new_project_2.png" alt="Screenshot of an RStudio window for choosing from different types of RStudio project"></p>
 
 Choose what the new project <abbr title="directories on your computer are also sometimes called folders">
 directory</abbr> should be called, and where on your computer it should be 
