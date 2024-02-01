@@ -1,3 +1,10 @@
+# crimemapping 2.3.2
+
+* Remove reference to obsolete Stamen map tile provider in tutorial 9.
+* Make minor changes to background code consequent to updating the book versions
+  of each tutorial.
+
+
 # crimemapping 2.3.1
 
 * Remove interactivity from leaflet portion of tutorial 9 due to 

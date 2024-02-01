@@ -1,6 +1,6 @@
 ---
 title: "Crime Mapping: Mapping area data"
-description: "Learn how to make maps that show data for areas, as well as how to produce interactive maps"
+description: "Learn how to make maps that show data for areas, as well as how to produce interactive maps."
 output: 
   learnr::tutorial:
     progressive: true
@@ -1166,7 +1166,7 @@ new-line separator `<br>` and wrap the whole legend title in the `HTML()`
 function from the `htmltools` package.
 
 
-```{r rates-exercise4, exercise=TRUE, exercise.lines=25, out.width="100%", fig.asp=1}
+```r
 leaflet(district_murders_pop) |> 
   addProviderTiles(
     "Esri.WorldImagery", 
@@ -1174,10 +1174,6 @@ leaflet(district_murders_pop) |>
     # partially transparent to reduce its visual prominence
     options = providerTileOptions(opacity = 0.3)
   ) |> 
-  # The base map we have chosen does not have any labels, so we will add a
-  # second base map layer over the top. To do this we choose a layer that 
-  # consists only of labels.
-  addProviderTiles("Stamen.TonerLabels") |> 
   addPolygons(
     fillColor = ~ colours_red(murder_rate),
     fillOpacity = 0.75,
@@ -1196,7 +1192,7 @@ leaflet(district_murders_pop) |>
 We now have all the code we need to load the necessary data, calculate crime
 rates and make an interactive map of murders in districts in Uttar Pradesh.
 
-```{r rates-exercise5, exercise=TRUE, exercise.lines=47, out.width="100%", fig.asp=1}
+```r
 library(leaflet)
 library(sf)
 library(tidyverse)
@@ -1226,10 +1222,6 @@ leaflet(district_murders_pop) |>
     # partially transparent to reduce its visual prominence
     options = providerTileOptions(opacity = 0.3)
   ) |> 
-  # The base map we have chosen does not have any labels, so we will add a
-  # second base map layer over the top. To do this we choose a layer that 
-  # consists only of labels.
-  addProviderTiles("Stamen.TonerLabels") |> 
   addPolygons(
     fillColor = ~ colours_red(murder_rate),
     fillOpacity = 0.75,
