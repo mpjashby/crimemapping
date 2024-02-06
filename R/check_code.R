@@ -8,6 +8,8 @@
 #' @param reprex Should the code be checked for errors?
 #' @param style Should the code be checked for style issues?
 #' @return NULL, invisibly
+#'
+#' @importFrom rlang .data
 #' @export
 check_code <- function(
     file = NULL,
@@ -59,7 +61,7 @@ check_code <- function(
     # Reprex file
     rlang::try_fetch(
       suppressMessages(
-        reprex::reprex(input = reprex_file, venue = "r", html_preview = FALSE)
+        reprex::reprex(input = reprex_file, venue = "r") #, html_preview = FALSE)
       ),
       error = function(cnd) {
         cli::cli_h2("There is an error in your code")
@@ -68,7 +70,7 @@ check_code <- function(
     )
 
     # Load reprex file
-    reprex_text <- readLines(sub("\\.R$", "_reprex.r", reprex_file))
+    reprex_text <- readLines(sub("\\.R$", "_reprex_r.R", reprex_file))
 
     # Report any issues
     if (any(grepl("^#> Error", reprex_text))) {
@@ -77,7 +79,7 @@ check_code <- function(
       cli::cli_text("You must fix these errors before continuing.")
       cli::cli_text("The first error was:")
       cli::cli_ul()
-      cli::cli_li(head(
+      cli::cli_li(utils::head(
         sub(
           "^#> Error in ",
           "",
@@ -102,7 +104,7 @@ check_code <- function(
 
       warnings_found <- ifelse(
         length(warnings_found) >= 3,
-        head(warnings_found, 3),
+        utils::head(warnings_found, 3),
         warnings_found
       )
 
@@ -136,7 +138,7 @@ check_code <- function(
 
     }
 
-    cli::cli_text("{.file ", sub("\\.R$", "_reprex.r", reprex_file), "}")
+    cli::cli_text("{.file ", sub("\\.R$", "_reprex_r.R", reprex_file), "}")
 
   }
 

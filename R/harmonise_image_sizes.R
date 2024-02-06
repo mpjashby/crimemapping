@@ -3,6 +3,7 @@
 #' @param x File path to an image.
 #' @param type Either "full" (the default) for a 1,600px-wide image or "side"
 #'   for a 300px-wide image.
+#' @noRd
 
 harmonise_image_sizes <- function (x, type = "full") {
 

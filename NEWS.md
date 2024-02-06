@@ -1,3 +1,8 @@
+# crimemapping 2.4.0
+
+* Release `check_code()` function.
+
+
 # crimemapping 2.3.2
 
 * Remove reference to obsolete Stamen map tile provider in tutorial 9.

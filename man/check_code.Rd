@@ -4,10 +4,11 @@
 \alias{check_code}
 \title{Check code file before submission}
 \usage{
-check_code(file, reprex = TRUE, style = TRUE)
+check_code(file = NULL, reprex = TRUE, style = TRUE)
 }
 \arguments{
-\item{file}{A file path for the .R file to check}
+\item{file}{A file path for the .R file to check, or \code{NULL} to choose a
+file using the standard system file select dialog box}
 
 \item{reprex}{Should the code be checked for errors?}
 
