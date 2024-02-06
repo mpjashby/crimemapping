@@ -251,7 +251,7 @@ format_lintr_message <- Vectorize(function(message, line_nums) {
   message <- substr(message, 1, nchar(message) - 1)
 
   # Change message if needed
-  if (str_detect(message, "Lines should not be more than 80 characters"))
+  if (grepl(message, "Lines should not be more than 80 characters"))
     message <- paste(
       message,
       " (ignore this message if the lines contain long URLs or file paths)"

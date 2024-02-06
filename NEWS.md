@@ -1,3 +1,8 @@
+# crimemapping 2.4.1
+
+* Remove undeclared dependency on `stringr` package in `check_code()`.
+
+
 # crimemapping 2.4.0
 
 * Release `check_code()` function.
