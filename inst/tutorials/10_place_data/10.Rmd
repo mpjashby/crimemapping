@@ -274,11 +274,18 @@ head(medellin_homicides)
 
 In the rest of this tutorial we will use data from different sources to better
 understand clusters of homicides in the La Candelaria neighbourhood of downtown 
-Medellin. Use this map (created with the `leaflet` package) to look around the
+Medellin. 
+
+<!--
+
+Use this map (created with the `leaflet` package) to look around the
 La Candelaria neighbourhood -- the markers show the locations of the metro
 stations inside the neighbourhood boundary.
 
-```{r lacandelaria-map, message=FALSE, warning=FALSE, fig.asp=1, out.width="100%"}
+-->
+
+
+```{r lacandelaria-map, message=FALSE, warning=FALSE, fig.asp=1, out.width="100%", eval=FALSE}
 la_candelaria <- medellin_comunas |> 
   filter(nombre == "LA CANDELARIA") |> 
   st_transform("EPSG:4326") |> 

@@ -1,3 +1,9 @@
+# crimemapping 2.5.1
+
+* Remove `leaflet` map from tutorial 10, since this was again causing the 
+  `` Couldn't normalize path in `addResourcePath` `` error.
+
+
 # crimemapping 2.5.0
 
 * Update content for 2024 Week 6 (tutorials 10 and 11).
