@@ -1,3 +1,8 @@
+# crimemapping 2.5.0
+
+* Update content for 2024 Week 6 (tutorials 10 and 11).
+
+
 # crimemapping 2.4.1
 
 * Remove undeclared dependency on `stringr` package in `check_code()`.

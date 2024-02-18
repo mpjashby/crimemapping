@@ -4,7 +4,7 @@ description: "Learn how to find and use extra data about places to improve your 
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -117,7 +117,7 @@ medellin_homicides_density <- medellin_homicides |>
   st_intersection(medellin_comunas)
 
 medellin_homicides_map1 <- ggplot() +
-  annotation_map_tile(type = "cartolight", zoomin = 0) +
+  annotation_map_tile(type = "cartolight", zoomin = 0, progress = "none") +
   geom_sf(
     data = medellin_comunas, 
     colour = "grey70", 
@@ -710,7 +710,7 @@ medellin_bbox <- medellin_boundary |>
   st_as_sf()
 
 medellin_bbox_map <- ggplot() +
-  annotation_map_tile(type = "cartolight", zoomin = 1) +
+  annotation_map_tile(type = "cartolight", zoomin = 1, progress = "none") +
   geom_sf(
     data = medellin_boundary, 
     colour = "darkblue", 

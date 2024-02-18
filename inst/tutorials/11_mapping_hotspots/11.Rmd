@@ -3,8 +3,7 @@ title: "Crime Mapping: Mapping hotspots"
 description: "Learn what crime hotspots are, why they are important and how to map them."
 output: 
   learnr::tutorial:
-    progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -559,7 +558,8 @@ burglary_risk <- hotspot_dual_kde(
   burglaries, 
   nottingham_building_centroids, 
   bandwidth_adjust = 0.25, 
-  grid = hotspot_grid(wards, cell_size = 100)
+  grid = hotspot_grid(wards, cell_size = 100),
+  quiet = TRUE
 ) |> 
   st_intersection(wards)
 
@@ -875,7 +875,7 @@ robbery <- read_csv("https://mpjashby.github.io/crimemappingdata/nottingham_robb
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
   st_transform(27700)
 
-robbery_gistar <- hotspot_gistar(robbery, cell_size = 100)
+robbery_gistar <- hotspot_gistar(robbery, cell_size = 100, quiet = TRUE)
 
 # Use the `sample_n()` function from the `dplyr` package to return a random
 # sample of 10 rows from the result
@@ -901,6 +901,19 @@ multiple comparison problem (which we don't need to go into detail about).
 Fortunately, the values in the `pvalue` column have already been automatically
 adjusted to take account of the multiple comparison problem, so we can interpret 
 the $p$-values instead of interpreting the Gi* statistic directly.
+
+
+::: {.box .notewell}
+
+Since Gi* is a relative measure, if you have data for a large area (e.g. a 
+country) but only want to show data for a smaller area (e.g. a city), the Gi* 
+values will be influenced by the large areas with no crime and all of the city 
+is likely to be identified as a hotspot. To prevent this, it is important to 
+clip the dataset before calculating the Gi* values, as well as then clipping 
+afterwards where necessary.
+
+:::
+
 
 By convention, $p$-values are considered to be significant if they are _less 
 than 0.05_. So if $p<0.05$, we can say that the number of robberies occurring in 
@@ -1041,7 +1054,7 @@ nottingham_wards <- read_sf("https://mpjashby.github.io/crimemappingdata/notting
 # Calculate Gi* statistic, filter for only significant hotspot cells and clip to
 # the city boundary
 robbery_gi <- robbery |> 
-  hotspot_gistar(cell_size = 100, bandwidth_adjust = 0.25) |> 
+  hotspot_gistar(cell_size = 100, bandwidth_adjust = 0.25, quiet = TRUE) |> 
   filter(gistar > 0, pvalue < 0.05) |> 
   st_intersection(nottingham_wards)
 

@@ -76,7 +76,7 @@ check_code <- function(
     if (any(grepl("^#> Error", reprex_text))) {
 
       cli::cli_h2("There appear to be errors in your code")
-      cli::cli_text("You must fix these errors before continuing.")
+      cli::cli_text("{.strong You must fix these errors before continuing.}")
       cli::cli_text("The first error was:")
       cli::cli_ul()
       cli::cli_li(utils::head(
@@ -90,8 +90,8 @@ check_code <- function(
       cli::cli_end()
       cli::cli_text("There may be further errors after this.")
       cli::cli_text(
-        "Click the link below and look for lines that begin with \"#> Error\" ",
-        "to see more details."
+        "Click the link below and look for lines that begin with ",
+        "{.code #> Error} to see more details."
       )
 
     } else if (any(grepl("^#> Warning", reprex_text))) {
@@ -111,9 +111,9 @@ check_code <- function(
       cli::cli_h2("Warnings were produced by your code")
       cli::cli_text(
         "Although your code appears to run without errors, your code does ",
-        "produce one or more warnings. You should make sure you understand ",
-        "these warnings and whether you need to take any action before you ",
-        "continue."
+        "produce one or more warnings. {.emph You should make sure you ",
+        "understand these warnings and whether you need to take any action ",
+        "before you continue}."
       )
       cli::cli_text(ifelse(
         length(warnings_found) > 1,
@@ -123,7 +123,7 @@ check_code <- function(
       cli::cli_ul(warnings_found)
       cli::cli_text(
         "Click the link below and look for lines that begin with ",
-        "\"#> Warning\" to see more details."
+        "{.code #> Warning} to see more details."
       )
 
     } else {
@@ -132,8 +132,8 @@ check_code <- function(
       cli::cli_text(
         "There may still be issues in your code that could not be detected by ",
         "this check. Click the link below and look for any unexpected output ",
-        "(output is shown on lines starting with `#>`). Make sure you make ",
-        "any changes in your {.strong original} code file."
+        "(output is shown on lines starting with {.code #>}). Make sure you ",
+        "make any changes in your {.strong original} code file."
       )
 
     }
@@ -217,7 +217,7 @@ check_code <- function(
       dplyr::select(.data$message, .data$line_nums)
 
     if (length(lint_results$message) > 0) {
-      cli::cli_h2("There are potential issues with your code style")
+      cli::cli_h2("{.strong There are potential issues with your code style}")
       cli::cli_text(
         "Code style is important because well-styled code is less likely to ",
         "contain logic errors that cannot be detected by this automated check."
