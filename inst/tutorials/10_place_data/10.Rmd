@@ -460,7 +460,7 @@ any other information you place in the `caption` argument of the `labs()`
 function in a `ggplot()` stack.
 
 
-### Check your understanding
+### Check your understanding {.tutorial}
 
 ```{r open-data-quiz}
 quiz(
@@ -609,7 +609,7 @@ files that are inside the zip file rather than unzip any files. For example, the
 code `unzip(metro_lines_file, list = TRUE)` would produce a data frame of file
 names:
 
-```{r}
+```{r echo=FALSE}
 metro_lines_file |> unzip(list = TRUE) |> knitr::kable()
 ```
 
@@ -962,6 +962,15 @@ Candelaria.
 ```{r osm-exercise5-solution}
 # There are lots of design decisions you could make in producing a map -- the
 # following code is a minimal map, which you could improve on in several ways
+
+# Load data
+medellin_comunas <- read_sf("https://mpjashby.github.io/crimemappingdata/medellin_comunas.gpkg") |> 
+  janitor::clean_names() |> 
+  st_transform("EPSG:3115") |> 
+  select(nombre, geom)
+medellin_homicides <- read_csv2("https://mpjashby.github.io/crimemappingdata/medellin_homicides.csv") |> 
+  remove_missing(vars = c("longitud", "latitud")) |> 
+  st_as_sf(coords = c("longitud", "latitud"), crs = "EPSG:4326")
 
 # Create neighbourhood boundary
 la_candelaria <- medellin_comunas |> 

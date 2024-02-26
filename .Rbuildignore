@@ -14,8 +14,6 @@
 ^.*/rosm.cache
 ^rosm.cache
 ^data-raw$
-^inst/tutorials/12_messy_data
-^inst/tutorials/13_crime_series
 ^inst/tutorials/14_writing_reports
 ^inst/tutorials/15_no_maps
 ^inst/tutorials/16_mapping_time

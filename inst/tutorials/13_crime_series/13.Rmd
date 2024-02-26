@@ -4,7 +4,7 @@ description: "Learn how to map crime series, including mapping movement over tim
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -656,8 +656,6 @@ add the locations of buildings or particular facilities using data from
 OpenStreetMap. What information we choose to present on the map will depend on 
 what information we think it is important to communicate to our audience.
 
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
-
 
 <!--
 ## Plotting the journey to crime
@@ -849,3 +847,4 @@ hungerford_map_town <- ggplot() +
 
 <p class="credits"><a href="https://www.getreading.co.uk/news/berkshire-history/gallery/30-years-hungerford-massacre-13495555">Photograph of PC Roger Brereton's funeral from Berkshire Live</a></p>
 
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>

@@ -1,3 +1,8 @@
+# crimemapping 2.6.0
+
+* Update content for 2024 Week 7 (tutorials 12 and 13).
+
+
 # crimemapping 2.5.1
 
 * Remove `leaflet` map from tutorial 10, since this was again causing the 

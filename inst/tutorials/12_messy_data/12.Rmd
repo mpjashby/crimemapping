@@ -4,7 +4,7 @@ description: "Learn how to tidy messy data so that it is easier to use for data 
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -14,6 +14,7 @@ tutorial_options(exercise.timelimit = 120)
 knitr::opts_chunk$set(echo = FALSE)
 
 # Load packages
+library(gt)
 library(rnaturalearth)
 library(sf)
 library(tidygeocoder)
@@ -785,7 +786,7 @@ library(ggspatial)
 cairo_null_island_map1 <- cairo_suspects |> 
   filter(lon != 0) |> 
   ggplot() +
-  annotation_map_tile(type = "cartolight", zoomin = 1) +
+  annotation_map_tile(type = "cartolight", zoomin = 1, progress = "none") +
   geom_sf() +
   scale_x_continuous(expand = expansion(mult = 0.2)) +
   fixed_plot_aspect(16/9) +
@@ -801,7 +802,7 @@ ggsave(
 
 cairo_null_island_map2 <- cairo_suspects |> 
   ggplot() +
-  annotation_map_tile(type = "cartolight", zoomin = 1) +
+  annotation_map_tile(type = "cartolight", zoomin = 1, progress = "none") +
   geom_sf() +
   fixed_plot_aspect(16/9) +
   theme_void()
@@ -860,8 +861,6 @@ cairo_suspects_valid <- st_intersection(cairo_suspects, egypt_outline)
 
 Now if we were to plot a map using the `cairo_suspects_valid` object, we would
 see the map covered only the Cairo area, as we originally wanted.
-
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
 
 
 
@@ -924,8 +923,8 @@ tribble(
   "[Geocodio](https://www.geocod.io/)", "United States and Canada", "[register for Geocodio](https://dash.geocod.io/register)", "2,500 addresses per day",
   "[US Census](https://geocoding.geo.census.gov/)", "United States", "not required", "none"
 ) |> 
-  knitr::kable() |> 
-  kableExtra::kable_styling(full_width = FALSE)
+  gt() |> 
+  fmt_markdown()
 ```
 
 The `tidygeocoder` package also supports some other services that do not offer
@@ -1215,5 +1214,4 @@ resources:
     
 <p class="full-width-image"><img src="images/tidydata_7.jpg" alt="Cartoon saying make friends with tidy data!"></p>
 
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
-
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>

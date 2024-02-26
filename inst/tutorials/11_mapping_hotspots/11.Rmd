@@ -225,7 +225,7 @@ ggsave(
 <p class="full-width-image"><img src="images/nottingham_robbery_map.jpg" alt="A hotspot map of robberies in Nottingham" style="max-height: 700px;"></p>
 
 
-### Check your understanding
+### Check your understanding {.tutorial}
 
 ```{r why-maps-quiz}
 quiz(
@@ -644,7 +644,7 @@ ggplot() +
 ```
 
 
-### Check your understanding
+### Check your understanding {.tutorial}
 
 ```{r dual-kde-quiz}
 quiz(
@@ -968,7 +968,7 @@ waste time chasing apparent patterns that are actually the result of random
 variation.
 
 
-### Check your understanding
+### Check your understanding {.tutorial}
 
 ```{r gistar-quiz}
 quiz(
