@@ -4,7 +4,7 @@ description: "Learn how to write reports directly in RStudio that integrate text
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -71,6 +71,8 @@ polished reports in a way that makes sure they are always up to date. For
 example, the report 
 [*Stop and Search in London*](https://discovery.ucl.ac.uk/id/eprint/10115766/1/2020-Q3.pdf)
 was created entirely in Quarto.
+
+<p class="centered-image"><img src="images/quarto_process.png" alt="A schematic representing the multi-language input (e.g. Python, R, Observable, Julia) and multi-format output (e.g. PDF, html, Word documents, and more) versatility of Quarto."></p>
 
 
 
@@ -465,8 +467,6 @@ written in R or Python, runs the code and then integrates the Markdown text and
 the code results into one or more output files. Quarto can produce web pages,
 Word documents, PDF files, presentations, websites, e-books and other formats.
 
-<p class="full-width-image"><img src="images/quarto-process.png" alt="A schematic representing the multi-language input (e.g. Python, R, Observable, Julia) and multi-format output (e.g. PDF, html, Word documents, and more) versatility of Quarto."></p>
-
 A Quarto file is just like a Markdown document except that it has the file
 extension `.qmd` rather than the extension `.md`. The `.qmd` extension tells 
 RStudio that a file will contain a mixture of text formatted with Markdown and
@@ -663,9 +663,6 @@ creates messages or warnings, and a second chunk to create the map itself.
 <p class="centered-image"><img src="images/quarto-multiple-chunks.png" alt="Screen shot of the a Quarto document including multiple code chunks with different chunk options."></p>
 
 
-<p class="credits">Artwork from "<a href="https://allisonhorst.com/cetinkaya-rundel-lowndes-quarto-keynote">Hello, Quarto</a>" keynote by Julia Lowndes and Mine Çetinkaya-Rundel, presented at RStudio Conference 2022. Illustrated by Allison Horst.</p>
-
-
 
 ## Rendering Quarto
 
@@ -693,7 +690,7 @@ You can control the output format that RStudio will produce by changing the
 
 If you have a choice of which format to produce a report in, I would suggest you
 choose HTML because it can do things (like include interactive maps made with
-`tmap`) that Word and PDF format cannot, and can easily be read on mobile 
+`leaflet`) that Word and PDF format cannot, and can easily be read on mobile 
 devices. If, for whatever reason, you cannot choose HTML, I recommend choosing 
 PDF format since it is readable on almost all computers, even those that do not
 have Word installed on them. Only produce reports in Word format if you are 
@@ -732,6 +729,35 @@ line of the previous code chunk and the first line of the next code chunk. It is
 up to you to find the exact location of the error.
 
 
+### Making self-contained HTML documents
+
+Web pages written in HTML typically make use of images, videos and other 
+resources stored in separate files. In fact, the web page you're reading now
+makes use of resources stored in 51 separate files. This works well on the web,
+since it allows resources to be shared between lots of HTML files, which reduces
+how much data has to be stored and transmitted across networks. But it works 
+less well when you want to send an HTML report to someone else over email, since
+it can be hard to keep track of all the external files associated with a 
+particular HTML file.
+
+To deal with this problem, we can tell Quarto that when it creates an HTML 
+report, all the necessary data and other resources should be embedded inside the
+HTML file itself. This makes the HTML file larger, but easier to manage. To make
+HTML reports produced by Quarto self-contained in this way, we can change the
+`format` section of the header of a Quarto document from simply `format: html`
+to instead specify exactly what settings we want to be used to create that HTML
+file:
+
+```yaml
+format:
+  html:
+    embed-resources: true
+```
+
+There are lots of other ways we can use the `format` section of the header in a
+Quarto document to fine-tune how the resulting document works. You can find out
+more [in the HTML section of the Quarto website](https://quarto.org/docs/output-formats/html-basics.html).
+
 
 ## In summary
 
@@ -769,3 +795,5 @@ resources.
 
   * [R for Data Science chapter on Quarto](https://r4ds.hadley.nz/quarto.html).
   * A [gallery of different documents, websites and presentations written with Quarto](https://quarto.org/docs/gallery/).
+
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>

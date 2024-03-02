@@ -4,7 +4,7 @@ description: "Learn how to use tables and charts to effectively communicate info
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
@@ -116,7 +116,7 @@ violence_counts <- violence %>%
   drop_na() %>%
   right_join(districts, by = "lad19nm") %>%
   st_as_sf() %>%
-  mutate(hjust = ifelse(n == max(n), 1, 0))
+  mutate(hjust = if_else(n == max(n), 1, 0))
 
 # Download base map
 base_map <- violence_counts %>%
@@ -469,21 +469,16 @@ property such as colour that people can easily see patterns in. To do this, we
 can colour the cells in a column according to the value of each cell using the 
 `data_color()` function (note the spelling of 'color' in this function). To use 
 `data_color()`, we specify the columns we want to shade using the `columns` 
-argument and the colours we want to use using the `colors` argument (note the 
-spelling again). 
+argument and the colour palette we want to use using the `palette` argument. 
 
 In this example, we will only colour the values in two columns, so we will pass
 the column names (enclosed in `` ` ``back ticks`` ` `` if they contain a space) 
 to the `columns` argument.
 
-The `colors` argument to `data_color()` needs to be the result produced by a 
-function that converts numeric values to shades of colour. We will use the 
-`col_numeric()` function from the `scales` package, which converts numbers to 
-colour shades on a linear scale. To calculate the colour shades, `col_numeric()` 
-needs to know the range of possible values that we want the colour scale to 
-cover. In this case we just want the colour scale to cover the values in the 
-data, so we specify `domain = NULL` to say that we want `col_numeric()` to work
-out the range of possible values automatically.
+The easiest way to specify a colour palette is to use one of the built-in colour
+palettes that the `gt` package understands automatically. These use the same
+colour palette names we have used in previous tutorials when making use of 
+functions such as `scale_fill_distiller()`.
 
 ```{r tables-exercise7, exercise=TRUE, exercise.lines=17}
 library(scales)
@@ -498,11 +493,8 @@ violence |>
   # Functions from `dplyr`, `tidyr` etc above and functions from `gt` below
   gt() |> 
   fmt_number(columns = where(is.numeric), decimals = 0) |> 
-  data_color(
-    columns = `unarmed robbery`,
-    colors = col_numeric("Oranges", domain = NULL)
-  ) |> 
-  data_color(columns = rape, colors = col_numeric("Blues", domain = NULL))
+  data_color(columns = `unarmed robbery`, palette = "Oranges") |> 
+  data_color(columns = rape, palette = "Blues")
 ```
 
 
@@ -566,11 +558,8 @@ violence |>
   # Functions from `dplyr`, `tidyr` etc above and functions from `gt` below
   gt() |> 
   fmt_number(columns = where(is.numeric), decimals = 0) |> 
-  data_color(
-    columns = `unarmed robbery`,
-    colors = col_numeric("Oranges", domain = NULL)
-  ) |> 
-  data_color(columns = rape, colors = col_numeric("Blues", domain = NULL)) |> 
+  data_color(columns = `unarmed robbery`, palette = "Oranges") |> 
+  data_color(columns = rape, palette = "Blues") |> 
   summary_rows(
     columns = where(is.numeric),
     fns = list("total" = "sum"),
