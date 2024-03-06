@@ -83,7 +83,7 @@ into different file formats. For example, RStudio can convert Markdown documents
 into Word, PDF, PowerPoint and many other formats. 
 
 
-```{r markdown-flowchart, eval=FALSE}
+```{r markdown-flowchart, echo=FALSE, eval=FALSE}
 library(Gmisc)
 
 box_markdown <- boxGrob(

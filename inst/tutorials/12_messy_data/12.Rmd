@@ -160,7 +160,7 @@ imagine a dataset showing counts of several different types of crime in several
 different areas. We could store this data in wide format, where there is a 
 column for the name of the area and then a column for each type of crime.
 
-```{r wide-table}
+```{r wide-table, echo=FALSE}
 crime_counts |>  
   knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
@@ -212,7 +212,7 @@ A common reason for data to be stored in wide format is where repeated
 observations are made of some value over time. For example, we might have 
 monthly counts of crimes for different areas.
 
-```{r monthly-table}
+```{r monthly-table, echo=FALSE}
 monthly_counts |>  
   knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
@@ -375,7 +375,7 @@ Sometimes datasets include multiple variables in a single column. For example,
 data about crime victims stored in an object called `victims` might include a 
 single column representing both age and sex.
 
-```{r victims-table}
+```{r victims-table, echo=FALSE}
 victims |> 
   knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
@@ -441,7 +441,7 @@ package start with `str_` so that they are easy to remember.
 
 We can change the case of text using one of four `str_to_` functions:
 
-```{r case-table}
+```{r case-table, echo=FALSE}
 tribble(
   ~input, ~`function`, ~output,
   "A stRinG oF TeXT", "`st_to_lower()`", str_to_lower("A stRinG oF TeXT"),
@@ -467,7 +467,7 @@ start of every value in the `location` column of the data. This is to remind
 users that the locations of crimes are deliberately obscured by being 'snapped' 
 to the centre of the street on which they occur to protect victims' privacy. 
 
-```{r uk-data-table, include=TRUE}
+```{r uk-data-table, include=TRUE, echo=FALSE}
 uk_data |> 
   knitr::kable() |> 
   kableExtra::kable_styling(full_width = FALSE)
@@ -661,7 +661,7 @@ the problems it causes.
 
 ![](https://youtu.be/bjvIpI-1w84)
 
-```{r null-island-map, eval=FALSE}
+```{r null-island-map, echo=FALSE, eval=FALSE}
 ortho <- "+proj=ortho +lon_0=0 +lat_0=15"
 
 countries <- rnaturalearth::countries110 |> 
@@ -774,13 +774,13 @@ several (fictional) suspects for bank fraud in and around Cairo, Egypt. The data
 contain 10 rows stored in an object called `cairo_suspects` that looks like 
 this:
 
-```{r cairo-suspects-table}
+```{r cairo-suspects-table, echo=FALSE}
 cairo_suspects |> 
   knitr::kable()
 ```
 
 
-```{r cairo-suspects-maps, eval=FALSE}
+```{r cairo-suspects-maps, echo=FALSE, eval=FALSE}
 library(ggspatial)
 
 cairo_null_island_map1 <- cairo_suspects |> 
@@ -940,7 +940,7 @@ addresses (`r scales::comma(60 * 60)`) you can geocode each day.
 To illustrate the geocoding process, we will find co-ordinates for the addresses
 in the object `addresses`, which holds data for 10 sexual assaults in Chicago.
 
-```{r}
+```{r, echo=FALSE}
 addresses |> knitr::kable() |> kableExtra::kable_styling(full_width = FALSE)
 ```
 
@@ -1166,7 +1166,7 @@ any action.
 
 
 
-#### Check your understanding
+#### Check your understanding {.tutorial}
 
 ```{r conflict-quiz}
 question(

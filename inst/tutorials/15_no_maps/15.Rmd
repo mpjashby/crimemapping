@@ -83,7 +83,7 @@ less clear than a bar chart (for example, in being able to decipher if there
 were more offences in Kettering or in Wellingborough). 
 
 
-```{r northants-district-maps, eval=FALSE}
+```{r northants-district-maps, echo=FALSE, eval=FALSE}
 library(patchwork)
 
 # Load crime data

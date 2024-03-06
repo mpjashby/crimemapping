@@ -214,7 +214,7 @@ The `order` column shows the order in which the victims were shot. These are the
 first few rows of the dataset (the dagger symbol † shows that the victim was 
 killed):
 
-```{r}
+```{r, echo=FALSE}
 hungerford_shootings |> 
   mutate(victims = str_replace_all(victims, "\\n", ", ")) |> 
   head(5) |> 
@@ -224,7 +224,7 @@ hungerford_shootings |>
 In this tutorial we will learn how to create this composite map of the locations
 of the shootings in this crime series.
 
-```{r make-hungerford-map, eval=FALSE}
+```{r make-hungerford-map, eval=FALSE, echo=FALSE}
 hungerford_map <- (hungerford_map_overall / hungerford_map_town) + 
   plot_annotation(
     title = "Shootings during the Hungerford massacre",
@@ -261,7 +261,7 @@ of each event and the order in which they occurred. To show a sequence of events
 on a map, we need to link each event with those that happened immediately before 
 and after it. 
 
-```{r}
+```{r, echo=FALSE}
 hungerford_shootings |> 
   mutate(victims = str_replace_all(victims, "\\n", ", ")) |> 
   head(5) |> 
@@ -696,7 +696,7 @@ the `patchwork` package.
 
 :::
 
-```{r names-killed}
+```{r names-killed, echo=FALSE}
 names_killed <- hungerford_shootings |> 
   pull("victims") |> 
   str_split("\n") |> 
