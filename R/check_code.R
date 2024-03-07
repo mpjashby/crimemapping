@@ -32,18 +32,51 @@ check_code <- function(
 
   # Check arguments
   if (!rlang::is_character(file, n = 1) && !rlang::is_null(file))
-    rlang::abort("`file` must be `NULL` or a single file path")
+    cli::cli_abort("`file` must be `NULL` or a single file path")
   if (!file.exists(file))
-    rlang::abort(paste("The file ", file, "cannot be found"))
+    cli::cli_abort(paste("The file ", file, "cannot be found"))
   if (!rlang::is_logical(reprex, n = 1))
-    rlang::abort("`reprex` must be a single `TRUE` or `FALSE` value")
+    cli::cli_abort("`reprex` must be a single `TRUE` or `FALSE` value")
   if (!rlang::is_logical(style, n = 1))
-    rlang::abort("`style` must be a single `TRUE` or `FALSE` value")
+    cli::cli_abort("`style` must be a single `TRUE` or `FALSE` value")
+  file_type <- file |>
+    stringr::str_extract(
+      stringr::regex("\\.(r|rmd|qmd)$", ignore_case = TRUE)
+    ) |>
+    stringr::str_to_lower()
+  if (!file_type %in% c(".r", ".rmd", ".qmd")) {
+    cli::cli_abort(
+      "`file` must be an R (`.R`), Rmarkdown (`.Rmd`) or Quarto (`.qmd`) "
+    )
+  }
 
   # Introduce
   cli::cli_h1("Checking your code")
 
-    # Check for errors
+  # Explain processing of Rmarkdown/Quarto documents
+  if (file_type %in% c(".rmd", ".qmd")) {
+
+    # cli tries to interpret `{r}` as an R object called `r`, so to avoid an
+    # `object 'r' not found` error we have to create an object called `r`
+    r <- "{r}"
+    cli::cli_text(
+      "{.emph Note}: The file you want to check appears to be a Quarto or ",
+      "Rmarkdown file. This file will be checked by extracting the R code ",
+      "from all the code chunks in the file (i.e. pieces of code with ```{r} ",
+      "on a line before and ``` on a line afterwards). Any inline R code ",
+      "(e.g. `r Sys.date()`) cannot be checked by this function. You can ",
+      "check inline code by clicking the `Render` button at the top of your ",
+      "Quarto document in RStudio."
+    )
+
+    r_file <- suppressMessages(knitr::purl(file, documentation = 0))
+    file_loc <- stringr::str_glue("{dirname(file)}/{basename(r_file)}")
+    file.rename(r_file, file_loc)
+    file <- file_loc
+
+  }
+
+  # Check for errors
   if (reprex) {
 
     cli::cli_text(
@@ -162,7 +195,7 @@ check_code <- function(
         lintr::indentation_linter(), # consistent indentation
         lintr::infix_spaces_linter(), # spaces around operators
         lintr::inner_combine_linter(), # vectorised function not re-used for every element of vector
-        lintr::keyword_quote_linter(), # no unnecessary quoting of obj index
+        # lintr::keyword_quote_linter(), # no unnecessary quoting of obj index
         lintr::length_test_linter(), # no mistakes with usage of `length()`
         lintr::library_call_linter(allow_preamble = FALSE), # packages loaded first
         lintr::line_length_linter(), # lines no more than 80 chrs
@@ -207,6 +240,21 @@ check_code <- function(
       cache = FALSE
     ) |>
       as.data.frame() |>
+      dplyr::filter(
+        !(linter == "line_length_linter" & stringr::str_detect(line, "http"))
+      ) |>
+      dplyr::mutate(
+        message = dplyr::case_when(
+          linter == "implicit_assignment_linter" ~
+            "Do not assign values to objects inside function calls",
+          linter == "indentation_linter" ~ "Indentation is incorrect",
+          linter == "line_length_linter" ~
+            "Lines should not be more than 80 characters unless they contain URLs or file paths",
+          linter == "infix_spaces_linter" ~
+            "Put a space either side of operators such as `+` and `<-`",
+          TRUE ~ stringr::str_to_lower(stringr::str_remove(message, "\\.$"))
+        )
+      ) |>
       dplyr::group_by(.data$message) |>
       dplyr::summarise(
         line_sort = dplyr::first(.data$line_number),
@@ -246,16 +294,6 @@ check_code <- function(
 }
 
 format_lintr_message <- Vectorize(function(message, line_nums) {
-
-  # Remove the terminal period
-  message <- substr(message, 1, nchar(message) - 1)
-
-  # Change message if needed
-  if (grepl(message, "Lines should not be more than 80 characters"))
-    message <- paste(
-      message,
-      " (ignore this message if the lines contain long URLs or file paths)"
-    )
 
   # Print single/plural message
   if (length(line_nums) == 1) {
