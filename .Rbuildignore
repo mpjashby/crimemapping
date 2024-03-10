@@ -15,5 +15,4 @@
 ^rosm.cache
 ^data-raw$
 
-^inst/tutorials/16_mapping_time
 ^R/harmonise_image_sizes.R$

@@ -1,3 +1,8 @@
+# crimemapping 2.8.0
+
+* Update content for 2024 Week 9 (tutorial 16).
+
+
 # crimemapping 2.7.1
 
 * `check_code()` can now handle Quarto and Rmarkdown files.

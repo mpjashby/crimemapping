@@ -4,14 +4,14 @@ description: "Learn to show change over time on crime maps and charts"
 output: 
   learnr::tutorial:
     progressive: true
-    css: ["css/tutorial_style.css", "css/2023.css"]
+    css: ["css/tutorial_style.css", "css/2024.css"]
 runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 library(learnr)
 tutorial_options(exercise.timelimit = 120)
-knitr::opts_chunk$set(echo = FALSE, fig.align='center')
+knitr::opts_chunk$set(echo = FALSE, fig.align = "center")
 
 # Load packages
 # Note that `gifski` and `transformr` aren't used in the tutorial, but are
@@ -38,7 +38,10 @@ walk(
 # Load data --------------------------------------------------------------------
 
 # Crime data for demonstrating date manipulation
-crimes <- read_csv("https://mpjashby.github.io/crimemappingdata/bronx_shootings.csv") |> 
+crimes <- read_csv(
+  "https://mpjashby.github.io/crimemappingdata/bronx_shootings.csv",
+  show_col_types = FALSE
+) |> 
   # Change dates so they can be filtered using recent dates
   mutate(occur_date = as_date(runif(
     n(), 
@@ -47,7 +50,10 @@ crimes <- read_csv("https://mpjashby.github.io/crimemappingdata/bronx_shootings.
   )))
 
 # Crime data for demonstrating date creation
-thefts <- read_csv("https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz") |> 
+thefts <- read_csv(
+  "https://mpjashby.github.io/crimemappingdata/vancouver_thefts.csv.gz",
+  show_col_types = FALSE
+) |> 
   janitor::clean_names() |> 
   select(year, month_of_year = month, day_of_month = day, hour, minute, x, y) |> 
   filter(month_of_year == 9)
@@ -56,7 +62,10 @@ thefts <- read_csv("https://mpjashby.github.io/crimemappingdata/vancouver_thefts
 ## Assaults data for animated map ----
 
 # Load data 
-assaults <- read_csv("https://mpjashby.github.io/crimemappingdata/chicago_aggravated_assaults.csv.gz")
+assaults <- read_csv(
+  "https://mpjashby.github.io/crimemappingdata/chicago_aggravated_assaults.csv.gz",
+  show_col_types = FALSE
+)
 cpd_districts <- read_sf("https://mpjashby.github.io/crimemappingdata/chicago_police_districts.kml") |> 
   st_transform("EPSG:26916") |> 
   select(district_no = Name, geometry) |> 
@@ -565,12 +574,12 @@ in the second and third arguments (inclusive).
 
 ::: {.tutorial}
 
-For example, complete the following code by replacing the text `[start]` and 
-`[end]` with `ymd()` functions to extract only crimes occurring between 
+For example, complete the following code by replacing the text `____` and 
+`____` with `ymd()` functions to extract only crimes occurring between 
 `r start_date_formatted` and `r end_date_formatted` inclusive.
 
 ```{r dates-exercise6, exercise=TRUE}
-filter(crimes, between(occur_date, [start], [end]))
+filter(crimes, between(occur_date, ____, ____))
 ```
 
 ```{r dates-exercise6-hint}
@@ -627,7 +636,6 @@ between(as_date(offence_date), ymd("2021-01-01"), ymd("2021-01-31"))
 would allow us to select all the crimes occurring in January 2021.
 
 
-<p class="credits">[Stats Illustrations by Allison Horst](https://github.com/allisonhorst/stats-illustrations) licensed under the [Creative Commons Attribution licence](https://github.com/allisonhorst/stats-illustrations/blob/master/license).</p>
 
 
 ## Showing change over time
@@ -1072,7 +1080,7 @@ whether each day is a weekday or on a weekend, then adding `facet_grid()` to our
 
 ```{r change-exercise7, exercise=TRUE, exercise.lines=19, fig.asp=1}
 assault_hourly_counts |> 
-  mutate(weekend = ifelse(wday %in% c("Sat", "Sun"), "Sat–Sun", "Mon–Fri")) |> 
+  mutate(weekend = if_else(wday %in% c("Sat", "Sun"), "Sat–Sun", "Mon–Fri")) |> 
   ggplot(aes(x = pseudo_date, y = count, colour = wday)) +
   geom_line(linewidth = 1) +
   # Assign the facets to rows so that we can compare the same time on different
@@ -1250,7 +1258,9 @@ library(sfhotspot)
 
 kde_by_shift <- assaults_by_shift |> 
   group_by(shift) |> 
-  group_modify(~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75)) |> 
+  group_modify(
+    ~ hotspot_kde(.x, cell_size = 200, bandwidth_adjust = 0.75, quiet = TRUE)
+  ) |> 
   ungroup() |> 
   st_as_sf() |> 
   # Clip the result to the boundary of Chicago, which is already stored in the 
@@ -1384,7 +1394,7 @@ we will use `slice_max()` together with `group_by()` to get the rows with the
 highest values _separately for each shift_ rather than those with the highest 
 values across all three shifts combined.
 
-```{r map-exercise4, exercise=TRUE}
+```{r map-exercise4, exercise=TRUE, exercise.lines=21}
 kde_shift_highest <- kde_by_shift |> 
   group_by(shift) |> 
   slice_max(order_by = kde, n = 10)
@@ -1444,7 +1454,7 @@ of the day needs 24 KDE layers, in this case it is particularly useful to use
 `group_modify()` to avoid having to create 24 different objects and then binding 
 them together.
 
-```{r animated-exercise1, exercise=TRUE, exercise.lines=25}
+```{r animated-exercise1, exercise=TRUE, exercise.lines=27}
 library(gganimate)
 
 assaults_by_hour <- assaults |> 
@@ -1723,3 +1733,6 @@ You can learn more about:
     [Getting Started with `gganimate`](https://gganimate.com/articles/gganimate.html).
 
 :::
+
+
+<p class="credits"><a href="https://twitter.com/allison_horst">Artwork by @allison_horst</a></p>
